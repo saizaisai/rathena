@@ -33,6 +33,7 @@
 #include "itemdb.hpp"
 #include "log.hpp"
 #include "map.hpp"
+#include "mapreg.hpp"
 #include "mercenary.hpp"
 #include "npc.hpp"
 #include "party.hpp"
@@ -1225,6 +1226,12 @@ int32 mob_spawn (struct mob_data *md)
 		clif_spawn(&md->bl);
 	skill_unit_move(&md->bl,tick,1);
 	mobskill_use(md, tick, MSC_SPAWN);
+	
+	if(md->spawn && md->spawn->state.boss){
+		std::string mapregname = "$" + std::to_string(md->mob_id) + "_" + std::to_string(md->bl.m);
+		mapreg_setreg(reference_uid( add_str( mapregname.c_str() ), 0 ),2);
+	}
+
 	return 0;
 }
 
@@ -1301,6 +1308,15 @@ static int32 mob_ai_sub_hard_activesearch(struct block_list *bl,va_list ap)
 	md=va_arg(ap,struct mob_data *);
 	target= va_arg(ap,struct block_list**);
 	mode= static_cast<enum e_mode>(va_arg(ap, int32));
+
+	if(battle_config.feature_autoattack_teleport_mvp && bl->type == BL_PC){
+		TBL_PC *sd = BL_CAST(BL_PC, bl);
+		e_mob_bosstype bosstype = md->get_bosstype();
+
+		if(bosstype != BOSSTYPE_NONE){
+			aa_teleport(sd);
+		}
+	}
 
 	//If can't seek yet, not an enemy, or you can't attack it, skip.
 	if ((*target) == bl || !status_check_skilluse(&md->bl, bl, 0, 0))
@@ -2552,6 +2568,11 @@ void mob_damage(struct mob_data *md, struct block_list *src, int32 damage)
 		//Log damage
 		mob_log_damage(md, src, damage);
 		md->dmgtick = gettick();
+
+		if(src->type == BL_PC){
+			map_session_data *sd = (map_session_data *)src;
+			sd->aa.last_attack = gettick();
+		}
 	}
 
 	if (battle_config.show_mob_info&3)
@@ -3317,6 +3338,16 @@ int32 mob_dead(struct mob_data *md, struct block_list *src, int32 type)
 	// MvP tomb [GreenBox]
 	if (battle_config.mvp_tomb_enabled && md->spawn->state.boss && map_getmapflag(md->bl.m, MF_NOTOMB) != 1)
 		mvptomb_create(md, mvp_sd ? mvp_sd->status.name : nullptr, time(nullptr));
+
+	if(md->spawn->state.boss){
+		std::string mapregname = "$" + std::to_string(md->db->id) + "_" + std::to_string(md->bl.m);
+		std::string mapregnamestr = mapregname + "$";
+		mapreg_setreg(reference_uid( add_str( mapregname.c_str() ), 0 ),1);
+		mapreg_setreg(reference_uid( add_str( mapregname.c_str() ), 1 ),md->bl.x);
+		mapreg_setreg(reference_uid( add_str( mapregname.c_str() ), 2 ),md->bl.y);
+		mapreg_setreg(reference_uid( add_str( mapregname.c_str() ), 3 ),time(NULL));
+		mapreg_setregstr(reference_uid( add_str( mapregnamestr.c_str() ), 4),mvp_sd ? mvp_sd->status.name : NULL);
+	}
 
 	if( !rebirth )
 		mob_setdelayspawn(md); //Set respawning.
