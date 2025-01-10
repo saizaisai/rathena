@@ -1,0 +1,172 @@
+-	script	storage_collection	-1,{
+	end;
+OnOpen:
+	mes "^00B2EE[ Collection Book ]^000000";
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";	
+	.@select = select("^3CB371[»]^000000 View Collection Information","^3CB371[»]^000000 Add Card to collection","^FF0000[»]^000000 Cancel");
+	if(.@select == 1){
+		soundeffect "click.wav",1;
+		mes "Which card collection do you want to see?";
+		for( .@i = 0; .@i < getarraysize(.MAP_LIST$); .@i++ ) 
+		{
+			.var_map$[0] = "#map_"+ .MAP_LIST$[.@i];
+			.@menu$ = .@menu$ + ( (getd(.var_map$[0])) ? "> ^0088eeCollection of "+.MAP_LIST$[.@i]+" ["+ getd(.var_map$[0]) +"].^000000" : "- ^FF0000 Collection of "+.MAP_LIST$[.@i]+" Collection of ["+ getd(.var_map$[0]) +"]^000000" ) +":";
+		}
+		.@select = select( .@menu$ ) - 1;
+		
+		
+		next;
+		explode(.@card_selected$, .card_collections$[.@select], "|");	
+		explode(.@effects$, .unlock_effect$[.@select], "|");		
+		soundeffect "click.wav",1;		
+		.var_map$[0] = "#map_"+ .MAP_LIST$[.@select];		
+		cutin "map_"+.@select+"_"+getd(.var_map$[0]), 4;
+		
+		mes .NPC$;
+		mes "^008800Collection of cards "+.MAP_LIST$[.@select]+"^000000 ";
+		mes "Here is your entire card collection...";
+		for(.@a = 0; .@a < getarraysize(.@card_selected$); .@a ++){
+			.var_cards[0] = get_collection_item(1,atoi(.@card_selected$[.@a])); 
+			mes "["+(.@a+1)+"]: "+((.var_cards[0] != 0) ? "^008800"+getitemname(atoi(.@card_selected$[.@a]))+" ["+get_collection_check(atoi(.@card_selected$[.@a]))+"]^000000": "^FF0000"+ getitemname(atoi(.@card_selected$[.@a])) +"  ["+get_collection_check(atoi(.@card_selected$[.@a]))+"]^000000");
+			mes " "+((.var_cards[0] != 0) ?  "  ^008800» "+ .@effects$[.@a] +" [Complete]^000000":"  ^FF0000» "+ .@effects$[.@a] +"^000000"); 
+		}
+		close3;
+	end;
+	}else if(.@select == 2){
+		openstorage2 1,STOR_MODE_GET|STOR_MODE_PUT;
+	}else if(.@select == 3){
+		end;
+	}
+	end;
+OnInit:
+	.NPC$ = "^00B2EE[ Collection Book ]^000000";
+	// TOWN & DUNGEONS
+	setarray .MAP_LIST$[0],
+	"Prontera",		 //[0] Thiefbug Egg Card | Thiefbug Card | Female Thiefbug Card | Male Thiefbug Card 
+	"Morocc", 		 //[1] Matyr Card | Requiem Card | Zerom Card | Marduk Card 
+	"Geffen",		 //[2] Hunter Fly Card | Poison Spore Card | Nightmare Card | Ghoul Card
+	"Payon",		 //[3] Zombie card | Skeleton Card | Archer Skeleton Card | Soldier Skeleton Card
+	"Alberta",		 //[4] Dragon Tail Card | Spring Rabbit Card | Permeter Card | Solider Card
+	"Izlude",		 //[5] Vadon Card | Hydra Card | Kukre Card | Marina Card
+	"Aldebaran",	 //[6] Bathory Card | Rideword Card | Punk Card | Tower Keeper Card
+	"Lutie",		 //[7] Marin Card | Sasquatch Card | Christmas Cookie Card | Myst Case Card 
+	"Comodo",		 //[8] Medusa Card | Nereid Card | Pest Card | Megalith Card 
+	"Yuno";			 //[9] Horn Card | Rafflesia Card | Beetle King Card | Dustiness Card
+	
+	//CARD COLLECTION	
+	setarray .card_collections$[0],
+	"4012|4016|4026|4050|4001|4006|4021|4028|4022|4051|4002", //[0] Prontera Collection [4030|4114|4019|4129]
+	"4097|4064|4112|4126|4009|4043|4036|4106|4116|4087", //[1] Morocc Collection [4076|4053|4031|4082]
+	"4115|4048|4127|4109|4002|4014|4060|4066|4071|4085", //[2] Geffen Collection [4040|4190|4187|4133|4136|4122|4091]
+	"4038|4025|4094|4086|4020|4010|4074|4103|4090|4212", //[3] Payon Collection [4029|4052|4283|4100|4098|4159|4070]
+	"4034|4227|4311|4220|4210|4102|4073|4178|4315|4319", //[4] Alberta Collection
+	"4049|4035|4027|4055|4093|4105|4058|4077|4089|4199", //[5] Izlude Collection
+	"4119|4185|4313|4229|4080|4069|4322|4256|4118|4296", //[6] Aldebaran Collection [4185]
+	"4196|4235|4206|4293|4323", //[7] Lutie Collection
+	"4124|4200|4223|4067|4078|4149|4234|4292|4157|4156", //[8] Comodo Collection
+	"4045|4083|4307|4056|4257"; //[9] Yuno Collection
+
+	//DEPOSIT EFFECT ############################################################################################
+	setarray .unlock_effect$[0],
+	" MaxHP +100|"+				//[0] Prontera Collection
+	" MaxHP +200|"+				//[0] Prontera Collection
+	" MaxHP +300|"+				//[0] Prontera Collection
+	" MaxHP +400|"+				//[0] Prontera Collection
+	" AllStatus +50|"+				//[0] Prontera Collection
+	" MaxHP +1000|"+			//[0] Prontera Collection
+	" MaxHP +1500|"+			//[0] Prontera Collection
+	" MaxHP +2000|"+			//[0] Prontera Collection
+	" MaxHP +2500|"+			//[0] Prontera Collection
+	" MaxHP +3000|",				//[0] Prontera Collection
+	" AllStats +100",				//[0] Prontera Collection
+	
+	" MaxSP +25|"+				//[1] Morocc Collection
+	" MaxSP +50|"+				//[1] Morocc Collection
+	" MaxSP +100|"+				//[1] Morocc Collection
+	" MaxSP +150|"+				//[1] Morocc Collection
+	" MaxSP +200|"+				//[1] Morocc Collection
+	" MaxSP +250|"+				//[1] Morocc Collection
+	" MaxSP +300|"+				//[1] Morocc Collection
+	" MaxSP +350|"+				//[1] Morocc Collection
+	" MaxSP +400|"+				//[1] Morocc Collection
+	" MaxSP +450",				//[1] Morocc Collection
+	
+	" Atk +1%|"+ 				//[2] Geffen Collection
+	" Matk +1%|"+ 				//[2] Geffen Collection
+	" Atk +1%|"+ 				//[2] Geffen Collection
+	" Matk +1%|"+ 				//[2] Geffen Collection
+	" Atk +1%|"+ 				//[2] Geffen Collection
+	" Matk +1%|"+ 				//[2] Geffen Collection
+	" Atk +1%|"+ 				//[2] Geffen Collection
+	" Matk +1%|"+ 				//[2] Geffen Collection
+	" Atk +1%|"+ 				//[2] Geffen Collection
+	" Matk +1%",				//[2] Geffen Collection
+	
+	" Max Weight +150|"+				//[3] Payon Collection
+	" Max Weight +150|"+				//[3] Payon Collection
+	" Max Weight +150|"+				//[3] Payon Collection
+	" Max Weight +150|"+				//[3] Payon Collection
+	" Max Weight +150|"+				//[3] Payon Collection
+	" Max Weight +150|"+				//[3] Payon Collection
+	" Max Weight +150|"+				//[3] Payon Collection
+	" Max Weight +150|"+				//[3] Payon Collection
+	" Max Weight +150|"+				//[3] Payon Collection
+	" Max Weight +150",					//[3] Payon Collection
+	
+	" Def +2%|"+				//[4] Alberta Collection
+	" Mdef +2%|"+				//[4] Alberta Collection
+	" Def +2%|"+				//[4] Alberta Collection
+	" Mdef +2%|"+ 				//[4] Alberta Collection
+	" Def +2%|"+ 				//[4] Alberta Collection
+	" Mdef +2%|"+				//[4] Alberta Collection
+	" Def +2%|"+				//[4] Alberta Collection
+	" Mdef +2%|"+				//[4] Alberta Collection
+	" Def +2%|"+				//[4] Alberta Collection
+	" Mdef +2%",				//[4] Alberta Collection
+	
+	" Fire Dmg +2%|"+			//[5] Izlude Collection
+	" Water Dmg +2%|"+			//[5] Izlude Collection
+	" Earth Dmg +2%|"+			//[5] Izlude Collection
+	" Wind Dmg +2%|"+			//[5] Izlude Collection
+	" Neutral Dmg +2%|"+		//[5] Izlude Collection
+	" Poison Dmg +2%|"+ 		//[5] Izlude Collection
+	" Holy Dmg +2%|"+			//[5] Izlude Collection
+	" Shadow Dmg +2%|"+			//[5] Izlude Collection
+	" Ghost Dmg +2%|"+			//[5] Izlude Collection
+	" All Element Dmg +3%",		//[5] Izlude Collection
+	
+	" Water Def +2%|"+			//[6] Aldebaran Collection
+	" Fire Def +2%|"+			//[6] Aldebaran Collection
+	" Earth Def +2%|"+			//[6] Aldebaran Collection
+	" Wind Def +2%|"+			//[6] Aldebaran Collection
+	" Neutral Def +2%|"+		//[6] Aldebaran Collection
+	" Poison Def +2%|"+			//[6] Aldebaran Collection
+	" Holy Def +2%|"+			//[6] Aldebaran Collection
+	" Shadow Def +2%|"+			//[6] Aldebaran Collection
+	" Ghost Def +2%|"+			//[6] Aldebaran Collection
+	" All Element +3%",			//[6] Aldebaran Collection
+	
+	" Str +1|"+					//[7] Lutie Collection
+	" Agi +1|"+					//[7] Lutie Collection
+	" Vit +1|"+					//[7] Lutie Collection
+	" Int +1|"+					//[7] Lutie Collection
+	" Dex +1",					//[7] Lutie Collection
+	
+	" MoveSpeed +1%|"+			//[8] Comodo Collection
+	" MoveSpeed +1%|"+			//[8] Comodo Collection
+	" MoveSpeed +1%|"+			//[8] Comodo Collection
+	" MoveSpeed +1%|"+			//[8] Comodo Collection
+	" MoveSpeed +1%|"+ 			//[8] Comodo Collection
+	" MoveSpeed +1%|"+			//[8] Comodo Collection
+	" MoveSpeed +1%|"+			//[8] Comodo Collection
+	" MoveSpeed +1%|"+			//[8] Comodo Collection
+	" MoveSpeed +1%|"+			//[8] Comodo Collection
+	" MoveSpeed +1%",			//[8] Comodo Collection
+	
+	" Skill Delay -1%|"+ 		//[9] Yuno Collection
+	" Skill Delay -1%|"+ 		//[9] Yuno Collection
+	" Skill Delay -1%|"+ 		//[9] Yuno Collection
+	" Skill Delay -1%|"+ 		//[9] Yuno Collection
+	" Skill Delay -1%"; 		//[9] Yuno Collection
+	end;
+}

@@ -1,0 +1,105 @@
+prontera,135,201,5	script	Reset Girl	893,{
+	set .@RequireLevel,51;	// Set Your Required Level for Free of Use.
+	set .@DelayResetSkill, 3600;	// Dealay of Reset Skill 1 DEFAULT
+	set .@DelayResetStats, 3600;	// Dealay of Reset Stats 1 DEFAULT
+	
+	if(BaseLevel >= .@RequireLevel){
+		.neuralizer$ = "[ Neuralizer ]";
+		.resetstone$ = "[ Reset Stone ]";
+	}else{ 
+		.neuralizer$ = "[ Free ]";
+		.resetstone$ = "[ Free ]";
+	}
+	
+	mes ""+.npc$+"";
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "Reset Stats: ^0000FF"+ .count_Stat +" "+ getitemname( .ResetStat )+"^000000";
+	mes "Reset Skill:  ^0000FF"+ .count_Skill +" "+ getitemname( .ResetSkill )+"^000000";
+	mes " ";
+	mes "Select Service you want.";
+	next;
+	switch(select("> ^0000FFReset Skills - "+.neuralizer$+"^000000. :> ^0000FFReset Stats - "+.resetstone$+"^000000. :> ^FF0000Cancel^000000.")) {
+	case 1:
+		mes ""+.npc$+"";
+		
+		if(BaseLevel < .@RequireLevel){
+			if (@RESETSKILL > gettimetick(2)){
+				mes "^FF0000Opps Sorry you can only reset every 1 Hour^000000.";
+				mes "Bye!!! see you later...";
+				close;
+			}
+		}
+		
+		if ( countitem( .ResetSkill ) < .count_Skill && BaseLevel >= .@RequireLevel) {
+			mes "Sorry, you don't have enough Items.";
+			close;
+		}
+		
+		if(BaseLevel >= .@RequireLevel){
+			delitem .ResetSkill, .count_Skill;
+		}
+		
+		sc_end SC_ALL;
+		ResetSkill;
+		mes "There you go!";
+		
+		//DELAY RESET SKILL
+		if (.@DelayResetSkill) set @RESETSKILL, gettimetick(2)+.@DelayResetSkill;		
+		dispbottom "Your Skill is now reset.";
+	close;
+	
+	case 2:
+		mes ""+.npc$+"";
+		if(BaseLevel < .@RequireLevel){
+			if (@RESETSTATS > gettimetick(2)){
+				mes "^FF0000Opps Sorry you can only reset every 1 Hour^000000.";
+				mes "Bye!!! see you later...";
+				close;
+			}
+		}
+		
+		if ( countitem( .ResetStat ) < .count_Stat && BaseLevel >= .@RequireLevel) {
+			mes "Sorry, you don't have enough Items.";
+			close;
+		}
+		
+		if(BaseLevel >= .@RequireLevel){
+			delitem .ResetStat, .count_Stat;
+		}
+			
+		sc_end SC_ALL;
+		ResetStatus;
+		mes "There you go!";
+		
+		//DELAY RESET SKILL
+		if (.@DelayResetStats) set @RESETSTATS, gettimetick(2)+.@DelayResetStats;
+		
+		dispbottom "Your Stats is now reset.";
+	close;
+	
+	case 3:
+		mes ""+.npc$+"";
+		mes "See you arround bye!!!";
+	close;
+}
+OnInit:
+	.npc$ = "^00B2EE[ Reset Girl ]^000000";
+
+	set .ResetStat, 6320;	// item stat reset
+	set .count_Stat, 1;	// number of item need for stat reset
+
+	set .ResetSkill, 12213;	// item for skill reset
+	set .count_Skill, 1;	// number of item need for skill reset
+	
+	
+	PUBTITLE:
+			showscript "Reset Girl";
+			sleep 3000;	
+			
+			showscript "Free Reset Until Level 50.";
+			sleep 3000;	
+	goto PUBTITLE;
+end;
+
+}
+

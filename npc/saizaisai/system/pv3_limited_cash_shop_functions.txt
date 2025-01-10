@@ -1,0 +1,113 @@
+-	script	limitedcashshop#K	-1,{
+OnInit:
+    bindatcmd "limitedsale",strnpcinfo(0)+"::OnSales";
+end;
+OnSales:
+	if(getgroupid(getcharid(0)) < 99) { end; }
+	switch(select("Add Item Limited Sale:Remove Item Limited Sale:List Registred Limited Sale:Drop All Sales")){
+	case 1:
+		.@menu  = 1;
+	break;
+	case 2:
+		mes "Digite o ID";
+		input(.@id);
+			query_sql("SELECT `end`,`id` FROM `sales` WHERE `nameid` = '" + .@id + "'",.@old_time,.@table_id);
+		if(.@old_time){		
+			query_sql("DELETE FROM `sales` WHERE `nameid` = '" + .@id + "'");
+			query_sql("DELETE FROM `sales_limited_acc` WHERE `sales_id` = '" + .@table_id + "'");
+			mes "Feito!";
+			switch(select("Retornar ao menu principal:Sair")){
+				case 1: goto OnSales;
+				case 2: default: break;
+			}
+			end;			
+		}
+		else
+		{
+			mes "Item nao encontrado"; next; goto OnSales;
+		}
+	break;
+	case 3:
+		query_sql("SELECT `nameid`,`end` FROM `sales` WHERE `nameid` > '0' ORDER BY `id` ASC",.@item,.@max);
+		for(.@i=0;.@i<getarraysize(.@item);.@i++){
+			mes"[ID: "+.@item[.@i]+"] -> <ITEM>"+getitemname(.@item[.@i])+"<INFO>"+.@item[.@i]+"</INFO></ITEM>";
+		}
+		switch(select("Retornar ao menu principal:Sair")){
+			case 1: goto OnSales;
+			case 2: default: end; break;
+		}
+	break;
+	case 4:
+		mes "Tem certeza?";
+		switch(select("NAO:NAO:sim:NAO")){
+		case 3:
+			query_sql("TRUNCATE `sales`"); 
+			query_sql("TRUNCATE `sales_limited_acc`"); 
+		default: break;
+		}
+		switch(select("Retornar ao menu principal:Sair")){
+			case 1: goto OnSales;
+			case 2: default: end; break;
+		}
+	default:
+	break;
+	}
+	if(.@menu == 1){
+OnAdd:
+		mes "Input Item ID";
+		input(.@id);
+		if(!getiteminfo(.@id,17)){
+			mes "Invalid Item ID";
+			next;
+			clear;
+			goto OnAdd;
+		}
+		mes "Item Selecionado:<ITEM>"+getitemname(.@id)+"<INFO>"+.@id+"</INFO></ITEM>";
+		mes "Confirmar?";
+		switch(select("NAAAAAAAAAAO:Sim")){
+			case 1: goto OnAdd;
+			case 2: default: break;
+		}
+		clear;
+		mes "Adicione o Periodo da venda em dias a partir de hoje";
+		input(.@item_sell_time);
+		if(.@item_sell_time == 0) { end;}
+		.@timeYYYYMMDD = gettime(DT_YYYYMMDD);
+		.@h = gettime(DT_HOUR);
+		.@m = gettime(DT_MINUTE);
+		.@s = gettime(DT_SECOND);
+		.@DD = gettime(DT_DAYOFMONTH);
+		.@MM = gettime(DT_MONTH);
+		.@YYYY = gettime(DT_YEAR);
+		clear;
+		mes "Digite a quantidade por conta";
+		input(.@amount);
+		clear;
+		mes "Digite o tempo de aluguel em segundos";
+		input(.@rentTime);
+		clear;
+		mes "O Item <ITEM> "+getitemname(.@id)+" <INFO>"+.@id+"</INFO></ITEM> sera adicionado a partir de "+.@timeYYYYMMDD+" por "+.@item_sell_time+"dias";
+		mes ""+.@DD+"/"+.@MM+"/"+.@YYYY+" ate "+(.@DD+.@item_sell_time)+"/"+.@MM+"/"+.@YYYY;
+		mes "as "+.@h+"h "+.@m+"m "+.@s+"s";
+		mes "A Quantidade e de " +((.@amount > 0)?.@amount:"Ilimitado")+" por conta";
+		mes "O Tempo de Aluguel e de "+((.@rentTime>0)?.@rentTime:"Ilimitado")+" segundos"; 
+		mes "Confirmar?";
+		switch(select("NAAAAAAAAAAO:Sim")){
+			case 1: goto OnAdd;
+			case 2: default: break;
+		}
+		query_sql("SELECT `end` FROM `sales` WHERE `nameid` = '" + .@id + "'",.@old_time);
+		.@result =  .@timeYYYYMMDD+.@item_sell_time;
+		if(!.@old_time){
+			query_sql("INSERT INTO `sales` (`nameid`,`start`,`end`,`amount`,`rentalTime`) VALUES ('" + .@id + "',STR_TO_DATE('" + .@timeYYYYMMDD + " "+.@h+":"+.@m+":"+.@s+"', '%Y%m%d %H:%i:%s'),STR_TO_DATE('" +.@result+ " "+.@h+":"+.@m+":"+.@s+"', '%Y%m%d %H:%i:%s'),'" + .@amount + "','" + .@rentTime + "')");
+		}else{
+			query_sql("UPDATE `sales` SET end = STR_TO_DATE('" +.@result+ " "+.@h+":"+.@m+":"+.@s+"', '%Y%m%d %H:%i:%s'),amount='" + .@amount + "',rentalTime='" + .@rentTime + "' WHERE nameid ='" + .@id + "'");
+		}
+		clear;
+		mes "Done!";
+		switch(select("Adicionar Outros:Menu Principal:Sair")){
+		case 1: goto OnAdd; case 2: goto OnSales; default: break;		
+		}
+	}
+end;
+}

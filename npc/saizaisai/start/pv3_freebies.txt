@@ -1,0 +1,75 @@
+new_1-1,65,117,3	script	Airi#1	533,{	
+	.@NPC$ = "[ ^00B71EAiri^000000 ]";
+	.@SERVERNAME$ = "[ ^00B71EAiri^000000 ]";
+	
+	if(#FREEBIES3 == 1) goto L_1;
+	
+	
+	mes .@NPC$;
+	mes "Nice to meet you ^0000FF"+strcharinfo(0)+"^000000, my name is "+.@NPC$+".";
+	mes "Welcome to "+.@SERVERNAME$+"";
+	mes "I see that you're new here so to help you out I'd like to give you these.";
+	
+	next;
+	mes .@NPC$;
+	mes "I hope this will help you for your adventure on  ^0066FFRagnarok Online^000000.";
+	
+	if(checkweight(2504,1) == 0 ) goto L_OverWeight;
+		
+		//ITEM LIST
+		//setarray .@RANDOMITEM,31105,31195,31506,19937;		
+		//getitembound .@RANDOMITEM[rand(getarraysize(.@RANDOMITEM ))],1,Bound_Account;		
+		 
+		//rentitem 5531,604800;  //DRAGON
+		//getitembound 33900,1,Bound_Account; //TERRA CLASSIC TAG
+		
+		//SUPPLIES
+		//getitembound 33259,1,Bound_Account; 
+		//getitembound 13990,1,Bound_Account;
+		//getitembound 33261,1,Bound_Account;
+		//getitembound 33019,5,Bound_Account;
+		//getitembound 13697,1,Bound_Account;
+		//getitembound 14170,1,Bound_Account;  
+		//getitembound 6320,2,Bound_Account;  
+		//getitembound 12213,2,Bound_Account;  
+		
+		getitembound 7059,30,Bound_Account;  
+		getitembound 7060,30,Bound_Account;  
+		
+		emotion ET_THANKS;		
+		
+		set #FREEBIES3,1;
+	
+	next;
+	mes .@NPC$;
+	mes "Good luck and have a nice day "+strcharinfo(0)+".";
+close;
+
+L_OverWeight:
+	mes .@NPC$;
+	mes "Sorry, you are over weight";
+	emotion ET_HUK;
+close;
+
+L_1:
+	mes .@NPC$;
+	mes "^FF0000You already received the freebies^000000.";
+	mes "To get more freebies. Invite your friends and Unlock the Player Peak Reward Located on Prontera.";
+	emotion ET_STARE;
+close;
+	
+OnInit:	
+	PUBTITLE:	
+		showscript "Welcome to Ragnarok Online!";
+		sleep 3000;
+		
+		showscript "Get FREEBIES here!";
+		sleep 2000;		
+	goto PUBTITLE;
+end;
+}
+ 
+//prontera,105,71,4	duplicate(Freebies#1)	Freebies#2	864
+//new_3-1,65,117,4	duplicate(Freebies#1)	Freebies#3	864
+//new_4-1,65,117,4	duplicate(Freebies#1)	Freebies#4	864
+//new_5-1,65,117,4	duplicate(Freebies#1)	Freebies#5	864

@@ -1,0 +1,29 @@
+//===== rAthena Script =======================================
+//= resuhelp
+//===== By: ==================================================
+//= Mirage / llchrisll
+//===== Current Version: =====================================
+//= 1.0
+//===== Compatible With: =====================================
+//= rAthena Project - Paid
+//===== Description: =========================================
+//= 'Help! Resurrect' pops up when BL_PC died
+//============================================================
+
+-	script	resuhelp	-1,{
+
+OnPCDieEvent:
+		set @HeadBottom,getlook(LOOK_HEAD_BOTTOM);
+		addtimer 3,strnpcinfo(0)+"::OnVisualCheck";
+		changelook LOOK_HEAD_BOTTOM,10011;
+	end;
+
+OnVisualCheck:
+		deltimer strnpcinfo(0)+"::OnVisualCheck";
+		if(HP > 1) {
+    		changelook LOOK_HEAD_BOTTOM,@HeadBottom;
+    		set @HeadBottom,0;
+	} else
+   	 	addtimer 3,strnpcinfo(0)+"::OnVisualCheck";
+	end;
+}

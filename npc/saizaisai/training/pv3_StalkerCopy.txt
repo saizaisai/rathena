@@ -1,0 +1,218 @@
+-	script	StalkerCopy	-1,{
+if (!getskilllv(225)) goto End_Talk;
+	mes .name$;
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "select which skill you want to be copy, your existing one will be overwrite";
+	next;
+	for ( set .@i,0; .@i < getarraysize(.skill$); set .@i, .@i +3 )
+		set .@menu$, .@menu$ + .skill$[.@i] +":";
+	set .@menu, select(.@menu$) -1;
+	if ( getskilllv(atoi(.skill$[.@menu * 3 +1])) ) {
+		mes .name$;
+		mes "you already copied that skill";
+		close;
+	}
+	mes .name$;
+	mes "Are you sure you want to copy "+ .skill$[.@menu * 3] +"?";
+	mes "Copy cost: ^0055FF100,000z^000000";
+	next;
+	if ( select ( "Yes", "No" ) == 2 ) close;
+	.@text$ = atoi( .skill$[.@menu * 3 +2] ) > 1 ? "-" + .skill$[.@menu * 3 +2] : "" ;
+	mes .name$;
+	mes "choose a level (1" + .@text$ + ")";
+	next;
+	if ( input( .@input, 1, ( atoi( .skill$[.@menu * 3 +2] ) > 1 ? atoi( .skill$[.@menu * 3 +2] ) : 1 )) != 0 ) {
+		mes "wrong level";
+		close;
+	}
+	if(Zeny < 100000){
+		mes .name$;
+		mes "You don't have enough zeny.";
+		close;
+	}
+	close2;
+	Zeny -= 100000;
+	copyskill atoi(.skill$[.@menu *3 +1]),.@input;
+	/*
+	if(inarray(.Ground,atoi(.skill$[.@menu *3 +1]))>=0){
+		getmapxy(.@map$,.@x,.@y,BL_PC);
+		unitskillusepos getnpcid(0),atoi(.skill$[.@menu *3 +1]),.@input,.@x,.@y,0;
+	} else
+		unitskilluseid getnpcid(0),atoi(.skill$[.@menu *3 +1]),.@input,getcharid(3),0;
+	sleep 3000;
+	movenpc strnpcinfo(0),192,264;
+	*/
+	end;
+
+
+End_Talk:
+	mes .name$;
+	mes "Please make sure you have the skills required to copy a skills.";
+end;
+
+OnInit:
+	setarray .data[0],UNPC_STR,UNPC_AGI,UNPC_VIT,UNPC_INT,UNPC_DEX,UNPC_LUK,UNPC_ATKMIN,UNPC_ATKMAX,UNPC_MATKMIN,UNPC_MATKMAX;
+	setunitdata getnpcid(0),UNPC_LEVEL,99;
+	setunitdata getnpcid(0),UNPC_HIT,5000;
+	for(.@i=0;.@i<getarraysize(.data);.@i++)
+		setunitdata getnpcid(0),.data[.@i],150;
+	//waitingroom "Stalker Plagiarism",0;
+	set .name$,"^00B2EE[ Stalker Copy ]^000000";
+	setarray .Ground[0],89,85,83;
+	setarray .skill$[0],
+			"Focused Arrow Strike", 382, 5,
+			"Acid Demonstration", 229, 5,
+			"Acid Terror", 230, 5,
+			"Arrow Repel", 148, 1,
+			"Arrow Shower", 47, 10,
+			"Aspersio", 68, 5,
+			"Asura Strike", 271, 5,
+			"B.S. Sacramenti", 69, 5,
+			"Back Stab", 212, 10,
+			"Bash", 5, 10,
+			"Blast Mine", 122, 5,
+			"Bomb",229,  5,
+			"Bowling Bash", 62, 10,
+			"Charge Attack", 1001, 1,
+			"Cicada Skin Sheeding", 531, 5,
+			"Claymore Trap", 123, 5,
+			"Cold Bolt", 14, 10,
+			"Crimson Fire Formation", 535, 10,
+			"Crimson Fire Petal", 534, 10,
+			"Double Strafe", 46, 10,
+			"Earth Spike", 90, 5,
+			"Envenom", 52, 10,
+			"Fire Ball", 17, 10,
+			"Fire Bolt", 19, 10,
+			"Fire Pillar", 80, 10,
+			"Fire Wall", 18, 10,
+			"Flying Kick", 421, 7,
+			"Freezing Trap", 121, 5,
+			"Frost Diver", 15, 10,
+			"Frost Nova", 88, 10,
+			"Grand Cross", 254, 10,
+			"Heal", 28, 10,
+			"Heaven's Drive", 91, 5,
+			"Holy Cross", 253, 10,
+			"Holy Light", 156, 1,
+			"Ice Meteor", 539, 5,
+			"Jupitel Thunder", 84, 10,
+			"First Wind", 542, 5,
+			"Ki Translation", 1015, 1,
+			"Land Mine", 116, 5,
+			"Lightning Bolt", 20, 10,
+			"Lightning Strike of Destruction", 541, 5,
+			"Lord of Vermilion", 85, 10,
+			"Magnum Break", 7, 10,
+			"Magnus Exorcismus", 79, 10,
+			"Mammonite", 42, 10,
+			"Meteor Storm", 83, 10,
+			"Napalm Beat", 11, 10,
+			"Occult Impaction", 266, 5,
+			"Phantasmic Arrow", 1009, 1,
+			"Raging Fire Dragon", 536, 5,
+			"Raging Quadruple Blow", 272, 5,
+			"Triple Attack", 263, 10,
+			"Resurrection", 54, 4,
+			"Ruwach", 24, 1,
+			"Sanctuary", 70, 10,
+			"Shadow Leap", 529, 5,
+			"Shadow Slash", 530, 5,
+			"Shield Boomerang", 251, 5,
+			"Sight Blaster", 1006, 1,
+			"Sightrasher", 81, 10,
+			"Smite", 250, 5,
+			"Soul Strike", 13, 10,
+			"Spear of Ice", 537, 10,
+			"Stone Fling", 152, 1,
+			"Storm Gust", 89, 10,
+			"Throw Spirit Sphere", 267, 5,
+			"Throw Tomahawk", 337,1,
+			"Throw Venom Knife", 1004,1,
+			"Throw Zeny", 526, 10,
+			"Thunderstorm", 21, 10,
+			"Turn Undead", 77, 10,
+			"Vanishing Slash", 528, 10,
+			"Venom Splasher", 141, 10,
+			"Water Ball", 86, 5,
+			"Wind Blade", 540, 10;
+	// Interval in seconds
+	.interval = 1;
+	while(1) {
+	showscript "Stalker Copy", getnpcid(0);
+	sleep 1000;
+	}
+
+end;
+}
+
+//clashcity,186,258,3	duplicate(StalkerCopy)	Stalker Copier#main	4_F_SHADOWCHASER
+//amatsu,121,81,3	duplicate(StalkerCopy)	Stalker Copier#main1	4_F_SHADOWCHASER
+prontera,169,236,3	duplicate(StalkerCopy)	Stalker Copier#prt	4_F_SHADOWCHASER
+//einbroch,173,208,5	duplicate(StalkerCopy)	Stalker Copier#einbroch	4_F_SHADOWCHASER
+//thor_camp,94,319,5	duplicate(StalkerCopy)	Stalker Copier#thorcamp	4_F_SHADOWCHASER
+
+//prontera,144,214,5	script	Stalker Copier#prt	4_F_SHADOWCHASER,{
+//if (!getskilllv(225)) goto End_Talk;
+//	mes .name$;
+//	mes "select which skill you want to be copy, your existing one will be overwrite";
+//	next;
+//	for ( set .@i,0; .@i < getarraysize(.skill$); set .@i, .@i +3 )
+//		set .@menu$, .@menu$ + .skill$[.@i] +":";
+//	set .@menu, select(.@menu$) -1;
+//	if ( getskilllv(atoi(.skill$[.@menu * 3 +1])) ) {
+//		mes .name$;
+//		mes "you already copied that skill";
+//		close;
+//	}
+//	mes .name$;
+//	mes "Are you sure you want to copy "+ .skill$[.@menu * 3] +"?";
+//	mes "Copy cost: ^0055FF1.000,000z^000000";
+//	next;
+//	if ( select ( "Yes", "No" ) == 2 ) close;
+//	.@text$ = atoi( .skill$[.@menu * 3 +2] ) > 1 ? "-" + .skill$[.@menu * 3 +2] : "" ;
+//	mes .name$;
+//	mes "choose a level (1" + .@text$ + ")";
+//	next;
+//	if ( input( .@input, 1, ( atoi( .skill$[.@menu * 3 +2] ) > 1 ? atoi( .skill$[.@menu * 3 +2] ) : 1 )) != 0 ) {
+//		mes "wrong level";
+//		close;
+//	}
+//	if(Zeny < 1000000){
+//		mes .name$;
+//		mes "You don't have enough zeny.";
+//		close;
+//	}
+//	close2;
+//	Zeny -= 1000000;
+//	copyskill atoi(.skill$[.@menu *3 +1]),.@input;
+//	/*
+//	if(inarray(.Ground,atoi(.skill$[.@menu *3 +1]))>=0){
+//		getmapxy(.@map$,.@x,.@y,BL_PC);
+//		unitskillusepos getnpcid(0),atoi(.skill$[.@menu *3 +1]),.@input,.@x,.@y,0;
+//	} else
+//		unitskilluseid getnpcid(0),atoi(.skill$[.@menu *3 +1]),.@input,getcharid(3),0;
+//	sleep 3000;
+//	movenpc strnpcinfo(0),192,264;
+//	*/
+//	end;
+//
+//
+//End_Talk:
+//	mes .name$;
+//	mes "Please make sure you have the skills required to copy a skills.";
+//end;
+//
+//OnInit:
+//	setarray .data[0],UNPC_STR,UNPC_AGI,UNPC_VIT,UNPC_INT,UNPC_DEX,UNPC_LUK,UNPC_ATKMIN,UNPC_ATKMAX,UNPC_MATKMIN,UNPC_MATKMAX;
+//	setunitdata getnpcid(0),UNPC_LEVEL,99;
+//	setunitdata getnpcid(0),UNPC_HIT,5000;
+//	for(.@i=0;.@i<getarraysize(.data);.@i++)
+//		setunitdata getnpcid(0),.data[.@i],150;
+//	//waitingroom "Stalker Plagiarism",0;
+//	set .name$,"[ Stalker ]";
+//	setarray .Ground[0],89,85,83;
+//	setarray .skill$[0],
+//			"Throw Zeny", 526, 10;
+//end;
+//}

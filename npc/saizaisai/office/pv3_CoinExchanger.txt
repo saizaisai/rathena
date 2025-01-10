@@ -1,0 +1,81 @@
+-	script	Coin Trader::COINTRADER	-1,{
+OnAtCommand:
+	mes "" + .colors$[1] + .npc_name$ + .colors$[0] + "";
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "Tell me, what coin would you like to exchange for your zeny?";
+	for (set .@a, 0; .@a < getarraysize(.coin_id); set .@a, .@a + 1) {
+		mes .colors$[3 + .@a] + getitemname(.coin_id[.@a]) + .colors$[0] + ": " + .coin_to_zeny_format$[.@a] + "z";
+		set .@coin_menu$, .@coin_menu$ + (.@coin_menu$ == "" ? "" : ":") + .colors$[3 + .@a] + getitemname(.coin_id[.@a]) + .colors$[0];
+	}
+	mes "^FF5500NOTE: Double-click coins to receive zeny^000000";
+	next;
+	set .@coin_choice, select(.@coin_menu$) - 1;
+	mes "" + .colors$[1] + .npc_name$ + .colors$[0] + "";
+	mes "How much coins would you like?";
+	input .@amount;
+	if (.@amount <= 0) { // Invalid Number?
+		mes .colors$[2] + "Please Input a number greater than 0:";
+		cutin "",255;
+		end;
+	} else if (!checkweight(.coin_id[.@coin_choice],.@amount)) { // Will it make the character overweight?
+		mes .colors$[2] + "I'm Sorry, but you can't carry this due to weight restrictions";
+		cutin "",255;
+		end;
+	} else if (Zeny < .coin_to_zeny[.@coin_choice] * .@amount) {
+		mes .colors$[2] + "I'm sorry, you do not have enough zeny...";
+		cutin "",255;
+		end;
+	} else { // Checks OK! Let's trade!
+		set Zeny, Zeny - (.coin_to_zeny[.@coin_choice] * .@amount);
+		getitem .coin_id[.@coin_choice], .@amount;				
+		cutin "",255;
+	}
+	mes "" + .colors$[1] + .npc_name$ + .colors$[0] + "";
+	mes "Pleasure doing business with you.";
+	close2;
+	cutin "", 255;
+	end;
+
+
+L_FullZeny:
+	next;
+	mes "" + .colors$[1] + .npc_name$ + .colors$[0] + "";
+	mes "I'm sorry, but I can't allow you to exchange Coins into Zeny when you have over 1.8b zeny.";
+end;
+	
+OnInit:
+	// Store NPC Name
+	set .npc_name$, "^00B2EE[ Coin Master ]^000000";
+	
+	bindatcmd "coin","COINTRADER::OnAtCommand",0,99;
+	
+	// Storing Colours
+	// Order of Array: Default Text, NPC Name, Error, coin_type1, coin_type2, coin_type3, coin_type4, etc...
+	// Note: If you plan on adding additional coins, simply add a new color here
+	setarray .colors$[0],"^000000", "^336699", "^550000", "^996633", "^666666", "^FFFF66", "^99CCCC";
+	
+	// Set Coin Item ID's
+	// In Order coin_id1, coin_id2, coin_id3, coin_id4, etc...
+	setarray .coin_id[0],673, 675, 671, 674;
+	
+	// Coin -> Zeny Value
+	// Change the Value you want the coins to be worth | Order: Bronze Coin, Gold Coin, Platinum Coin, Mithril Coin
+	setarray .coin_to_zeny[0],500000,1000000,5000000,10000000;
+			
+	// Currency Formatted String of Zeny | Order: Bronze Coin, Gold Coin, Platinum Coin, Mithril Coin
+	setarray .coin_to_zeny_format$[0],"500,000","1,000,000","5,000,000","10,000,000";
+
+	PUBTITLE:
+		showscript "Coin Trader";
+		sleep 3000;	
+	goto PUBTITLE;
+end;
+}
+
+// --------------------------------------------------
+//	Duplicates:
+// --------------------------------------------------
+//home,68,152,3	duplicate(COINTRADER)	Coin Trader#home1	90
+//home,68,115,10	duplicate(COINTRADER)	Coin Trader#home2	90
+main_of,261,32,4	duplicate(COINTRADER)	Coin Trader#main	90
+//prontera,129,215,5	duplicate(COINTRADER)	Coin Trader#prt	10168

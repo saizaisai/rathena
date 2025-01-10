@@ -1,0 +1,141 @@
+prtg_cas01	mapflag	woe_consume
+prtg_cas02	mapflag	woe_consume
+prtg_cas03	mapflag	woe_consume
+prtg_cas04	mapflag	woe_consume
+prtg_cas05	mapflag	woe_consume
+payg_cas01	mapflag	woe_consume
+payg_cas02	mapflag	woe_consume
+payg_cas03	mapflag	woe_consume
+payg_cas04	mapflag	woe_consume
+payg_cas05	mapflag	woe_consume
+gefg_cas01	mapflag	woe_consume
+gefg_cas02	mapflag	woe_consume
+gefg_cas03	mapflag	woe_consume
+gefg_cas04	mapflag	woe_consume
+prtg_cas05	mapflag	woe_consume
+aldeg_cas01	mapflag	woe_consume
+aldeg_cas02	mapflag	woe_consume
+aldeg_cas03	mapflag	woe_consume
+aldeg_cas04	mapflag	woe_consume
+aldeg_cas05	mapflag	woe_consume
+arug_cas01	mapflag	woe_consume
+arug_cas02	mapflag	woe_consume
+arug_cas03	mapflag	woe_consume
+arug_cas04	mapflag	woe_consume
+arug_cas05	mapflag	woe_consume
+schg_cas01	mapflag	woe_consume
+schg_cas02	mapflag	woe_consume
+schg_cas03	mapflag	woe_consume
+schg_cas04	mapflag	woe_consume
+schg_cas05	mapflag	woe_consume
+
+guild_vs2-1	mapflag	restricted	10
+guild_vs2-1	mapflag	restricted	11
+new_1-1	mapflag	nomobloot
+
+prt_maze03	mapflag	nopenalty
+lhz_dun02	mapflag	noicewall
+moc_fild22	mapflag	noicewall
+jupe_core	mapflag	noicewall
+odin_tem03	mapflag	noicewall
+tur_dun04	mapflag	noicewall
+in_sphinx5	mapflag	noicewall
+moc_fild17	mapflag	noicewall
+ein_dun02	mapflag	noicewall
+beach_dun	mapflag	noicewall
+anthell02	mapflag	noicewall
+mjolnir_04	mapflag	noicewall
+pay_dun04	mapflag	noicewall
+gef_fild14	mapflag	noicewall
+gef_fild02	mapflag	noicewall
+gef_fild10	mapflag	noicewall
+moc_pryd04	mapflag	noicewall
+ama_dun03	mapflag	noicewall
+kh_dun02	mapflag	noicewall
+xmas_dun02	mapflag	noicewall
+ice_dun03	mapflag	noicewall
+ayo_dun02	mapflag	noicewall
+niflheim	mapflag	noicewall
+xmas_fild01	mapflag	noicewall
+ra_san05	mapflag	noicewall
+prt_sewb4	mapflag	noicewall
+mosk_dun03	mapflag	noicewall
+thor_v03	mapflag	noicewall
+gl_chyard	mapflag	noicewall
+abyss_03	mapflag	noicewall
+gef_dun02	mapflag	noicewall
+gef_dun01	mapflag	noicewall
+treasure02	mapflag	noicewall
+pay_fild11	mapflag	noicewall
+gon_dun03	mapflag	noicewall
+abbey02	mapflag	noicewall
+moc_pryd06	mapflag	noicewall
+ra_fild02	mapflag	noicewall
+ra_fild03	mapflag	noicewall
+ra_fild04	mapflag	noicewall
+ve_fild01	mapflag	noicewall
+ve_fild02	mapflag	noicewall
+lou_dun03	mapflag	noicewall
+prt_maze03	mapflag	noicewall
+
+//mosk_dun03	mapflag	AUTOLOOT_FARM
+//
+//gefenia01	mapflag	AUTOLOOT_FARM
+//gefenia02	mapflag	AUTOLOOT_FARM
+//gefenia03	mapflag	AUTOLOOT_FARM
+//gefenia04	mapflag	AUTOLOOT_FARM
+//gon_dun01	mapflag	AUTOLOOT_FARM
+//mag_dun01	mapflag	AUTOLOOT_FARM
+//mag_dun01	mapflag	PVP
+//mag_dun02	mapflag	AUTOLOOT_FARM
+//jupe_ele	mapflag	AUTOLOOT_FARM
+//juperos_01	mapflag	AUTOLOOT_FARM
+//juperos_02	mapflag	AUTOLOOT_FARM
+
+// Restricted > 32770
+//koeh	mapflag	restricted	11
+
+// WOE > 262144
+prtg_cas01	mapflag	restricted	14
+prtg_cas02	mapflag	restricted	14
+prtg_cas03	mapflag	restricted	14
+prtg_cas04	mapflag	restricted	14
+prtg_cas05	mapflag	restricted	14
+payg_cas01	mapflag	restricted	14
+payg_cas02	mapflag	restricted	14
+payg_cas03	mapflag	restricted	14
+payg_cas04	mapflag	restricted	14
+payg_cas05	mapflag	restricted	14
+gefg_cas01	mapflag	restricted	14
+gefg_cas02	mapflag	restricted	14
+gefg_cas03	mapflag	restricted	14
+gefg_cas04	mapflag	restricted	14
+prtg_cas05	mapflag	restricted	14
+aldeg_cas01	mapflag	restricted	14
+aldeg_cas02	mapflag	restricted	14
+aldeg_cas03	mapflag	restricted	14
+aldeg_cas04	mapflag	restricted	14
+aldeg_cas05	mapflag	restricted	14
+arug_cas01	mapflag	restricted	14
+arug_cas02	mapflag	restricted	14
+arug_cas03	mapflag	restricted	14
+arug_cas04	mapflag	restricted	14
+arug_cas05	mapflag	restricted	14
+schg_cas01	mapflag	restricted	14
+schg_cas02	mapflag	restricted	14
+schg_cas03	mapflag	restricted	14
+schg_cas04	mapflag	restricted	14
+schg_cas05	mapflag	restricted	14
+
+new_1-1	mapflag	town
+abbey03	mapflag	nomemo
+odin_tem03	mapflag	nomemo
+
+//m_event01	mapflag	nobranch
+//m_event01	mapflag	nomemo
+//m_event01	mapflag	nopenalty
+//m_event01	mapflag	nosave
+//m_event01	mapflag	noteleport
+//m_event01	mapflag	nowarp
+//m_event01	mapflag	nowarpto
+//m_event01	mapflag	loadevent

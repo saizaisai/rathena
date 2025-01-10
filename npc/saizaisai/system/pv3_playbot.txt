@@ -1,0 +1,123 @@
+-	script	Players Bot#main	-1,{
+OnLoad:
+OnInterIfInitOnce:
+	deletearray $BotPlayersUID;
+	deletearray $BotPlayersMap$;
+	setarray .@Bots$[0],
+		// <Name>, <Class>, <Sex>, <HairStyle>, <HairColor>, <Clother>, <HeadBottom>, <HeadMiddle>, <HeadTop>, <Mapname>, <CoordX>, <CoordY>, <Dir>, <Mode>, <WaitingRoom Name>,
+		// <Mode>:
+		//		0 - Walk
+		//		1 - Sit
+		//		2 - Waiting Room (stand)
+		//		3 - Waiting Room (sit)
+		//
+		"William", Job_Novice, 99, 50, 1, 0, 0, 0, 0, 0, 0, "prontera", 159, 176, 4, 0, "",
+		"Maryanne", Job_Thief, 99, 50, 0, 1, 1, 1, 8, 0, 5022, "prontera", 150, 166, 4, 3, "Welcome to Rag",
+		"Essence", Job_Mage, 99, 70, 0, 1, 1, 1, 8, 0, 57539, "prontera", 148, 163, 4, 3, "Essence is noob!"
+	;
+	
+	.@c = 0;
+	.@m = 0;
+	deletearray $BotUID[0];
+	query_sql "DELETE FROM `player_bot`";
+
+	for( .@i=0; .@i < getarraysize(.@Bots$); .@i+=17 ) {
+		.@Name$ = .@Bots$[.@i];
+		.@Class = atoi(.@Bots$[.@i+1]);
+		.@BaseLevel = atoi(.@Bots$[.@i+2]);
+		.@JobLevel = atoi(.@Bots$[.@i+3]);
+		.@Sex = atoi(.@Bots$[.@i+4]);
+		.@HairStyle = atoi(.@Bots$[.@i+5]);
+		.@HairColor = atoi(.@Bots$[.@i+6]);
+		.@Clother = atoi(.@Bots$[.@i+7]);
+		.@HeadBottom = atoi(.@Bots$[.@i+8]);
+		.@HeadMiddle = atoi(.@Bots$[.@i+9]);
+		.@HeadTop = atoi(.@Bots$[.@i+10]);
+		.@MapName$ = .@Bots$[.@i+11];
+		.@CoordX = atoi(.@Bots$[.@i+12]);
+		.@CoordY = atoi(.@Bots$[.@i+13]);
+		.@Dir = atoi(.@Bots$[.@i+14]);
+		.@Mode = atoi(.@Bots$[.@i+15]);
+		.@WaitingRoom$ = .@Bots$[.@i+16];
+		
+		monster .@MapName$,.@CoordX,.@CoordY,.@Name$,1002,1,"Players Bot#main::OnKill";
+		.@UID = $@mobid[0];
+
+		setunitdata .@UID, UMOB_CLASS, .@Class;
+		setunitdata .@UID, UMOB_LEVEL, .@BaseLevel;
+		setunitdata .@UID, UMOB_JOBLEVEL, .@JobLevel;
+		setunitdata .@UID, UMOB_SEX, .@Sex;
+		setunitdata .@UID, UMOB_DMGIMMUNE, 1;
+		setunitdata .@UID, UMOB_SPEED, 170;
+		setunitdata .@UID, UMOB_HAIRSTYLE, .@HairStyle;
+		setunitdata .@UID, UMOB_HAIRCOLOR, .@HairColor;
+		setunitdata .@UID, UMOB_CLOTHCOLOR, .@Clother;
+		setunitdata .@UID, UMOB_LOOKDIR, .@Dir;
+		setunitdata .@UID, UMOB_HEADBOTTOM, .@HeadBottom;
+		setunitdata .@UID, UMOB_HEADMIDDLE, .@HeadMiddle;
+		setunitdata .@UID, UMOB_HEADTOP, .@HeadTop;
+		setunitdata .@UID, UMOB_PLAYER_BOT, 1;
+		
+		if( .@Mode == 1 || .@Mode == 3 )
+			setunitdata .@UID, UMOB_DEADSIT, 2;
+		if( .@Mode == 2 || .@Mode == 3 )
+			mobwaitingroom .@UID, .@WaitingRoom$, 20;
+		
+		$BotPlayersUID[.@c] = .@UID;
+		.@c++;
+		
+		if( inarray($BotPlayersMap$,.@MapName$) == -1 ) {
+			$BotPlayersMap$[.@m] = .@MapName$;
+			.@m++;
+		}
+		
+		query_sql "INSERT INTO `player_bot` (`name`, `mapname`, `coord_x`, `coord_y`, `class`, `sex`, `base_level`, `job_level`) VALUES ('" + .@Name$ + "', '" + .@MapName$ + "', " + .@CoordX + ", " + .@CoordY + ", " + .@Class + ", " + .@Sex + ", " + .@BaseLevel + ", " + .@JobLevel + ")";
+	}
+	end;
+	
+OnInit:
+	bindatcmd "botreload", "Players Bot#main::OnReloadCmd", 99, 99;
+	bindatcmd "botkillall", "Players Bot#main::OnKillAllCmd", 99, 99;
+	initnpctimer;
+	end;
+	
+OnReloadCmd:
+	for( .@i=0; .@i < getarraysize($BotPlayersMap$); .@i++ ) {
+		killmonster $BotPlayersMap$[.@i],"Players Bot#main::OnKill";
+	}
+	donpcevent "Players Bot#main::OnLoad";
+	end;
+	
+OnKillAllCmd:
+	for( .@i=0; .@i < getarraysize($BotPlayersMap$); .@i++ ) {
+		killmonster $BotPlayersMap$[.@i],"Players Bot#main::OnKill";
+	}
+	deletearray $BotPlayersUID;
+	deletearray $BotPlayersMap$;
+	end;
+	
+OnKill:
+	end;
+	
+OnTimer5000:
+	stopnpctimer;
+	initnpctimer;
+	query_sql "DELETE FROM `player_bot`";
+	
+	if( getarraysize($BotPlayersUID) ) {
+		for( .@i=0; .@i < getarraysize($BotPlayersUID); .@i++ ) {
+			getunitdata $BotPlayersUID[.@i], .@infos;
+			.@Name$ = getunitname($BotPlayersUID[.@i]);
+			.@MapId = .@infos[UMOB_MAPID];
+			.@MapName$ = mapid2name(.@MapId);
+			.@CoordX = .@infos[UMOB_X];
+			.@CoordY = .@infos[UMOB_Y];
+			.@Class = .@infos[UMOB_CLASS];
+			.@Sex = .@infos[UMOB_SEX];
+			.@BaseLevel = .@infos[UMOB_LEVEL];
+			.@JobLevel = .@infos[UMOB_JOBLEVEL];
+			query_sql "INSERT INTO `player_bot` (`name`, `mapname`, `coord_x`, `coord_y`, `class`, `sex`, `base_level`, `job_level`) VALUES ('" + .@Name$ + "', '" + .@MapName$ + "', " + .@CoordX + ", " + .@CoordY + ", " + .@Class + ", " + .@Sex + ", " + .@BaseLevel + ", " + .@JobLevel + ")";
+		}
+	}
+	end;
+}

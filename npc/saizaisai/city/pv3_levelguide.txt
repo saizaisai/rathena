@@ -1,0 +1,65 @@
+prontera,136,180,5	script	Board Information	837,{
+	mes "^00B2EE[Hunting Information]^000000";
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "^FF3355Recommended hunting grounds^000000";
+	mes "Please choose according to your level";
+	menu "^99D6FFLevel 1~30^000000",level30,"^66C2FFLevel 31~60^000000",level60,"^4DB8FFLevel 61~80^000000",level80,"^0099FFLevel 81~99^000000",level99;
+	
+	level30:
+	next;
+	mes "^00B2EE[Hunting Information]^000000";
+	mes "Hunt's recommendation for ^99D6FFLevel 1~30^000000";
+	mes "- ^FF3355Spore^000000 Campo Payon 08";
+	mes "- ^FF3355Wolf^000000 Campo Payon 02";
+	mes "- ^FF3355Marina^000000 Byalan Dungeon 01";
+	mes "- ^FF3355Skeleton^000000 Payon Dungeon";
+	mes "- ^FF3355Bigfoot^000000 Campo Payon 07";
+	mes "- ^FF3355PecoPeco^000000 Moroc Field 02";
+	close;
+	
+	level60:
+	next;
+	mes "^00B2EE[Hunting Information]^000000";
+	mes "Hunt's recommendation for ^99D6FFLevel 31~60^000000";
+	mes "- ^FF3355Argiope^000000 Campo de Mjolnir 05";
+	mes "- ^FF3355Myst Case^000000 Fábrica de brinquedos 02";
+	mes "- ^FF3355Munak^000000 Payon Dungeon 02";
+	mes "- ^FF3355Greatest General^000000 Campo Payon 10";
+	mes "- ^FF3355Orc Zombie^000000 Orc Dungeon";
+	mes "- ^FF3355Hode^000000 Morroc Field 17";
+	mes "- ^FF3355Sandman^000000 Campo Payon 02";
+	mes "- ^FF3355High Orc^000000 Geffen Field 14";
+	mes "- ^FF3355Alarm^000000 Clock Tower 03";
+	mes "- ^FF3355High Orc^000000 Aldebaran Dungeon 02";
+	close;
+
+	level80:
+	next;
+	mes "^00B2EE[Hunting Information]^000000";
+	mes "Hunt's recommendation for ^99D6FFLevel 61~80^000000";
+	mes "- ^FF3355Sting^000000 GlastHeim Culvert 03";
+	mes "- ^FF3355Anubis^000000 Sphinx 04";
+	mes "- ^FF3355Pasana^000000 Sphinx 05";
+	mes "- ^FF3355High Orc^000000 Geffen Field 14";
+	mes "- ^FF3355Mummy^000000 Pyramid 03";
+	mes "- ^FF3355Raydric^000000 Glastheim Chilvary F1";
+	close;
+
+	level99:
+	next;
+	mes "^00B2EE[Hunting Information]^000000";
+	mes "Hunt's recommendation for ^99D6FFLevel 81~99^000000";
+	mes "- ^FF3355Anubis^000000 Sphinx 04";
+	mes "- ^FF3355Anolian^000000 Comodo Field 03";
+	mes "- ^FF3355Bloody Murder^000000 Niflheim Field 02";
+	mes "- ^FF3355Mummy^000000 Pyramid 03";
+	mes "- ^FF3355Heater,Freezer,Solider^000000 Turtle Dungeon 02";
+	mes "- ^FF3355Lava Golem^000000 Magma Dungeon 02";
+	close;
+OnInit:
+    .@UID = getnpcid(0);
+    setunittitle(.@UID, "[Hunting]");
+    setunitdata .@UID, UNPC_GROUP_ID, 4;
+    end;
+}
+//prontera,165,163,3	duplicate(Board Information)	Board Information#1	837

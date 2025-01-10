@@ -1,0 +1,7 @@
+prontera,171,195,5	script	Runic Stone#eAcustom	10547,{
+	mes "[Runic Stone]";
+	mes "UI opening";
+	close2;
+	runeui();
+	end;
+}

@@ -1,0 +1,49 @@
+prontera,144,172,5	script	Zeny Ranking	837,{
+query_sql("SELECT `c`.`name`, `c`.`class`, `c`.`base_level`, `c`.`job_level`, `c`.`zeny`, `g`.`name` FROM `char` c LEFT JOIN (`guild` g) ON (`c`.`guild_id` = `g`.`guild_id`) ORDER BY `c`.`zeny` DESC LIMIT 20", .@name$, .@class, .@blvl, .@jlvl, .@zeny, .@guild$);
+for (.@i = 0; .@i < getarraysize(.@name$); .@i++) {
+	.@menu$ = (("" == .@menu$) ? "[^0000FFTop "+(.@i + 1)+"^000000] "+.@name$[.@i] : .@menu$+":[^0000FFTop "+(.@i+1)+"^000000] "+.@name$[.@i]+" ");
+}
+
+mes "[ ^0000FFZeny Ranking^000000 ]";
+mes "Top Zeny Holder";
+
+.@selected = select(.@menu$);
+
+next;
+	mes "[ ^0000FFZeny Ranking^000000 ]";
+	mes "Name: " + .@name$[.@selected - 1];
+	mes "Class: " + jobname(.@class[.@selected - 1]);
+	mes "Base level: " + .@blvl[.@selected - 1];
+	mes "Job level: " + .@jlvl[.@selected - 1];
+	mes "Guild: " + ((.@guild$[.@selected - 1]) ? .@guild$[.@selected - 1] : "none");
+	mes "Zeny: ^FF0000"+F_InsertComma(.@zeny[.@selected-1])+"^000000z ";
+close;
+
+OnInit:
+	query_sql("SELECT `c`.`name`, `c`.`class`, `c`.`base_level`, `c`.`job_level`, `c`.`zeny`, `g`.`name` FROM `char` c LEFT JOIN (`guild` g) ON (`c`.`guild_id` = `g`.`guild_id`) ORDER BY `c`.`zeny` DESC LIMIT 20", .@name$, .@class, .@blvl, .@jlvl, .@zeny, .@guild$);
+	for (.@i = 0; .@i < getarraysize(.@name$); .@i++) {
+		.@menu$ = (("" == .@menu$) ? "Top "+(.@i + 1)+" - "+.@name$[.@i] : .@menu$+":Top "+(.@i+1)+" - "+.@name$[.@i]+" ");
+	}
+
+	WAITINGPUB:
+		showscript "Top Zeny Holder";
+		sleep 5000;		
+		
+		showscript "Top 1: "+.@name$[0]+"";
+		sleep 5000;
+		
+		showscript "Top 2: "+.@name$[1]+"";
+		sleep 5000;
+		
+		showscript "Top 3: "+.@name$[2]+"";
+		sleep 5000;
+		
+		showscript "Top 4: "+.@name$[3]+"";
+		sleep 5000;
+		
+		showscript "Top 5: "+.@name$[4]+"";
+		sleep 5000;
+	goto WAITINGPUB;
+end;
+
+}

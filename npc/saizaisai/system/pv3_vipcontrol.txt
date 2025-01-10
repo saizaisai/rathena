@@ -1,0 +1,253 @@
+// Manager
+-	script	Vip Control#manager	-1,{
+
+	// Configurações
+	// Defina o Nível de VIP declarado em 'conf/login_athena.conf' na configuração 'vip_group'.
+	set .@vipGroup, 5;
+
+	set .@loop_1, 1;
+	while( .@loop_1 )
+	{
+		mes "^FFA500[VIP Controller]^000000";
+		mes "Welcome to the VIP User Control Center.";
+		mes "How can I help you?";
+		next;
+		switch( select("- Add or Remove VIP.", "- Consult VIP.", "^FF0000- Cancel.^000000") )
+		{
+			// Adicionar ou Retirar
+			case 1:
+				set .@loop_2, 1;
+				while( .@loop_2 )
+				{
+					mes "^FFA500[VIP Controller]^000000";
+					mes "Please enter the account ID ^FF0000 or user^000000 that you wish to add/remove VIP time.";
+					mes "^FF0000Leave blank to cancel this operation.^000000";
+					next;
+					input .@UserID$;
+					
+					deletearray .@AccountId;
+					query_sql "SELECT `account_id`, `userid`, `group_id`, `vip_time` FROM `login` WHERE `account_id`='" + atoi(.@UserID$) + "' OR `userid`='" + .@UserID$ + "' LIMIT 1", .@AccountId, .@UID$, .@GroupId, .@VipTime;
+
+					if( getarraysize(.@AccountId) )
+					{
+						if( isloggedin(.@AccountId) ) {
+							set .@charname$, getcharinfo(6,.@AccountId);
+							set .@vipStatus, vip_status(VIP_STATUS_ACTIVE,.@charname$);
+							set .@vipExpire, vip_status(VIP_STATUS_EXPIRE,.@charname$);
+						}
+						else {
+							set .@vipStatus, .@GroupId > 0 ? 1 : 0;
+							set .@vipExpire, .@VipTime;
+						}
+						
+						mes "^FFA500[VIP Controller]^000000";
+						if( .@vipStatus ) {
+							mes "^FF0000AID/UID '" + .@UserID$ + "' is a VIP user^000000.";
+							mes "VIP user time expires in:";
+							mes "^FF0000" + callfunc("Time2Str",.@vipExpire) + "^000000";
+							next;
+						}
+						else {
+							mes "^FF0000AID/UID '" + .@UserID$ + "' not a VIP user^000000.";
+							next;
+						}
+						
+						set .@loop_3, 1;
+						while(.@loop_3) {
+							mes "^FFA500[VIP Controller]^000000";
+							mes "What do you want to do?";
+							next;
+							set .@type, select("- Add VIP time.", "- Remove VIP time.", "^FFA500- Log in with another user.^000000", "^FF0000- Cancel.^000000") -1;
+							if( .@type == 2 ) {
+								set .@loop_3, 0;
+								break;
+							}
+							else if( .@type == 3 ) {
+								set .@loop_3, 0;
+								set .@loop_2, 0;
+								break;
+							}
+							
+							set .@loop_4, 1;
+							while( .@loop_4 ) {
+								mes "^FFA500[VIP Controller]^000000";
+								mes "To alleviate the situation, enter the format you want to add:";
+								next;
+								setarray .@formats$[0], "y", "m", "d", "h", "n", "s";
+								setarray .@ntype$[0], "year", "month", "days", "hours", "minutes", "seconds";
+								set .@f, select("- In Years.", "- In Months.", "- In Days.", "- In Hours.", "- In Minutes.", "- In Seconds.", "^FFA500- Return to previous option. ^000000", "^FF0000- Cancel.^000000")-1;
+								
+								if( .@f == 6 ) {
+									set .@loop_4, 0;
+									break;
+								}
+								else if( .@f == 7 ) {
+									set .@loop_4, 0;
+									set .@loop_3, 0;
+									set .@loop_2, 0;
+									break;
+								}
+							
+								mes "^FFA500[VIP Controller]^000000";
+								mes "Type in ^FF0000" + .@ntype$[.@f] + "^000000 the time you want " + (.@type ? "to remove" : "to add") + ".";
+								mes "^FF0000Enter 0 to cancel this operation.^000000";
+								next;
+								input .@value;
+								
+								if( .@value == 0 ) {
+									set .@loop_3, 0;
+									set .@loop_2, 0;
+									break;
+								}
+							
+								set .@loop_5, 1;
+								while(.@loop_5) {
+									set .@tmpStr$, callfunc("Time2Str",gettimetick(2)+(.@value*60));
+									mes "^FFA500[VIP Controller]^000000";
+									mes "Are you sure you want " + (.@type ? "to remove" : "to add") + " ^0000FF" + .@tmpStr$ + "^000000?";
+									next;
+									switch( select("- Yes please.", "^FFA500- Don't try again.^000000", "^FF0000- Cancel.^000000") )
+									{
+										case 1:
+											if( isloggedin(.@AccountId) ) {
+												// Restore if login!
+												set .@charname$, getcharinfo(6,.@AccountId);
+												atcommand "@vip " + (.@type?"-":"+") +.@value+ .@formats$[.@f]+" " + .@charname$;
+											}
+											else {
+												if( .@f == 0 )
+													set .@time, .@value*525600;
+												else if( .@f == 1 )
+													set .@time, .@value*43800;
+												else if( .@f == 2 )
+													set .@time, .@value*86400;
+												else if( .@f == 3 )
+													set .@time, .@value*1440;
+												else if( .@f == 4 )
+													set .@time, .@value*60;
+												else
+													set .@time, .@value;
+												
+												deletearray .@group_id;
+												deletearray .@vip_time;
+												query_sql "SELECT `group_id`, `vip_time` FROM `login` WHERE `account_id`='" + .@AccountID + "' LIMIT 1", .@group_id, .@vip_time;
+												
+												if( .@group_id >= .@vipGroup )
+													query_sql "UPDATE `login` SET ´vip_time`=`vip_time`+'" + .@time + "' WHERE `account_id`='" + .@AccountID + "'";
+												else {
+													set .@time, gettimetick(2) + .@time;
+													query_sql "UPDATE `login` SET `group_id`='" + .@vipGroup + "', `vip_time`=`vip_time`+'" + .@time + "', `old_group`='" + .@group_id + "' WHERE `account_id`='" + .@AccountID + "'";
+												}
+											}
+											mes "^FFA500[VIP Controller]^000000";
+											mes "VIP Time " + (.@type ? "withdrawn" : "adicionado") + " successfully!";
+											next;
+											set .@loop_5, 0;
+											set .@loop_4, 0;
+											set .@loop_3, 0;
+											set .@loop_2, 0;
+											break;
+										case 2:
+											break;
+										case 3:
+											set .@loop_5, 0;
+											set .@loop_4, 0;
+											set .@loop_3, 0;
+											set .@loop_2, 0;
+											break;
+									}
+								}
+							}
+						}
+					}
+					else {
+						mes "^FFA500[VIP Controller]^000000";
+						mes "No accounts were found with ^FF0000AID/UID '" + .@UserID$ + "'^000000.";
+						mes "Do you want to try again?";
+						next;
+						if( select("- Yes, please.", "^FF0000- No, thank you.^000000") == 2 )
+							set .@loop_2, 0;
+					}
+				}
+				break;
+			// Consultar
+			case 2:
+				set .@loop_2, 1;
+				while(.@loop_2)
+				{
+					mes "^FFA500[VIP Controller]^000000";
+					mes "Please enter the account ID ^FF0000 or username^000000 you wish to check for VIP access.";
+					next;
+					input .@UserID$;
+					
+					deletearray .@AccountId;
+					query_sql "SELECT `account_id`, `userid`, `group_id`, `vip_time` FROM `login` WHERE `account_id`='" + atoi(.@UserID$) + "' OR `userid`='" + .@UserID$ + "' LIMIT 1", .@AccountId, .@UID$, .@GroupId, .@VipTime;
+
+					if( getarraysize(.@AccountId) )
+					{
+						if( isloggedin(.@AccountId) ) {
+							set .@charname$, callfunc("getcharnameonlinebyaid",.@AccountId);
+							set .@vipStatus, vip_status(VIP_STATUS_ACTIVE,.@charname$);
+							set .@vipExpire, vip_status(VIP_STATUS_EXPIRE,.@charname$);
+						}
+						else {
+							set .@vipStatus, .@GroupId > 0 ? 1 : 0;
+							set .@vipExpire, .@VipTime;
+						}
+						
+						mes "^FFA500[VIP Controller]^000000";
+						if( .@vipStatus ) {
+							mes "^FF0000AID/UID '" + .@UserID$ + "' is a VIP user^000000.";
+							mes "VIP user time expires in:";
+							mes "^FF0000" + callfunc("Time2Str",.@vipExpire) + "^000000";
+							next;
+							mes "^FFA500[VIP Controller]^000000";
+							mes "Do you want to make another inquiry??";
+						}
+						else {
+							mes "^FF0000AID/UID '" + .@UserID$ + "' not a VIP user^000000.";
+							mes "Do you want to make another inquiry?";
+						}
+					}
+					else {
+						mes "^FFA500[VIP Controller]^000000";
+						mes "No accounts were found with ^FF0000AID/UID '" + .@UserID$ + "'^000000.";
+						mes "Do you want to try again?";
+					}
+					next;
+					if( select("- Yes, please.", "^FF0000- No, thank you.^000000") == 2 )
+						set .@loop_2, 0;
+				}
+				break;
+			// Cancelar
+			case 3:
+				set .@loop_1, 0;
+				break;
+		}
+	}
+	mes "^FFA500[VIP Controller]^000000";
+	mes "Come back when you need to use the VIP User Control Center!";
+	close;
+
+}
+
+// arg(0) type
+// arg(1) amount
+// arg(2) lvl group_id
+// arg(3) account_id
+function	script	f_vip_ticket	{
+	set .@f, getarg(0);
+	set .@v, getarg(1);
+	set .@charname$, getarg(2);
+	set .@type, .@v < 0;
+	setarray .@formats$[0], "y", "m", "d", "h", "n", "s";
+	setarray .@ntype$[0], "year", "month", "days", "hours", "minutes", "seconds";
+	atcommand "@vip " + (.@type?"-":"+") +.@v+ .@formats$[.@f]+" " + .@charname$;
+	return;
+}
+
+function	script	getcharnameonlinebyaid	{
+	deletearray .@tmpname$;
+	query_sql "SELECT `name` FROM `char` WHERE `account_id`='" + getarg(0) + "' AND `online`='1'", .@tmpname$;
+	return (getarraysize(.@tmpname$)?.@tmpname$:"");
+}

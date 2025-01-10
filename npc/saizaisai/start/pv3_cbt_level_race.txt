@@ -1,0 +1,476 @@
+/*
+NPC TITLE: CBT Level Race
+Version 1.1
+Release By: Denz Skyzone
+Server Request: Global Chaos Ragnarok Online
+Description: Duering the CBT the player can do leveling and record the Base,Job Level and Job there done until the CBT. 
+After the CBT this NPC will generate the reward for the participation of CBT.
+[Updates]
+- 1.1 Added Gepard 
+*/
+
+
+prontera,169,158,4	script	CBT Level Race	620,{
+
+function LEVELRACEREGISTRATION;
+function REWARDUPDATE;
+    
+.@CID = getcharid(0);
+.@AID = getcharid(3);
+.@Player$ = strcharinfo(0);
+.@BaseLevel = BaseLevel;
+.@JobLevel = JobLevel;
+.@Class$ = readparam(Class); //jobname(Class)
+
+//GET UNIQUE ID
+query_sql("SELECT `last_unique_id` FROM `login` WHERE `account_id`="+.@AID+"", .@record_unique_id$);
+.@Unique_ID = .@record_unique_id$; //get_unique_id()
+ 
+mes .NPCNAME$;
+mes "Welcome to CBT Level Race Event.";
+mes "Hello "+strcharinfo(0)+" what can I do for you today?";
+ 
+    menu "Level Race Registration",LEVELRACE, 
+         "Check My CBT Status",CBTSTATUS,
+         "Information",INFORMATION,
+         "Claim Reward",CLAIMREWARD;
+
+    LEVELRACE: NEXT;
+        mes .NPCNAME$;
+        
+        if(.CBTEnable == 0){
+            mes "Close Beta Testing has ended. You can claim your reward now!";
+            end;
+        }
+         		
+		//CHECKER
+        set @CHECK_UNIQUE_ID$,"";	
+        set @CHECK_ACCOUNT_ID$,"";	
+        set @CHECK_ACCOUNT_ID2$, .@AID;			
+		if(.Options&1){
+			//GEPARD UNIQUE ID CHECK
+			query_sql "SELECT `name`, `account_id`, `unique_id` FROM `sky_level_race` WHERE `unique_id`="+.@Unique_ID+"", @CHECK_NAME$, @CHECK_ACCOUNT_ID$, @CHECK_UNIQUE_ID$;
+		}else{
+			//NO GEPARD
+			query_sql "SELECT `account_id`, `unique_id` FROM `sky_level_race` WHERE `account_id`="+.@AID+" ", @CHECK_ACCOUNT_ID$;
+		}  
+		
+		if(.Options&1){
+			if (@CHECK_UNIQUE_ID$ == "" && @CHECK_ACCOUNT_ID$ == ""){
+				if(@CHECK_ACCOUNT_ID$ == ""){
+					mes "Good luck to your leveling.";
+					mes "^248b00You Account is now Registered^000000.";				
+					LEVELRACEREGISTRATION(.@CID, .@AID, .@Player$, .@BaseLevel, .@JobLevel, .@Class$, .@Unique_ID);
+				}
+			}else{
+				if(@CHECK_ACCOUNT_ID$ == @CHECK_ACCOUNT_ID2$){
+					mes "See you on official opening kid. ";
+					mes "^0000FFYou Account is now Updated^000000.";
+					LEVELRACEREGISTRATION(.@CID, .@AID, .@Player$, .@BaseLevel, .@JobLevel, .@Class$, .@Unique_ID);
+				}			
+				else{
+					mes "^FF0000Sorry you have other account used to register^000000.";
+					mes "The Character name is ^FF0000"+@CHECK_NAME$+"^000000. ";
+				}
+			}
+		}else{
+			//NO GEPARD
+			if (@CHECK_ACCOUNT_ID$ == ""){
+				// "You Account is now Registered.";
+				mes "Good luck to your leveling.";
+				mes "^248b00You Account is now Registered^000000.";	
+				
+				LEVELRACEREGISTRATION(.@CID, .@AID, .@Player$, .@BaseLevel, .@JobLevel, .@Class$);
+			}else{
+				// "You Account is now Updated.";
+				mes "See you on official opening kid. ";
+				mes "^0000FFYou Account is now Updated^000000.";
+				
+				LEVELRACEREGISTRATION(.@CID, .@AID, .@Player$, .@BaseLevel, .@JobLevel, .@Class$);
+			}	
+		}
+		
+    end;
+    
+    CBTSTATUS: NEXT;
+        mes .NPCNAME$; 
+        
+        set @ACC$,"";	
+        query_sql "SELECT `account_id`,`name`, `base_lvl`, `job_lvl`, `class`, `reward` FROM `sky_level_race` WHERE `account_id`="+.@AID+"",  @ACC$, .@name$, .@blvl, .@jlvl, .@class, .@reward;
+        mes "Register Information:"; 
+        if (@ACC$ == ""){
+            mes "^FF0000You are not registered yet^000000.";
+        }else{
+            mes "Name: ^0000FF"+ .@name$ +"^000000";
+            mes "Job Class: ^0000FF"+ jobname(.@class) +"^000000 ";
+            mes "Base Level: ^0000FF"+ .@blvl +"^000000 ";
+            mes "Job Level: ^0000FF"+ .@jlvl +"^000000";
+            if(.@reward == 1){
+                 mes "Status Reward: ^FF0000Already Claim^000000";
+            }else{
+                 mes "Status Reward: ^0000FFOn Hold^000000";
+            }
+           
+        }        
+    end;
+
+    INFORMATION: NEXT;
+        mes .NPCNAME$;
+        mes "^0000FF"+strcharinfo(0)+"^000000 You need to get the Max level as you can until the server Official Release.";
+        mes "if your level not get the highest before the opening. go back here and update your character.";
+        mes "[REWARD LIST]";
+		
+		
+		mes "[^0000FFMax Level Reward^000000]";
+		mes "Requried: Base/Job Lvl 99/50";
+        explode(.@rewarditem$,.rewarditem$[3],"|");
+		for(.@i=0; .@i< getarraysize(.@rewarditem$); .@i+=2)		
+		if(getitemname(atoi(.@rewarditem$[.@i])) == "null"){
+			mes  "^0000FF "+ atoi(.@rewarditem$[.@i+1]) +"x^000000 Random Costume.";
+		}else{			
+			mes  "^0000FF "+ atoi(.@rewarditem$[.@i+1]) +"x^000000 "+getitemname(atoi(.@rewarditem$[.@i]))+".";			
+		}
+		
+		//###########################################################################
+		
+		mes "_________________________";
+		mes "[^0000FFParticipation Reward #1^000000]";
+		mes "Requried: Base Lvl 81 to 95";
+        explode(.@rewarditem$,.rewarditem$[2],"|");
+		for(.@i=0; .@i< getarraysize(.@rewarditem$); .@i+=2)
+		if(getitemname(atoi(.@rewarditem$[.@i])) == "null"){
+			mes  "^0000FF "+ atoi(.@rewarditem$[.@i+1]) +"x^000000 Random Costume.";
+		}else{			
+			mes  "^0000FF "+ atoi(.@rewarditem$[.@i+1]) +"x^000000 "+getitemname(atoi(.@rewarditem$[.@i]))+".";			
+		}  
+        
+		//###########################################################################
+		
+        mes "_________________________";
+        mes "[^0000FFParticipation Reward #2^000000]";
+		mes "Requried: Base Lvl 61 to 80";
+        explode(.@rewarditem$,.rewarditem$[1],"|");
+		for(.@i=0; .@i< getarraysize(.@rewarditem$); .@i+=2)
+		if(getitemname(atoi(.@rewarditem$[.@i])) == "null"){
+			mes  "^0000FF "+ atoi(.@rewarditem$[.@i+1]) +"x^000000 Random Costume.";
+		}else{			
+			mes  "^0000FF "+ atoi(.@rewarditem$[.@i+1]) +"x^000000 "+getitemname(atoi(.@rewarditem$[.@i]))+".";			
+		}
+		
+		//###########################################################################
+        
+        mes "_________________________";
+        mes "[^0000FFParticipation Reward #3^000000]"; 
+		mes "Requried: Base Lvl 1 to 60";
+        explode(.@rewarditem$,.rewarditem$[0],"|");
+		for(.@i=0; .@i< getarraysize(.@rewarditem$); .@i+=2)
+		if(getitemname(atoi(.@rewarditem$[.@i])) == "null"){
+			mes  "^0000FF "+ atoi(.@rewarditem$[.@i+1]) +"x^000000 Random Costume.";
+		}else{			
+			mes  "^0000FF "+ atoi(.@rewarditem$[.@i+1]) +"x^000000 "+getitemname(atoi(.@rewarditem$[.@i]))+".";			
+		}	
+		 
+    end;
+
+    CLAIMREWARD: NEXT;
+        mes .NPCNAME$;
+        
+        if(.CBTEnable == 1){
+            mes "^FF0000Close Beta Testing is on going. The reward is available on Official Opening!^000000.";
+            end;
+        }
+        
+        set @REWARD$,"";	
+        query_sql "SELECT `account_id`, `base_lvl`,`job_lvl`,`class`,`reward` FROM `sky_level_race` WHERE `account_id`="+.@AID+" AND `reward`=0 AND `unique_id`="+.@Unique_ID+" ",  @ACC$,@BLVL,@JLVL,@CLASS,@REWARD$;
+       
+        mes "";
+        if (@REWARD$ == "0"){
+			mes "Reward Information:"; 
+			
+           if(@CLASS <= 20){                
+                mes "^0000FFYour Job on CBT is "+jobname(@CLASS)+"^000000. ";
+                mes "^0000FFYour Reward is Set 1 Prize^000000.";
+				
+                REWARDUPDATE(.@AID); //UPDATE REWARD STATUS
+                
+                explode(.@joblist$,.joblist$[0],"|");
+                for(.@i=0; .@i< getarraysize(.@joblist$); .@i++)
+				
+                if(@BLVL==99 && @JLVL==50){
+                    dispbottom "^0000FFYour Job on CBT is "+jobname(@CLASS)+"^000000. ";
+                    dispbottom "^0000FFYou get your Grand Prize Reward.^000000.";
+					
+                    //SET 3 REWARD
+                    explode(.@rewarditem$, .rewarditem$[3],"|"); //SET 3 REWARD [0]
+                    for(.@i=0; .@i<getarraysize(.@rewarditem$); .@i+=2)						
+                        if(.Options&2){
+                            getitembound atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]), Bound_Account; 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }else{
+                            getitem atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]); 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }
+                    end;
+					
+                }
+				else if(@BLVL <= 98 && @BLVL >= 81){
+				
+					//SET 2 REWARD
+                    explode(.@rewarditem$, .rewarditem$[2],"|"); //SET 2 REWARD [0]
+                    for(.@i=0; .@i<getarraysize(.@rewarditem$); .@i+=2)						
+                        if(.Options&2){
+                            getitembound atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]), Bound_Account; 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }else{
+                            getitem atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]); 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }
+                    end;
+					
+				}else if(@BLVL <= 80 && @BLVL >= 61){
+				
+					//SET 2 REWARD
+                    explode(.@rewarditem$, .rewarditem$[1],"|"); //SET 1 REWARD [0]
+                    for(.@i=0; .@i<getarraysize(.@rewarditem$); .@i+=2)						
+                        if(.Options&2){
+                            getitembound atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]), Bound_Account; 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }else{
+                            getitem atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]); 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }
+                    end;
+				}else{
+				
+                    mes "^0000FFYour Job on CBT is "+jobname(@CLASS)+"^000000. ";
+                    mes "^0000FFYour Reward is Set 1 Prize^000000.";
+					
+                     //SET 1 REWARD
+                    explode(.@rewarditem$, .rewarditem$[0],"|"); //SET 2 REWARD [0]
+                    for(.@i=0; .@i<getarraysize(.@rewarditem$); .@i+=2)						
+                        if(.Options&2){
+                            getitembound atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]), Bound_Account; 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }else{
+                            getitem atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]); 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }
+                    end;
+                }
+                
+            }else{
+                REWARDUPDATE(.@AID); //UPDATE REWARD STATUS
+                
+                explode(.@joblist$,.joblist$[1],"|");
+                for(.@i=0; .@i< getarraysize(.@joblist$); .@i++) 
+                if(@BLVL==99 && @JLVL==70){
+                    mes "^0000FFYour Job on CBT is "+jobname(@CLASS)+"^000000. ";
+                    mes "^0000FFYour Reward is Set 4 Prize^000000.";
+					
+                    //SET 3 REWARD
+                    explode(.@rewarditem$, .rewarditem$[3],"|"); //SET 3 REWARD [0]
+                    for(.@i=0; .@i<getarraysize(.@rewarditem$); .@i+=2)						
+                        if(.Options&2){
+                            getitembound atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]), Bound_Account; 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }else{
+                            getitem atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]); 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }
+                    end;
+					
+                }else{
+                    mes "^0000FFYour Job on CBT is "+jobname(@CLASS)+"^000000. ";
+                    mes "^0000FFYour Reward is Set 3 Prize^000000.";
+					
+                    //SET 2 REWARD
+                    explode(.@rewarditem$, .rewarditem$[2],"|"); //SET 2 REWARD [0]
+                    for(.@i=0; .@i<getarraysize(.@rewarditem$); .@i+=2)						
+                        if(.Options&2){
+                            getitembound atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]), Bound_Account; 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }else{
+                            getitem atoi(.@rewarditem$[.@i]), atoi(.@rewarditem$[.@i+1]); 
+                            mes "- "+atoi(.@rewarditem$[.@i+1])+"x "+getitemname(atoi(.@rewarditem$[.@i]))+".";
+                        }
+                    end;
+                }
+            }
+			
+        }else{
+			 query_sql "SELECT `name`,`base_lvl`,`job_lvl`,`class`,`reward` FROM `sky_level_race` WHERE `account_id`="+.@AID+" AND `reward`=1 AND `unique_id`="+.@Unique_ID+" ", @getName$,@getbaselvl$,@getjoblvl$,.@getclass, .@reward;
+			 
+			if(.@reward == 1){
+				 mes "^FF0000Sorry you already claim your reward.^000000.";
+				 mes "[^0000FFCharacter Participated^000000]";
+				 mes "Character: "+@getName$+"";
+				 mes "Base Lvl: "+@getbaselvl$+"";
+				 mes "Job Lvl: "+@getjoblvl$+"";
+				 mes "Job Class: "+jobname(.@getclass)+"";
+			}else{
+				 mes "^FF0000You are not participated on the CBT.";      
+			}           
+        }
+    end;
+	
+	
+       
+    OnInit:
+		///////////////////////////////
+		//      GENERAL SETTINGS
+		///////////////////////////////
+		//[1] Enable Gepard Check
+		//[2] Enable Bounded = 1 | Disable Bound Items = 0
+		
+		//GENERAL SETTINGS
+		.Options = 1|2;
+		
+        //NPC NAME
+        .NPCNAME$ = "[ ^0000FFCBT Level Race System^000000 ]";
+                 
+        //ENABLE THIS FOR REWARD CLAIMING ON OFFICIAL
+	   .CBTEnable = 1; //ENABLE THE CBT = 1 | OFFICIAL RELEASE = 0	
+          
+        // DO NOT REMOVE OR EDIT THIS AREA IF YOU DONT KNOW WHAT YOU ARE DOING
+        .@sql$ += "CREATE TABLE IF NOT EXISTS `sky_level_race` (";
+        .@sql$ += "`char_id` INT(11) UNSIGNED NOT NULL DEFAULT '0',"; 
+        .@sql$ += "`account_id` INT(11) UNSIGNED NOT NULL DEFAULT '0',"; 
+        .@sql$ += "`name` VARCHAR(255) NOT NULL DEFAULT '',";
+        .@sql$ += "`base_lvl` INT(11) UNSIGNED NOT NULL DEFAULT '0',";
+        .@sql$ += "`job_lvl` INT(11) UNSIGNED NOT NULL DEFAULT '0',";
+        .@sql$ += "`class` VARCHAR(30) NOT NULL DEFAULT '',";
+        .@sql$ += "`reward` INT(11) UNSIGNED NOT NULL DEFAULT '0',";
+		.@sql$ += "`unique_id` INT(11) UNSIGNED NOT NULL DEFAULT '0',";
+        .@sql$ += "PRIMARY KEY (`char_id`)) ENGINE=InnoDB";        
+        query_sql(.@sql$);
+        
+        
+		 //JOB 1 - 2 2-2 Job Reward
+                                //"ItemID|QTY| ItemID2|QTY2| ItemID3|QTY3" //NO | in the END of QTY for last Item
+        setarray .rewarditem$[0], "14003|25 | 12913|5 | 12914|5 | 12208|5 ", 		  				//0 SET 1 REWARD
+                                  "14003|50 | 12913|10| 12914|10| 12208|10| 12210|5 | 12209|10", 	//1 SET 2 REWARD							  
+                                  "14003|75 | 12913|15| 12914|15| 12208|15| 12210|10| 12209|10",    //2 SET 2 REWARD
+                                  "14003|100| 12913|20| 12914|20| 12208|20| 12210|10| 12209|10"; 	//3 SET 3 REWARD 
+		 
+        //JOB Transcend Reward
+        setarray .joblist$[0],
+        "0|1|2|3|4|5|6|7|8|9|10|11|12|14|15|16|17|18|19|20", 
+        "4001|4002|4003|4004|4005|4006|4007|4008|4009|4010|4011|4012|4013|4015|4016|4017|4018|4019|4020|4021"; //TRANS
+
+        //PUB TITLE
+        PUBTITLE:
+            showscript "CBT Event";
+            sleep 3000;
+        goto PUBTITLE;
+    end;
+    
+	
+	//START RECORDING FUNCTION
+	
+    OnPCJobLvUpEvent:
+    OnPCBaseLvUpEvent:
+    OnLevelUpReward:
+        .@CID = getcharid(0);
+        .@AID = getcharid(3);
+        .@Player$ = strcharinfo(0);
+        .@BaseLevel = BaseLevel;
+        .@JobLevel = JobLevel;
+        .@Class$ = readparam(Class); //jobname(Class)
+        
+		//GET UNIQUE ID
+		query_sql("SELECT `last_unique_id` FROM `login` WHERE `account_id`="+.@AID+"", .@record_unique_id$);
+		.@Unique_ID = .@record_unique_id$; //get_unique_id()
+		
+        if(.CBTEnable == 0){
+            end;
+        }
+        
+		//CHECKER
+        set @CHECK_UNIQUE_ID$,"";	
+        set @CHECK_ACCOUNT_ID$,"";	
+        set @CHECK_ACCOUNT_ID2$, .@AID;			
+		if(.Options&1){
+			//GEPARD UNIQUE ID CHECK
+			query_sql "SELECT `account_id`, `unique_id` FROM `sky_level_race` WHERE `unique_id`="+.@Unique_ID+"", @CHECK_ACCOUNT_ID$, @CHECK_UNIQUE_ID$;
+		}else{
+			//NO GEPARD
+			query_sql "SELECT `account_id`, `unique_id` FROM `sky_level_race` WHERE `account_id`="+.@AID+" ", @CHECK_ACCOUNT_ID$;
+		}  
+		
+		if(.Options&1){
+			LEVELRACEREGISTRATION(.@CID, .@AID, .@Player$, .@BaseLevel, .@JobLevel, .@Class$, .@Unique_ID);
+		}else{
+			//NO GEPARD
+			LEVELRACEREGISTRATION(.@CID, .@AID, .@Player$, .@BaseLevel, .@JobLevel, .@Class$);
+		}
+    end;
+    
+    function	LEVELRACEREGISTRATION	{
+        .@CID = getarg(0,"");
+        .@AID = getarg(1,"");
+        .@Player$ = getarg(2,"");
+        .@BaseLevel = getarg(3,"");
+        .@JobLevel = getarg(4,"");
+        .@Class$ = getarg(5,"");
+        .@Unique_ID = getarg(6,"");
+				
+		//CHECKER
+        set @CHECK_UNIQUE_ID$,"";	
+        set @CHECK_ACCOUNT_ID$,"";	
+        set @CHECK_ACCOUNT_ID2$, .@AID;	
+		
+		if(.Options&1){
+			//GEPARD UNIQUE ID CHECK
+			query_sql "SELECT `account_id`, `unique_id` FROM `sky_level_race` WHERE `unique_id`="+.@Unique_ID+"", @CHECK_ACCOUNT_ID$, @CHECK_UNIQUE_ID$;
+		}else{
+			//NO GEPARD
+			query_sql "SELECT `account_id`, `unique_id` FROM `sky_level_race` WHERE `account_id`="+.@AID+" ", @CHECK_ACCOUNT_ID$;
+		}       
+		 
+		if(.Options&1){
+			//GEPARD UNIQUE ID CHECK
+			if (@CHECK_UNIQUE_ID$ == "" && @CHECK_ACCOUNT_ID$ == ""){				
+				if(@CHECK_ACCOUNT_ID$ == ""){
+					// "You Account is now Registered.";
+					
+					//THIS IS FOR OBT ONLY
+					//atcommand "@zeny 100000000";
+					//atcommand "@cash 10000";
+					
+					query_sql("INSERT INTO `sky_level_race` (`char_id`, `account_id`, `name`, `base_lvl`, `job_lvl`, `class`, `unique_id`) VALUES ('"+.@CID+"', '"+.@AID+"', '"+.@Player$+"', '"+.@BaseLevel+"', '"+.@JobLevel+"', '"+.@Class$+"', '"+.@Unique_ID+"')");        
+				}
+			}else{
+				if(@CHECK_ACCOUNT_ID$ == @CHECK_ACCOUNT_ID2$){
+					// "You Account is now Updated.";
+					query_sql("UPDATE `sky_level_race` SET `base_lvl`='"+.@BaseLevel+"', `job_lvl`='"+.@JobLevel+"', `class`='"+.@Class$ +"' WHERE `account_id`='"+.@AID+"'");		
+					dispbottom "Your Account is now updated.";
+				}	
+			}
+		}else{
+			//NO GEPARD
+			if (@CHECK_ACCOUNT_ID$ == ""){
+				// "You Account is now Registered.";
+				query_sql("INSERT INTO `sky_level_race` (`char_id`, `account_id`, `name`, `base_lvl`, `job_lvl`, `class`) VALUES ('"+.@CID+"', '"+.@AID+"', '"+.@Player$+"', '"+.@BaseLevel+"', '"+.@JobLevel+"', '"+.@Class$+"')");        
+			}else{
+				// "You Account is now Updated.";
+				query_sql("UPDATE `sky_level_race` SET `base_lvl`='"+.@BaseLevel+"', `job_lvl`='"+.@JobLevel+"', `class`='"+.@Class$ +"' WHERE `account_id`='"+.@AID+"'");				
+			}		
+		}
+        
+        
+    }
+    
+    
+   //REWARDUPDATE(.@AID);
+   function REWARDUPDATE    {
+        .@AID = getarg(0,"");
+        set @CHECK$,"";	
+        query_sql "SELECT `account_id` FROM `sky_level_race` WHERE `account_id`="+.@AID+" AND `reward`=0", @CHECK$;
+       
+        if(@CHECK$ != ""){
+            query_sql("UPDATE `sky_level_race` SET `reward`=1 WHERE `account_id`='"+.@AID+"'");
+        }
+   }
+   
+   
+}

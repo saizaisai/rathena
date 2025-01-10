@@ -1,0 +1,203 @@
+-	shop	unishop	-1,512:-1
+prontera,167,181,5	script	Consumables::getstoragemish	10819,{
+	getmapxy(.@map$,.@x,.@y,BL_PC,strcharinfo(0));
+	if(checkcell(.@map$,.@x,.@y,CELL_CHKNOVENDING) && .@map$ == "cell_game")
+		end;
+	ignoretimeout 1;
+	@flag = 0;
+	deletearray @bought_nameid[0],getarraysize(@bought_nameid);
+	mes .name$;
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "Hello!~ How may i help you?";
+	next;
+	switch(select("> ^FF5500Sell Items^000000:> Shop to Storage:> Shop to Inventory:> Buy WoE Supplies:> Buy KoE Supplies:> Ammunition")){
+		case 1:
+			callshop "Basic Misc", 2;
+			end;
+		case 2:
+			if(zeny > 1000){
+				@flag = 3;
+				zeny -= 1000;
+			}else{
+				mes "You not have zeny.";
+				end;
+			}
+		case 3:
+			@yshop$ = "unishop";
+			break;
+		case 4:
+			switch(select("-> Buy Acid Bottle(6,500z):-> Buy Fire Bottle(6,500z)")){
+				case 1: callsub OnBuyWoeItem,7136,6500; end;
+				case 2: callsub OnBuyWoeItem,7135,6500; end;
+			}
+		case 5:
+			switch(select("-> "+getitemname(55079)+"(100,000z)")){
+				case 1:
+					input .@quant;
+					if(.@quant <= 0) end;
+					if(zeny < 100000*.@quant){
+						dispbottom "Failed to buy "+getitemname(55079)+" due to lack of "+getitemname(55079)+".",0xFF0000;
+						end;
+					}
+					zeny -= 100000*.@quant;
+					.@woechar = getBattleFlag("woe_reserved_char_id");
+					getitem2 55079,.@quant,1,0,0, 254, 0, .@woechar & 0xFFFF, .@woechar >> 0x10;
+					end;
+			}
+		case 6:
+			callshop "Arrow Merchant", 1;
+			end;	}
+	callshop @yshop$,1;
+	npcshopattach @yshop$;
+	if(@flag >= 2 && .openstorage)
+		openstorage;
+end;
+
+OnBuyWoeItem:
+	.@itemid = getarg(0);
+	.@price = getarg(1);
+	mes .name$;
+	mes "How many "+getitemname(.@itemid)+" would you like to buy?";
+	next;
+	input .@amt,1,30000;
+	if(!checkweight(.@itemid,.@amt)){
+		mes .name$;
+		mes "^FF0000You are overweight^000000";
+		end;
+	}
+	if(Zeny < .@amt*.@price){
+		mes .name$;
+		mes "^FF0000You don't have enough zeny^000000";
+		end;
+	}
+	mes .name$;
+	mes "Are you sure you want to buy "+.@amt+"x "+getitemname(.@itemid)+" for "+callfunc("F_InsertComma",.@amt*.@price)+"z?";
+	if(select("-> ^0055FFContinue^000000:-> Cancel") == 2) end;
+	if(!checkweight(.@itemid,.@amt)){
+		mes .name$;
+		mes "^FF0000You are overweight^000000";
+		end;
+	}
+	if(Zeny < .@amt*.@price){
+		mes .name$;
+		mes "^FF0000You don't have enough zeny^000000";
+		end;
+	}
+	Zeny -= .@amt*.@price;
+	.@woechar = getBattleFlag("woe_reserved_char_id");
+	getitem2 .@itemid,.@amt,1,0,0, 254, 0, .@woechar & 0xFFFF, .@woechar >> 0x10;
+end;
+
+OnBuyItem:
+	if(getskilllv(37))	//Discount
+		.@discount = .skill_37[getskilllv(37)];
+	if(getskilllv(224))	//Compulsion Discount
+		if( .@discount < .skill_224[getskilllv(224)]) .@discount = .skill_224[getskilllv(224)];
+	for(.@i=0;.@i<getarraysize(@bought_nameid);.@i++){
+		.@itemarr = inarray(getd("."+@yshop$+"ItemID"),@bought_nameid[.@i]);
+		.@idprice = getd("."+@yshop$+"PayAmt["+.@itemarr+"]");
+		.@price = (.@discount > 0 ? .@idprice-((.@idprice*.@discount)/100):.@idprice);
+		if(Zeny < @bought_quantity[.@i]*.@price){
+			dispbottom "Failed to buy "+getitemname(@bought_nameid[.@i])+" due to lack of "+getitemname(getd("."+@yshop$+"PaymentID"))+".",0xFF0000; end;
+		} else {
+			if(@flag == 3){
+				if(@bought_quantity[.@i]*getd("."+@yshop$+"Amount["+.@itemarr+"]") > 30000){
+					dispbottom "You tried to purchase an item exceeding 30,000 pcs."; end;
+				}
+				.@flag = getstorageitem(@bought_nameid[.@i],@bought_quantity[.@i]*getd("."+@yshop$+"Amount["+.@itemarr+"]"));
+				if(.@flag==1){
+					dispbottom "Cannot store "+getitemname(@bought_nameid[.@i])+".",0xFF0000; end;
+				} else if (.@flag==2) {
+					dispbottom "Failed to buy because no more room on storage or maximum stacks reached.",0xFF0000; end;
+				} else {
+					dispbottom "Successfully bought "+(@bought_quantity[.@i]*getd("."+@yshop$+"Amount["+.@itemarr+"]"))+" "+getitemname(@bought_nameid[.@i]);
+					Zeny -= @bought_quantity[.@i]*.@price;
+				}
+			} else {
+				if(!checkweight(@bought_nameid[.@i],@bought_quantity[.@i]*getd("."+@yshop$+"Amount["+.@itemarr+"]"))){
+					dispbottom "Failed to buy because of insufficient inventory space",0xFF0000; end;
+				}
+					getitem @bought_nameid[.@i],@bought_quantity[.@i]*getd("."+@yshop$+"Amount["+.@itemarr+"]");
+					dispbottom "Successfully bought "+(@bought_quantity[.@i]*getd("."+@yshop$+"Amount["+.@itemarr+"]"))+" "+getitemname(@bought_nameid[.@i]);
+					Zeny -= @bought_quantity[.@i]*.@price;
+			}
+		}
+	}
+end;
+
+OnInit:
+	.name$ = "^00B2EE[ Consumables ]^000000";
+	.openstorage = 1; //Open storage when using direct to storage? 1 = yes/ 0 = no
+	setarray .skill_37[1],7,9,11,13,15,17,19,21,23,24;
+	setarray .skill_224[1],9,13,17,21,25;
+if(!.finish){
+	setarray .unishopItemID[0],875,714,14287,14288,12214,14170,14169,14003,12549,14588,14589,55168,55169,55075,55076,55077,12016,505,12548,611,1065,1025,547,501,502,503,504,506,715,716,717,522,525,606,605,645,657,656,601,602,2243,7142,12020,523,610,533,579,678,7135,7136,7137,7139,55044,55045,55046,55047,55048,55049,11501,11502;
+	setarray .unishopAmount[0],1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+	setarray .unishopPayAmt[0],314000000,10000000,1000000,1000000,1000000,800000,800000,150000,150000,150000,150000,80000,80000,70000,70000,70000,35000,0,1000,0,0,0,1500,0,0,0,0,0,0,0,0,0,0,2000,3000,800,3000,0,0,0,0,1500000,0,50000,0,0,250,15000,15000,15000,10000,20000,1000000,1000000,1000000,1000000,1000000,1000000,6000,6000;
+	setarray .shops$[0],"unishop","bgshop","woeshop","koeshop";
+	for(.@i=0;.@i<getarraysize(.shops$);.@i++){
+		npcshopdelitem .shops$[.@i],512;
+		for(.@j=0;.@j<getarraysize(getd("."+.shops$[.@i]+"ItemID"));.@j++){
+			if(getd("."+.shops$[.@i]+"PayAmt["+.@j+"]")){
+				npcshopadditem .shops$[.@i],getd("."+.shops$[.@i]+"ItemID["+.@j+"]"),getd("."+.shops$[.@i]+"PayAmt["+.@j+"]");
+			} else {
+				npcshopadditem .shops$[.@i],getd("."+.shops$[.@i]+"ItemID["+.@j+"]"),getiteminfo(getd("."+.shops$[.@i]+"ItemID["+.@j+"]"),0);
+				setd "."+.shops$[.@i]+"PayAmt["+.@j+"]",getiteminfo(getd("."+.shops$[.@i]+"ItemID["+.@j+"]"),0);
+			}
+		}
+	}
+}
+	.finish = 1;
+end;
+}
+louyang,98,249,3	duplicate(getstoragemish)	Consumables#lou2	10819
+brasilis,90,66,5	duplicate(getstoragemish)	Consumables#bras	10819
+pay_arche,57,134,3	duplicate(getstoragemish)	Consumables#payarche	10819
+xmas,155,131,3	duplicate(getstoragemish)	Consumables#xmas2	10819
+lighthalzen,151,98,5	duplicate(getstoragemish)	Consumables#light2	10819
+alberta,125,59,3	duplicate(getstoragemish)	Consumables#alberta	10819
+
+
+geffen,181,121,5	duplicate(getstoragemish)	Consumables#gef2	10819	
+aldebaran,133,118,5	duplicate(getstoragemish)	Consumables#aldebaran	10819		
+xmas,205,138,3	duplicate(getstoragemish)	Consumables#xmas	10819		
+yuno,166,82,3	duplicate(getstoragemish)	Consumables#yuno	10819		
+amatsu,205,90,5	duplicate(getstoragemish)	Consumables#amatsu	10819	
+amatsu,102,97,5	duplicate(getstoragemish)	Consumables#amatsu1	10819	
+gonryun,149,124,5	duplicate(getstoragemish)	Consumables#gonryun	10819	
+umbala,86,150,5	duplicate(getstoragemish)	Consumables#umbala	10819
+louyang,228,113,3	duplicate(getstoragemish)	Consumables#louyang	10819		
+ayothaya,192,171,5	duplicate(getstoragemish)	Consumables#ayothaya	10819
+einbroch,73,193,3	duplicate(getstoragemish)	Consumables#einbroch	10819
+hugel,102,147,3	duplicate(getstoragemish)	Consumables#hugel	10819	
+rachel,138,114,3	duplicate(getstoragemish)	Consumables#rachel	10819	
+veins,209,122,5	duplicate(getstoragemish)	Consumables#veins	10819	
+moscovia,217,184,5	duplicate(getstoragemish)	Consumables#moscovia	10819	
+manuk,273,149,5	duplicate(getstoragemish)	Consumables#manuk	10819	
+splendide,184,151,5	duplicate(getstoragemish)	Consumables#splendide	10819
+dicastes01,203,175,3	duplicate(getstoragemish)	Consumables#discastes01	10819	
+mora,43,147,5	duplicate(getstoragemish)	Consumables#mora	10819	
+dewata,188,180,5	duplicate(getstoragemish)	Consumables#dewata	10819	
+malangdo,121,141,5	duplicate(getstoragemish)	Consumables#malangdo	10819
+malaya,245,190,3	duplicate(getstoragemish)	Consumables#malaya	10819
+malaya,293,340,5	duplicate(getstoragemish)	Consumables#malaya1	10819
+payon,170,224,5	duplicate(getstoragemish)	Consumables#payon	10819
+lighthalzen,167,187,3	duplicate(getstoragemish)	Consumables#lighthalzen	10819	
+comodo,192,141,5	duplicate(getstoragemish)	Consumables#comodo	10819	
+lasagna,164,161,5	duplicate(getstoragemish)	Consumables#lasagna	10819
+izlude,132,115,3	duplicate(getstoragemish)	Consumables#izlude	10819
+mid_camp,172,244,5	duplicate(getstoragemish)	Consumables#midcamp	10819
+prt_fild08,40,46,7	duplicate(getstoragemish)	Consumables#prtfild	10819
+lou_fild01,187,180,3	duplicate(getstoragemish)	Consumables#loufild	10819
+jawaii,213,290,3	duplicate(getstoragemish)	Consumables#jawaii	10819
+alberta,187,223,5	duplicate(getstoragemish)	Consumables#albie	10819
+thor_camp,114,333,3	duplicate(getstoragemish)	Consumables#thorcamp	10819
+einbroch,175,203,1	duplicate(getstoragemish)	Consumables#einbroch1	10819
+ghouse1,143,121,5	duplicate(getstoragemish)	Consumables#ghouse1	10819
+ghouse2,143,121,5	duplicate(getstoragemish)	Consumables#ghouse2	10819
+ghouse3,143,121,5	duplicate(getstoragemish)	Consumables#ghouse3	10819
+
+
+//prontera,167,211,5	duplicate(getstoragemish)	Consumables#prt	10819
+morocc,151,97,4	duplicate(getstoragemish)	Consumables#morocc	10819	
+geffen,127,63,3	duplicate(getstoragemish)	Consumables#geffen	10819

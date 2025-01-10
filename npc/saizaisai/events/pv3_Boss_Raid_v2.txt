@@ -1,0 +1,277 @@
+/*
+CREATE TABLE IF NOT EXISTS `ero_boss_raid_rank` (
+  `id` int(11) unsigned NOT NULL auto_increment,
+  `session` int(11) unsigned NOT NULL default '0',
+  `mob_id` int(11) unsigned NOT NULL default '0',
+  `aid` int(11) unsigned NOT NULL default '0',
+  `cid` int(11) unsigned NOT NULL default '0',
+  `gid` int(11) unsigned NOT NULL default '0',
+  `name` varchar(30) NOT NULL default '',
+  `guild_name` varchar(30) NOT NULL default '',
+  `damage` bigint(20) unsigned NOT NULL default '0',
+  `date` datetime DEFAULT NULL,
+  `point` int(11) unsigned NOT NULL default '0',
+  `claim` int(11) unsigned NOT NULL default '0',
+  `status` tinyint(3) unsigned NOT NULL default '1',
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM;
+*/
+//========== Boss Raid Script ==========================
+//======= 1.0 ==========================================
+//= Time start configurable
+//= Announce before boss raid start
+//= Countdown timer before the event start
+//= Everyone can enter as long as they are level 99. - (Configurable)
+//= Added Command @bossraid start|stop
+//= For all players who participated in the boss raid they will receive 2 points each as long as they deal atleast 50k damage.
+//======= 2.0 ==========================================
+//= Fixed NPC announcement Only Top 3 will announce - (Configurable)
+//= Fixed Points system
+//= Added Time limit ( You have 1 hour to kill the boss )- (Configurable)
+//= Added Count down before the event end
+//= Fixed the time limit announce when boss died
+//= Change variable to track the minutes remaining
+
+-	pointshop	br_pointshop	-1,#BOSS_RAID_POINTS,512:500,5022:500,5025:500
+
+prontera,144,161,5	script	Boss Raid	10582,{
+	doevent "boss_raid_main::OnTalk";
+	end;
+OnInit:
+	while(1) {
+	.@npc_id = getnpcid(0);
+		hateffect_npc 347, false, .@npc_id;
+		hateffect_npc 347, true, .@npc_id;
+	showscript "Boss Raid", getnpcid(0);
+	sleep 1000;
+	}
+	end;
+}
+
+
+-	script	boss_raid_main	-1,{
+
+OnInit:
+OnSlavesSpawn:
+	.minutes = 60; //<- 1 Hour
+	.min_base_level = 50;
+	.top_rank_display = 3;
+	
+	set .top_rank,3;
+	setarray .top_winner_point, 20, 10, 5; // <===== TOP WINNER POINTS CONFIG (TOP 1,TOP 2,TOP 3)
+	.top_winner_point_size = getarraysize(.top_winner_point);
+	
+	setarray .mob_id, 1832, 1708, 1873, 1917; // <===== MONSTER ID HERE
+	.mob_id_size = getarraysize(.mob_id);
+	
+	setarray .map$, "br_ifrit", "br_thana", "br_blz", "br_satan"; // <===== MAP NAME HERE
+	.map_size = getarraysize(.top_winner_point);
+	for (.@i = 0; .@i < .map_size; .@i++) {
+		setmapflag .map$[.@i], MF_NOWARP;
+		setmapflag .map$[.@i], MF_NOWARPTO;
+		setmapflag .map$[.@i], MF_PARTYLOCK;
+		setmapflag .map$[.@i], MF_NOMOBLOOT;
+		setmapflag .map$[.@i], MF_NOMVPLOOT;
+		setmapflag .map$[.@i], MF_NOMEMO;
+		setmapflag .map$[.@i], MF_NOTELEPORT;
+	}
+	
+	bindatcmd "bossraid",strnpcinfo(3) + "::OnCommandEvent", 99, 99;
+	end;
+	
+OnCommandEvent:
+	if (.@atcmd_parameters$[0] == "start" || .@atcmd_parameters$[0] == "on") {
+		if (.status)
+			dispbottom "Boss raid already begun.";
+		else {
+			dispbottom "Boss raid starting.";
+			donpcevent strnpcinfo(3)+"::OnStart";
+		}
+	}
+	else if (.@atcmd_parameters$[0] == "stop" || .@atcmd_parameters$[0] == "off") {
+		if (!.status)
+			dispbottom "Boss raid not yet begun.";
+		else {
+			dispbottom "Boss raid stopping.";
+			donpcevent strnpcinfo(3)+"::OnEnd";
+		}
+	}
+	else {
+		dispbottom .@atcmd_command$+" failed. Usage: "+.@atcmd_command$+" <start|stop|on|off>";
+	}
+	end;
+	
+OnSun2037:
+OnMon2300:
+OnTue2300:
+OnWed2238:
+OnThu2300:
+OnFri2300:
+OnSat2300:
+OnStart:
+	if (.status) end;
+	query_logsql("UPDATE `ero_boss_raid_rank` SET `status` = 3 WHERE `status` = 1");
+	for (.@i = 0; .@i < .map_size; .@i++)
+		killmonster .map$[.@i], "All";
+	.status = 1;
+	$boss_raid = (($boss_raid + 1) % .mob_id_size);
+	for (.@i = 5; .@i > 0; .@i--) {
+		announce "Attention Adventurers! 'Boss raid "+($boss_raid + 1)+" - "+getmonsterinfo(.mob_id[$boss_raid], MOB_NAME)+"' will open in "+.@i+"mins", bc_all;
+		sleep 60000;
+	}
+	announce "Attention Adventurers! 'Boss raid "+($boss_raid + 1)+" - "+getmonsterinfo(.mob_id[$boss_raid], MOB_NAME)+"' is now officially open!", bc_all;
+	.status = 2;
+	.session = gettimetick(2);
+	monster .map$[$boss_raid], 50, 49, "--ja--", .mob_id[$boss_raid], 1, strnpcinfo(3)+"::OnBossDied";  // <===== MONSTER SPAWN COORDINATE
+	.boss_gid = $@mobid[0];
+	.boss_dead = 0;
+	.@i = .minutes;
+	do {
+		if(.@i % (60*60) == 0) {
+			announce "<Boss Raid> You have "+(.@i / (60*60))+" Hour to kill the boss", bc_all;
+		} else if ( (.@i % (60*30) == 0) || (.@i % (60*15) == 0) || (.@i % (60*10) == 0) ||  (.@i % (60*5) == 0) || (.@i % (60*4) == 0) || (.@i % (60*3) == 0) ||
+		 (.@i % (60*2) == 0) || (.@i % (60*1) == 0)) {
+			announce "<Boss Raid> You have "+(.@i / 60)+" minute(s) left to kill the boss", bc_all;
+		} else if( .@i <= 10) {
+			announce "<Boss Raid> You have "+.@i+" second(s) left to kill the boss", bc_all;
+		}
+		.@i--;
+		sleep 60000;
+	} while (unitexists(.boss_gid) && .@i > 0);
+	if(.boss_dead == 0) {
+		.boss_dead = 1;
+		.status = 0;
+		unitkill .boss_gid;
+		announce "<Boss Raid> The Boss has escaped!", bc_all;
+		sleep 3000;
+		mapwarp .map$[$boss_raid], "prontera", 155,181;
+	}
+	end;
+	
+OnTalk:
+	mes "^00B2EE[ Raid Boss ]^000000";
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "how may i assist you today?";
+	next;  
+	.@is_gm = (getgmlevel() >= 99);
+	switch (select(
+		"^0084ff[ ~ ]^000000Check Boss Raid status",
+		"^0084ff[ ~ ]^000000Proceed to Boss raid",
+		"^0084ff[ ~ ]^000000View Boss Raid Rankings",
+		"^0084ff[ ~ ]^000000Claim Boss Raid Points",
+		"^0084ff[ ~ ]^000000Points Shop",
+		(.@is_gm) ? "^FF0000[GM] Reset Ranking^000000" : ""
+	)) {
+		case 1:
+			//for (.@i = 0; .@i < .mob_id_size; .@i++)
+			//	.@menu$ = .@menu$ + ((.status && $boss_raid == .@i) ? "^00FF00" : "^FF0000") + "- Boss Raid "+getmonsterinfo(.mob_id[$boss_raid], MOB_NAME)+" "+((.status && $boss_raid == .@i) ? "(Open)" : "(Closed)")+"^000000" + ":";
+			//.@i = select(.@menu$) - 1;
+			.@menu$ = "";
+			for (.@i = 0; .@i < .mob_id_size; .@i++) {
+    				.@menu$ += ((.status && $boss_raid == .@i) ? "^00FF00" : "^FF0000") +
+              				"- Boss Raid " + getmonsterinfo(.mob_id[.@i], MOB_NAME) +
+              				" " + ((.status && $boss_raid == .@i) ? "(Open)" : "(Closed)") +
+              				"^000000" + ":";
+			}
+			.@i = select(.@menu$) + 1; // Add 1 to match the array index			
+			close;
+			
+		case 2:
+			if (BaseLevel < .min_base_level) {
+				mes "Only player with level "+.min_base_level+" or above can participate.";
+				close;
+			}
+			if (.status != 2) {
+				mes "Boss raid not ready yet.";
+				close;
+			}
+			warp .map$[$boss_raid], 49, 14; // <===== ENTRANCE COORDINATE
+			end;
+			
+		case 3:
+			switch (select(
+				"Player Ranking",
+				"Guild Ranking"
+			)) {
+				case 1:
+					mes "Top "+.top_rank_display+" Player Ranking:";
+					query_logsql("SELECT `name`, SUM(`damage`) AS `total` FROM `ero_boss_raid_rank` WHERE `status` = 1 GROUP BY `cid` ORDER BY `total` DESC LIMIT "+.top_rank_display, .@name$, .@total_damage$);
+					break;
+				case 2:
+					mes "Top "+.top_rank_display+" Guild Ranking:";
+					query_logsql("SELECT `guild_name`, SUM(`damage`) AS `total` FROM `ero_boss_raid_rank` WHERE `status` = 1 AND `gid` > 0 GROUP BY `gid` ORDER BY `total` DESC LIMIT "+.top_rank_display, .@name$, .@total_damage$);
+					break;
+			}
+			.@size = getarraysize(.@name$);
+			for (.@i = 0; .@i < .@size; .@i++) {
+				mes (.@i+1)+". "+.@name$[.@i];
+				mes "Total Damage: " + F_InsertComma(.@total_damage$[.@i]);
+				mes " ";
+			}
+			close;
+			
+		case 4:
+			query_logsql("SELECT SUM(`point`) FROM `ero_boss_raid_rank` WHERE `status` <> 2 AND `aid` = "+getcharid(3)+" AND `claim` = 0", .@total_points);
+			mes "You have earned total of "+F_InsertComma(.@total_points)+" points from previous Boss Raids.";
+			if (.@total_points > 0) {
+				select("Claim all.");
+				query_logsql("UPDATE `ero_boss_raid_rank` SET `claim` = "+gettimetick(2)+" WHERE `status` <> 2 AND `aid` = "+getcharid(3)+" AND `claim` = 0");
+				#BOSS_RAID_POINTS += .@total_points;
+				clear;
+				mes "You have gained "+F_InsertComma(.@total_points)+" Points.";
+			}
+			mes " ";
+			mes "You have accumulated total of "+F_InsertComma(#BOSS_RAID_POINTS)+" Points.";
+			close;
+
+		case 5:
+			close2;
+			callshop "br_pointshop",1;
+			break;
+			
+		case 6:
+			mes "Confirm to reset ranking? this action aren't reversible.";
+			mes "Player will not be able to view their rankings or claims their points.";
+			if (select("Confirm", "Cancel") == 1) {
+				query_logsql("UPDATE `ero_boss_raid_rank` SET `status` = 2 WHERE `status` <> 1");
+				mes "Ranking has been reset.";
+			}
+			end;
+	}
+	end;
+	
+OnBossDied:
+	if(.boss_dead == 1) end;
+	if (!unitexists(.boss_gid)) end;
+	.@dmglog_size = getmonsterdamage(.boss_gid);
+	for (.@i = 0; .@i < .@dmglog_size; .@i++) {
+		.@aid = convertpcinfo(.@dmglog_id[.@i], CPC_ACCOUNT);
+		.@name$ = convertpcinfo(.@dmglog_id[.@i], CPC_NAME);
+		if (attachrid(.@aid)) {
+			.@gid = getcharid(2);
+			.@guild_name$ = (.@gid ? getguildname(.@gid) : "");
+			if (.@dmglog_dmg[.@i] > 0) {
+				if (.@dmglog_dmg[.@i] >= 50000)
+					.@point = 2; // <===== CONSO POINTS/PLAYERS WHO DEALT ATLEAST 50,000 DAMAGE
+				query_logsql("INSERT INTO `ero_boss_raid_rank` (`session`, `mob_id`, `aid`, `cid`, `gid`, `name`, `guild_name`, `damage`, `date`, `point`) VALUES ("+.session+", "+.mob_id[$boss_raid]+", "+.@aid+", "+.@dmglog_id[.@i]+", "+.@gid+", '"+convertpcinfo(.@dmglog_id[.@i], CPC_NAME)+"', '"+.@guild_name$+"', "+.@dmglog_dmg[.@i]+", NOW(),"+.@point+")");
+			}
+		}
+	}
+	detachrid;
+	set .@size, query_logsql("SELECT `cid`,`damage` FROM `ero_boss_raid_rank` WHERE `status` = 1 AND `session` = "+.session+" ORDER BY `damage` DESC LIMIT " + .top_rank, .@cid, .@damage);
+	for (.@i = 0; .@i < .@size; .@i++) {
+			announce "<Boss Raid> Top "+(.@i+1)+" Player - "+strcharinfo(0,.@cid[.@i])+" | Damage : "+F_InsertComma(.@damage[.@i]),bc_all;
+			query_logsql("UPDATE `ero_boss_raid_rank` SET `point` = `point` + "+.top_winner_point[.@i]+" WHERE `status` = 1 AND `cid` = "+.@cid[.@i]+" LIMIT 1");
+	}
+	announce "<Boss Raid> The Boss has been slain! Congratulations.", bc_all;
+	.boss_gid = 0;
+	.session = 0;
+	.status = 0;
+	.boss_dead = 1;
+	sleep 5000;
+
+OnEnd:
+	mapwarp .map$[$boss_raid], "prontera", 155,181; // // <===== WARP AFTER BOSS DIED
+	end;
+
+}

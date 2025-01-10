@@ -1,0 +1,17 @@
+-	script	timelyannounce	-1,{
+
+OnInit:
+	setarray .announce$[0],
+		"[ News ] : Usage of macro or AFK farming is strictly prohibited during BG matches.",
+		"[ News ] : Usage of other cheat tools aside from 4RTools are strictly prohibited.",
+		"[ News ] : There is no more rules in killing MVPs.",
+		"[ News ] : Players who would like to report can use @request option or DM us on Discord.",
+		"[ News ] : To join our Discord server visit https://discord.gg/",
+		"[ News ] : Proof of Donations are prohibited to sell for real money";
+OnTimer1800000:
+	if(.i>=getarraysize(.announce$))
+		.i=0;
+	announce .announce$[.i++],bc_blue;
+	initnpctimer;
+end;
+}

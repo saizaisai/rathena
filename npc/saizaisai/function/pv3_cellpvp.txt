@@ -1,0 +1,23 @@
+-	script	main_pvp	-1,{
+
+OnInit:	
+//	setcell "arenax1",40,57,59,42,cell_basilica,1;
+//	setcell "arenax1",40,57,59,42,cell_basilica,0;
+//	setcell "arenax1",40,57,59,42,cell_pvp,1;
+	
+	setcell "prontera",145,213,166,192,cell_basilica,1;
+	setcell "prontera",145,214,166,192,cell_basilica,0;
+	setcell "prontera",145,214,166,192,cell_pvp,1;
+end;
+
+}
+-	script	pvp_area_evt	-1,{
+	sc_end SC_POEMBRAGI;
+	sc_end SC_WHISTLE;
+	sc_end SC_ASSNCROS;
+	sc_end SC_APPLEIDUN;
+	sc_end SC_HUMMING;
+	sc_end SC_FORTUNE;
+	sc_end SC_SERVICE4U;
+end;
+}

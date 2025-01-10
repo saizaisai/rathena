@@ -1,0 +1,219 @@
+s_room,57,65,5	script	Master Ten	528,{
+
+	if(getgmlevel()<.min_gmlevel){
+		mes .name$;
+		mes "Hello, nice day isn't it?.";
+		end;
+	}
+	while(1){
+		mes .name$;
+		mes "Good Day Master!~";
+		mes "What can i help you today?.";
+		next;
+		switch(select("> ^0055FFAllow or Remove Guilds^000000 :> ^FF5500List Restricted Guilds^000000:> ^3DFF3DInformation^000000:> Goodbye~")){
+			case 1:
+				mes .name$;
+				mes "Do you want to Add a guild to restrictions or Remove Them?.";
+				mes "You can also edit their restrictions";
+				next;
+				switch(select("> ^0055FFAllow^000000:> ^FF5500Remove^000000:> Back")){
+					case 1:
+						mes .name$;
+						mes "Please Enter the ^0055FFGuild Name^000000 or the ^0055FFGuild Leader's Name^000000.";
+						next;
+						input .@guildinfo$;
+						.@count = query_sql("SELECT `guild_id` FROM `guild` WHERE `name` = '"+escape_sql(.@guildinfo$)+"' OR `master` = '"+escape_sql(.@guildinfo$)+"'",.@gid);
+						.@menu$ = "";
+						for(.@i=0;.@i<.@count;.@i++)
+							.@menu$ = .@menu$ + getguildname(.@gid[.@i])+":";
+						.@menu$ = .@menu$ + "Cancel";
+						mes .name$;
+						mes "Please select the guild.";
+						next;
+						.@opt = select(.@menu$)-1;
+						if(.@opt>=.@count) end;
+						for(.@i=0;.@i<getarraysize($GuildLimitID);.@i++)
+							if(.@gid[.@opt] == $GuildLimitID[.@i]){
+								mes .name$;
+								mes "This guild is already in restrictions.";
+								end;
+							}
+						mes .name$;
+						mes "You choose the guild ^0055FF"+getguildname(.@gid[.@opt])+"^000000 led by ^0055FF"+getguildmaster(.@gid[.@opt])+"^000000.";
+						mes "^FFFFFF_^000000";
+						mes "Please Choose Guild Restriction.";
+						next;
+						switch(select("Allow on FE Castles:Allow on SE Castles:Allow on FE/SE Castles:Cancel")){
+							case 1: .@res = 1; .@res$ = "Allowed on First Edition Castles."; break;
+							case 2: .@res = 2; .@res$ = "Allowed on Second Edition Castles.";break;
+							case 3: .@res = 3; .@res$ = "Allowed on Both First and Second Edition Castles.";break;
+							case 4: end;
+						}
+						mes .name$;
+						mes "The guild ^0055FF"+getguildname(.@gid[.@opt])+"^000000 led by ^0055FF"+getguildmaster(.@gid[.@opt])+"^000000 will be "+.@res$;
+						mes "Proceed?.";
+						next;
+						if(select("Proceed please.:Cancel")==2) end;
+						$GuildLimitID[getarraysize($GuildLimitID)] = .@gid[.@opt];
+						$GuildLimitRes[getarraysize($GuildLimitRes)] = .@res;
+						mes .name$;
+						mes "Restriction Applied!";
+						end;
+					case 2:
+						copyarray .@GuildID[0],$GuildLimitID[0],getarraysize($GuildLimitID);
+						if(!getarraysize(.@GuildID)){
+							mes .name$;
+							mes "There's are no registered guilds on restrictions.";
+							break;
+						}
+						mes .name$;
+						mes "Please select a guild you want to remove.";
+						.@menu$ = "";
+						freeloop(1);
+						for(.@i=0;.@i<getarraysize(.@GuildID);.@i++)
+							.@menu$ = .@menu$ + getguildname(.@GuildID[.@i])+":";
+						freeloop(0);
+						.@menu$ = .@menu$ + "Back";
+						next;
+						.@sel = select(.@menu$)-1;
+						if(.@sel>=getarraysize(.@GuildID)) break;
+						mes .name$;
+						mes "Are you sure you want to remove ^0055FF"+getguildname(.@GuildID[.@sel])+"^000000?";
+						next;
+						if(select("Yes, Remove..:Cancel")==2) end;
+						mes .name$;
+						mes "Successfully removed ^0055FF"+getguildname(.@GuildID[.@sel])+"^000000.";
+						deletearray $GuildLimitID[.@sel],1;
+						deletearray $GuildLimitRes[.@sel],1;
+						break;
+					case 3:
+						break;
+				}
+				break;
+			case 2:
+				copyarray .@GuildID[0],$GuildLimitID[0],getarraysize($GuildLimitID);
+				if(!getarraysize(.@GuildID)){
+					mes .name$;
+					mes "There's are no registered guilds on restrictions.";
+					break;
+				}
+				mes .name$;
+				mes "Legend = 1:^FF5500FE^000000 - 2:^00FF00SE^000000 - 3:^0055FFFE & SE^000000";
+				freeloop(1);
+				for(.@i=0;.@i<getarraysize(.@GuildID);.@i++){
+					if(.@i%10==0 && .@i != 0){ next; mes "Legend = 1:^FF5500FE^000000 - 2:^00FF00SE^000000 - 3:^0055FFFE & SE^000000"; }
+					mes (.@i+1)+". "+getguildname(.@GuildID[.@i])+" : "+$GuildLimitRes[.@i];
+				}
+				freeloop(0);
+				break;
+			case 3:
+				mes .name$;
+				mes "The guild limiter is a way to Restrict Guilds.";
+				mes "It is commonly used to make sure guild are restricted on entering guild castle maps.";
+				next;
+				mes .name$;
+				mes "Restrictions can vary on situations. You can add First Edition Castles or Second Edition Castles";
+				next;
+				break;
+			case 4:
+				mes .name$;
+				mes "Thank you for using my service~";
+				mes "Hoping to see you again soon master.";
+				end;
+		}
+		next;
+	}
+end;
+
+OnPCLoadMapEvent:
+	if(!getmapflag(strcharinfo(3),MF_GVG_CASTLE)) end;
+	getmapunits(BL_PC,strcharinfo(3),.@aid);
+	if(inarray(.BlockedGroup,getgroupid()) >=0 && inarray(.AllowedCharID,getcharid(0)) < 0) goto L_KickPlayer;
+	freeloop(1);
+	//if(inarray(.Exclude,getcharid(3)) < 0)
+		for(.@i=0;.@i<getarraysize(.@aid);.@i++){
+			if(getcharid(3) == .@aid[.@i]) continue;
+			if(get_unique_id(.@aid[.@i]) == get_unique_id()){
+				message strcharinfo(0),"[Dual Login]: You have a dual on this map named \""+convertpcinfo(.@aid[.@i],CPC_NAME)+"\".";
+				warp "SavePoint",0,0;
+				end;
+			}
+		}
+	freeloop(0);
+	.@arr = inarray($GuildLimitID,getcharid(2));
+	if(.@arr < 0) goto L_KickPlayer;
+	.@restriction = getd("$GuildLimitRes["+.@arr+"]");
+	if(.@restriction == 3) end;
+	for(.@i=0;.@i<getarraysize(.FE_Maps$);.@i++)
+		if(strcharinfo(3)==.FE_Maps$[.@i] && .@restriction&2 && agitcheck()) goto L_KickPlayer;
+	for(.@i=0;.@i<getarraysize(.SE_Maps$);.@i++)
+		if(strcharinfo(3)==.SE_Maps$[.@i] && .@restriction&1 && agitcheck2()) goto L_KickPlayer;
+end;
+
+L_KickPlayer:
+	if(inarray(.BlockedGroup,getgroupid()) >=0 && inarray(.AllowedCharID,getcharid(0)) < 0)
+		message strcharinfo(0),"You are not allowed to enter the castle.";
+	else if(getcharid(2))
+		message strcharinfo(0),"Your Guild is Restricted to enter this Castle.";
+	else
+		message strcharinfo(0),"You don't have a guild, You are Restricted to enter this Castle.";
+	sleep2 2000;
+	warp "SavePoint",0,0;
+end;
+
+OnInit:
+	setarray .Exclude[0],2000000;
+	set .min_gmlevel,99;
+	set .name$,"^00B2EE[ Guild Limiter ]^000000";
+	
+	setarray .AllowedCharID[0],
+				1,2,3,4,5,6,7;
+	setarray .BlockedGroup[0],15;
+
+	setarray .FE_Maps$[0],"prtg_cas01","prtg_cas02","prtg_cas03","prtg_cas04","prtg_cas05",
+						  "payg_cas01","payg_cas02","payg_cas03","payg_cas04","payg_cas05",
+						  "gefg_cas01","gefg_cas02","gefg_cas03","gefg_cas04","gefg_cas05",
+						  "aldeg_cas01","aldeg_cas02","aldeg_cas03","aldeg_cas04","aldeg_cas05";
+	
+	setarray .SE_Maps$[0],"arug_cas01","arug_cas02","arug_cas03","arug_cas04","arug_cas05",
+						  "schg_cas01","schg_cas02","schg_cas03","schg_cas04","schg_cas05";
+	
+	for(.@i=0;.@i<getarraysize(.FE_Maps$);.@i++) setmapflag .FE_Maps$[.@i],MF_LOADEVENT;
+	for(.@i=0;.@i<getarraysize(.SE_Maps$);.@i++) setmapflag .SE_Maps$[.@i],MF_LOADEVENT;
+end;
+}
+
+-	script	max_castle_guild_members	-1,{
+
+OnInit:
+    //settings here
+    setarray .maps$, "prtg_cas01","prtg_cas02","prtg_cas03","prtg_cas04","prtg_cas05"; // maps woe
+    setarray .maps_koe$, "koe_morroc","koe_royal","koe_mash","koeh"; // maps koe
+    setarray .maps_liberate$, "koe_morroc","koe_royal","koe_mash","koeh","prtg_cas01","prtg_cas02","prtg_cas03","prtg_cas04","prtg_cas05"; // insert your woe castles here
+    .max_members_in_castle = 24;    // set the maximum number of guild members in a castle
+    .max_members_in_castle_koe = 24;    // set the maximum number of guild members in a castle
+ 
+    //don't edit this
+ 
+    for(.@i = 0; .@i < getarraysize(.maps$); .@i++) {
+        if(!getmapflag(.maps$[.@i], mf_loadevent)) setmapflag .maps$[.@i], mf_loadevent;
+    }
+    end;
+ 
+OnPCLoadMapEvent:
+	.koe = 0;
+	.woe = 0;
+    if(inarray(.maps_liberate$, strcharinfo(3)) == -1 ) end;
+	if(inarray(.maps_koe$, strcharinfo(3)) > -1) .koe = 1;
+	if(inarray(.maps$, strcharinfo(3)) > -1) .woe = 1;
+	
+    if( .woe  && getmapguildusers(strcharinfo(3), getcharid(2)) > .max_members_in_castle ) {
+        dispbottom "There can only be "+.max_castle_guild_members+" guild members inside a castle during woe.";
+        warp "SavePoint",0,0;
+    }
+    if( .koe  && getmapguildusers(strcharinfo(3), getcharid(2)) > .max_members_in_castle_koe ) {
+        dispbottom "There can only be "+.max_members_in_castle_koe+" guild members inside a castle during koe.";
+        warp "SavePoint",0,0;
+    }
+    end;
+}

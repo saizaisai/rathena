@@ -1,0 +1,1793 @@
+//====* Glossary *====
+m_mining	mapflag	pvp
+m_mining	mapflag	pvp_noguild
+m_mining	mapflag	nosave	SavePoint
+m_mining	mapflag	nowarp
+m_mining	mapflag	nowarpto
+m_mining	mapflag	nomemo
+m_mining	mapflag	loadevent
+m_mining	mapflag	restricted	13
+m_mining	mapflag	novending
+//====* Functions *====
+//====* Mining NPC *====
+//====* Config *====
+
+//====* Functions *====
+
+//Check/Set ore random x,y
+//==
+function	script	F_SMsysRandLocCHK	{
+
+	if(!getargcount()){ debugmes "F_SMsysRandLocCHK needs map parameter!"; return; }
+	freeloop(1);
+	while( !checkcell(getarg(0),(.@x=rand(1,300)),(.@y=rand(1,300)),cell_chkpass) );
+
+return ""+.@x+","+.@y+"";
+}
+
+//Check Ore
+//1 = in cell map (opt,x,y,map)
+//2 = in var of the process of adding ore  (opt,x,y,map,implode(MAP","),implode(X","),impldode(Y","))
+//==
+function	script	F_SMsysOreCellCHK	{
+
+	if(getargcount() < 3){ debugmes "F_SMsysOreCellCHK needs 3 parameters!"; return 1; }
+	if((!getarg(2) && !getarg(3))) return 0;
+	set .@rst,0;
+	
+	switch(getarg(0))
+	{
+		//Check among existing ones
+		case 1:
+		
+			//Ore DB Autoload
+			//==
+			query_sql "SELECT `map`,`loc_x`,`loc_y` FROM `mir4_mining_db`",.@map$,.@xs$,.@ys$;
+			
+			if(!getarraysize(.@map$) || (!getarg(2) && !getarg(3))) return .@rst;
+			
+			for(set .@i,0; .@i<getarraysize(.@map$); set .@i,.@i+1)
+			{
+				explode(.@x$,.@xs$[.@i],",");
+				explode(.@y$,.@ys$[.@i],",");
+				
+				if(.@map$[.@i] != getarg(1)) continue;
+				
+				for(set .@j,0; .@j<getarraysize(.@x$); set .@j,.@j+1)
+				{
+					if(!atoi(.@x$[.@j]) && !atoi(.@y$[.@j])) continue;		
+					if(atoi(.@x$[.@j]) == getarg(2) && atoi(.@y$[.@j]) == getarg(3)){ set .@rst,1; break; }
+				}
+				deletearray .@x$[0],getarraysize(.@x$);
+				deletearray .@y$[0],getarraysize(.@y$);
+				if(.@rst) break;
+			}
+			break;
+		
+		//Checks among those being prepared to be added
+		case 2:
+			
+			set .@map$,getarg(1);
+			set .@x,getarg(2);
+			set .@y,getarg(3);
+			explode(.@maps$,getarg(4),",");
+			explode(.@xs$,getarg(5),",");
+			explode(.@ys$,getarg(6),",");
+			
+			for(set .@i,0; .@i<getarraysize(.@maps$); set .@i,.@i+1)
+			{
+				if(.@maps$[.@i] != .@map$) continue;
+				
+				for(set .@j,0; .@j<getarraysize(.@xs$); set .@j,.@j+1)
+				{
+					if(!atoi(.@xs$[.@j]) && !atoi(.@ys$[.@j])) continue;		
+					if(atoi(.@xs$[.@j]) == .@x && atoi(.@ys$[.@j]) == .@y){ set .@rst,1; break; }
+				}
+				if(.@rst) break;
+			}
+			break;
+	}
+	
+return .@rst;
+}
+
+//Automine Core
+//==
+function	script	F_SMsysAutoMine	{
+	
+	if(@mining) end;
+	
+	getmapxy(.@map$,.@x1,.@y1,BL_PC);
+	set .@uCount,getareaunits(BL_NPC,.@map$,.@x1-16,.@y1-16,.@x1+16,.@y1+16,.@uOre[0]);
+	
+	if(.@uCount)
+	{
+		for(set .@i,0; .@i<.@uCount; set .@i,.@i+1)
+		{
+			if(inarray($@gOREID[0],.@uOre[.@i]) == -1) continue;
+			set .@idx,inarray($@gOREID[0],.@uOre[.@i]);
+			if(getvariableofnpc(getd("."+$@gOREID[.@idx]+"_status$"),$@gORENAME$[.@idx]) != "") continue;
+			getmapxy(.@m2$,.@x2,.@y2,BL_NPC,.@uOre[.@i]);
+			setarray .@distance[getarraysize(.@distance)],distance(.@x1,.@y1,.@x2,.@y2);
+			setarray .@dist_idx[getarraysize(.@dist_idx)],.@uOre[.@i];
+		}
+		
+		if(getarraysize(.@distance))
+		{
+			set .@go,.@dist_idx[inarray(.@distance[0],min(.@distance))];
+			set .@idx,inarray($@gOREID[0],.@go);
+			unitwalkto getcharid(3),$@gOREID[.@idx],$@gORENAME$[.@idx]+"::OnMining";
+			sleep2 5900;
+		}
+	}
+
+end;
+}
+
+//Extra Drops
+//==
+function	script	F_SMsysDrops	{
+
+	if(!getarg(0)) return;
+	for(set .@i,0; .@i<getarraysize($SMsys_Drops); set .@i,.@i+4)
+	{
+		set .@sort,rand(1,10000);
+		if(!$SMsys_Drops[(.@i+2)] && .@sort <= $SMsys_Drops[(.@i+3)])
+		{
+			getitem $SMsys_Drops[(.@i)],$SMsys_Drops[(.@i+1)];
+			set .@get,1;
+		}
+		if(.@sort <= $SMsys_Drops[(.@i+3)] && getarg(0) == $SMsys_Drops[(.@i+2)])
+		{
+			getitem $SMsys_Drops[(.@i)],$SMsys_Drops[(.@i+1)];
+			set .@get,1;
+		}
+		//if(.@get) break;
+	}
+	if(rand(1,10000) < 100){
+		message strcharinfo(0),"You accidentally mined a bomb! You died.";
+		percentheal -100,-100;
+	}
+return;
+}
+
+//====* Config *====
+
+//Configs & Main GMCP & Ore AutoLoad
+//==
+-	script	MiningSYS	FAKE_NPC,{
+OnInit:
+	
+	//GM Control Painel
+	//==
+	bindatcmd "minecp",strnpcinfo(0)+"::OnSMGMCP",99;
+
+	//Pickaxe ItemID
+	//==
+	set $SMsys_reqeqp,55122;
+	
+	//The player will receive a percentage of ore dust and tailings for the total amount they mined after stopping mining or finishing the ore (default: 25%)
+	//==
+	set $SMsys_iGetDust,25;
+	
+	//Ores IDs Configs
+	//==
+	setarray $SMsys_RarityID[1],19001,19002,19003,19004,19005;							//Npcs IDs
+	setarray $SMsys_rTitle$[1],"Common","Uncommon","Rare","Epic","Legend";				//Npcs Title
+	setarray $SMsys_rColor$[0],"111111","aaaaaa","008c00","006cd9","FF0000","ffc926";	//Title Color for GMCP window
+	
+	//Visual effects when ore spawned (ascending order (common to legendary).)
+	//==
+	setarray $SMsys_spdEffect[1],59,56,54,55,57;
+	
+	//Min e Max ore id for random draw (1~5)
+	//==
+	setarray $SMsys_RandOre[0],1,2;
+	
+	//Default stack for an ore if not informed when added by GMCP
+	//==
+	set $SMsys_DefaultStack,100;
+	
+	//Maximum stacks an ore can have
+	//==
+	set $SMsys_MaxStack,999;
+	
+	//Default respawn time if not informed when added by GMCP (in seconds, 1800= 30min)
+	//==
+	set $SMsys_DefaultTime,1800;
+	
+	//Drops that can drop when mining (item_id,amount,ore_rarity,rate)
+	//==
+	//== ore_rarity: 0= all, 1~5
+	//== 
+	setarray $SMsys_Drops[0],
+		// Common Rarity
+		55147,1,1,7000,	// Black Draco Stone (2,500z)
+		984,1,1,500,	// Oridecon
+		985,1,1,500,	// Elunium
+		// Uncommon Rarity
+		55146,1,2,7000,	// Green Draco Stone (5,000z)
+		1544,1,2,1,	// Lunakaligo
+		// Rare Rarity
+		55145,1,3,7000,	// Blue Draco Stone (7,500z)
+		7620,1,3,5,	// Enriched Oridecon
+		7619,1,3,5,	// Enriched Elunium
+		// Epic Rarity
+		55144,1,4,7000,	// Red Draco Stone (10,000z)
+		1544,1,4,5,	// Lunakaligo
+		2138,1,4,5,	// Bradium Shield
+		// Legendary Rarity
+		55143,1,5,7000,	// Yellow Draco Stone (12,000z)	
+		55148,1,5,1;	// +1 Random Stat Box
+
+	// Auto Load & Sets \\
+	//====================
+	//Cria as tabelas SQL
+	//==
+	query_sql "CREATE TABLE IF NOT EXISTS `mir4_mining_db` (`map` varchar(24) NOT NULL,`loc_x` varchar(999) NOT NULL,`loc_y` varchar(999) NOT NULL,`rarity` varchar(999) NOT NULL,`stacks` varchar(999) NOT NULL,`respawn_time` varchar(999) NOT NULL,`npcgid` TEXT NULL,PRIMARY KEY (`map`))";
+	query_sql "CREATE TABLE IF NOT EXISTS `mir4_mining_log` (`id` int(11) NOT NULL AUTO_INCREMENT,`account_id` int(11) NOT NULL,`name` varchar(32) NOT NULL,`loc` varchar(26) DEFAULT NULL,`type` tinyint(1) DEFAULT NULL,`stacks` smallint(5) DEFAULT NULL,`time` smallint(5) DEFAULT NULL,`action` tinyint(1) DEFAULT NULL,`system` tinyint(1) DEFAULT NULL,`date` varchar(25) DEFAULT NULL,PRIMARY KEY (`id`))";
+
+	//Ore DB CleanNPCGID / Autoload
+	//==
+	query_sql "UPDATE `mir4_mining_db` SET `npcgid`=''";
+	query_sql "SELECT `map`,`loc_x`,`loc_y`,`rarity`,`stacks`,`respawn_time` FROM `mir4_mining_db`",.@map$,.@xs$,.@ys$,.@raritys$,.@stacks$,.@respawn_timer$;
+	
+	if(!getarraysize(.@map$)) end;
+	
+	for(set .@i,0; .@i<getarraysize(.@map$); set .@i,.@i+1)
+	{
+		explode(.@x$,.@xs$[.@i],",");
+		explode(.@y$,.@ys$[.@i],",");
+		explode(.@stack$,.@stacks$[.@i],",");
+		explode(.@rarity$,.@raritys$[.@i],",");
+		explode(.@timer$,.@respawn_timer$[.@i],",");
+		setarray $@SMsys_Maps$[getarraysize($@SMsys_Maps$)],.@map$[.@i];
+		set .@ord,0;
+		
+		for(set .@j,0; .@j<getarraysize(.@x$); set .@j,.@j+1)
+		{	
+			if(!atoi(.@rarity$[.@j])){ setarray .@rarity$[.@j],rand($SMsys_RandOre[0],$SMsys_RandOre[1]); set .@TypeRand,1; }
+			if(!atoi(.@x$[.@j]) && !atoi(.@y$[.@j]))
+			{
+				explode(.@xySUB$,callfunc("F_SMsysRandLocCHK",.@map$[.@i]),",");
+				setarray .@x$[.@j],.@xySUB$[0];
+				setarray .@y$[.@j],.@xySUB$[1];
+				set .@LocRand,1;
+			}
+			
+			duplicatenpc("main_mining_sys",""+.@stack$[.@j]+"/"+.@stack$[.@j]+"",""+.@map$[.@i]+"."+.@ord+"."+.@rarity$[.@j]+"."+.@timer$[.@j]+"."+.@LocRand+"."+.@TypeRand+"",.@map$[.@i],atoi(.@x$[.@j]),atoi(.@y$[.@j]),DIR_SOUTH,$SMsys_RarityID[atoi(.@rarity$[.@j])]);
+			set .@real_npcname$,""+.@stack$[.@j]+"/"+.@stack$[.@j]+"#"+.@map$[.@i]+"."+.@ord+"."+.@rarity$[.@j]+"."+.@timer$[.@j]+"."+.@LocRand+"."+.@TypeRand+"";
+			set .@npcid,getnpcid(0,.@real_npcname$);
+			setunittitle .@npcid,$SMsys_rTitle$[atoi(.@rarity$[.@j])];
+			setarray getd(".@npcids_"+.@map$[.@i]+"$["+getarraysize(getd(".@npcids_"+.@map$[.@i]+"$"))+"]"),.@npcid;
+			setarray $@gOREID[getarraysize($@gOREID)],.@npcid;
+			setarray $@gORENAME$[getarraysize($@gORENAME$)],.@real_npcname$;
+			set .@setki,0;
+			set .@LocRand,0;
+			set .@TypeRand,0;
+			set .@ord,.@ord+1;
+		}
+		
+		//Cleans the arrays that are generated by the map in the sql result
+		//==
+		deletearray .@x$[0],getarraysize(.@x$);
+		deletearray .@y$[0],getarraysize(.@y$);
+		deletearray .@stack$[0],getarraysize(.@stack$);
+		deletearray .@rarity$[0],getarraysize(.@rarity$);
+		deletearray .@timer$[0],getarraysize(.@timer$);
+	}
+	
+	for(set .@i,0; .@i<getarraysize(.@map$); set .@i,.@i+1)
+	{
+		query_sql "UPDATE `mir4_mining_db` SET `npcgid` = '"+implode(getd(".@npcids_"+.@map$[.@i]+"$"),",")+"' WHERE `map`='"+.@map$[.@i]+"'";
+		deletearray getd(".@npcids_"+.@map$[.@i]+"$[0]"),getarraysize(getd(".@npcids_"+.@map$[.@i]+"$"));
+	}
+
+	addrid(0);
+	if(@mining) set @mining,0;
+	
+end;
+
+
+//Clean ore vars if player log out
+OnPCLogoutEvent:
+	if(@mining) set getvariableofnpc(getd("."+@mining+"_status$"),$@gORENAME$[inarray($@gOREID[0],@mining)]),"";
+	end;
+
+//Call F_Automine
+OnSMsysAutoMine:
+	
+	query_sql "SELECT `loc_x` FROM `mir4_mining_db` WHERE `map`='"+strcharinfo(3)+"'",.@rst$;
+	
+	if(.@rst$ == "")
+	{
+		set @autofarm,0;
+		showscript("Auto-mine OFF");
+		message strcharinfo(0),"There are no ores on this map";
+	}
+	else
+		callfunc("F_SMsysAutoMine");
+end;
+
+//Mir4 GM Control Painel
+//==
+OnSMGMCP:
+
+//Creates/Updates log of the last access to the GMCP panel
+//==
+	set $SMsys_GMLOGCOUNT,($SMsys_GMLOGCOUNT<5?($SMsys_GMLOGCOUNT+1):1);
+	setd "$SMsys_GMLOG_"+$SMsys_GMLOGCOUNT+"_Nick$",strcharinfo(0);
+	setd "$SMsys_GMLOG_"+$SMsys_GMLOGCOUNT+"_Date$",gettimestr("%d/%m/%Y %H:%M",18);
+	
+	//Rescues sql data from autoload
+	//==
+	query_sql "SELECT `map`,`loc_x`,`loc_y`,`rarity`,`stacks`,`respawn_time` FROM `mir4_mining_db`",.@map$,.@xs$,.@ys$,.@raritys$,.@stacks$,.@respawn_timer$;
+	
+	//ore count
+	//==
+	for(set .@i,0; .@i<getarraysize(.@map$); set .@i,.@i+1)
+	{
+		explode(.@type$,.@raritys$[.@i],",");
+		
+		for(set .@j,0; .@j<getarraysize(.@type$); set .@j,.@j+1)
+		{
+			setd ".@amount"+.@type$[.@j]+"",getd(".@amount"+.@type$[.@j]+"")+1;
+			set .@total,.@total+1;
+		}
+		deletearray .@type$[0],getarraysize(.@type$);
+	}
+
+	mes "[Mining GM-CP]";
+	mes "^00a3d9-------------------------------------------^000000";
+	mes " ^a55ba0Total Maps: "+(getarraysize(.@map$))+"^000000";
+	mes "^00a3d9-------------------------------------------^000000";
+	mes " ^a55ba0Permanent Ore Statistics^000000";
+	mes "^"+$SMsys_rColor$[5]+""+$SMsys_rTitle$[5]+": "+.@amount5+"^000000^"+$SMsys_rColor$[4]+""+$SMsys_rTitle$[4]+": "+.@amount4+"^000000";
+	mes "^"+$SMsys_rColor$[3]+""+$SMsys_rTitle$[3]+": "+.@amount3+"^000000^"+$SMsys_rColor$[2]+""+$SMsys_rTitle$[2]+": "+.@amount2+"^000000";
+	mes "^"+$SMsys_rColor$[1]+""+$SMsys_rTitle$[1]+": "+.@amount1+"^000000Random: "+.@amount0+"";
+	mes "^f7f7f7-------------------------------------------^000000";
+	mes "*Random(^"+$SMsys_rColor$[$SMsys_RandOre[0]]+""+$SMsys_rTitle$[$SMsys_RandOre[0]]+"^000000~^"+$SMsys_rColor$[$SMsys_RandOre[1]]+""+$SMsys_rTitle$[$SMsys_RandOre[1]]+"^000000)";
+	mes "*Total: "+.@total+"";
+	mes "^00a3d9-------------------------------------------^000000";
+	mes " ^a55ba0Last 5 Access to GMCP:^000000";
+	if($SMsys_GMLOG_1_Date$ != "") mes "^999999["+$SMsys_GMLOG_1_Date$+"]: ^5d58e2"+$SMsys_GMLOG_1_Nick$+"^000000";
+	if($SMsys_GMLOG_2_Date$ != "") mes "^999999["+$SMsys_GMLOG_2_Date$+"]: ^5d58e2"+$SMsys_GMLOG_2_Nick$+"^000000";
+	if($SMsys_GMLOG_3_Date$ != "") mes "^999999["+$SMsys_GMLOG_3_Date$+"]: ^5d58e2"+$SMsys_GMLOG_3_Nick$+"^000000";
+	if($SMsys_GMLOG_4_Date$ != "") mes "^999999["+$SMsys_GMLOG_4_Date$+"]: ^5d58e2"+$SMsys_GMLOG_4_Nick$+"^000000";
+	if($SMsys_GMLOG_5_Date$ != "") mes "^999999["+$SMsys_GMLOG_5_Date$+"]: ^5d58e2"+$SMsys_GMLOG_5_Nick$+"^000000";
+	next;
+	switch(select("Add/Remove Ore:Mining STATUS ["+($SMsys_Status?"^FF0000OFF":"^36d900ON")+"^000000]:Logs"))
+	{
+		case 1:
+			clear;
+			mes "[Mining GM-CP]";
+			mes "Choose an option.";
+			next;
+			if(select("Add:Remove")==1)
+			{
+				while(!.@loop1)
+				{
+					clear;					
+					switch(.@pass)
+					{
+						case 0:
+							mes "[Mining GM-CP]";
+							mes "You can use your current location or digit in.";
+							mes "";
+							mes "Digitizing you can add several, using your location will be one at a time.";
+							if(select("Digit:My Location")==1)
+							{
+								while(!.@loop2)
+								{
+									clear;
+									mes "[Mining GM-CP-LOC]";
+									mes "Now inform the ^00a3d9map,x,y^000000";
+									mes "^a55ba0Obs: Using the value 0 for x and y will make the ore spawn random.^000000";
+									mes "* To cancel, digit: ^FF0000exit^000000";
+									input .@data$;
+									
+									if(strtolower(.@data$) == "exit"){ set .@loop1,1; set .@loop2,1; close; }									
+									if(countstr(.@data$,",") != 2){ mes "^FF0000* Check what was typed!^000000"; }
+									else
+									{
+										explode(.@loc$,.@data$,",");										
+										if(getmapusers(.@loc$[0]) == -1){ mes "^FF0000* This map does not exist!^000000"; }
+										else
+										{
+											if(((atoi(.@loc$[1]) && atoi(.@loc$[2])) || (.@loc$[1] == "" || .@loc$[2] == "")) && !checkcell(.@loc$[0],atoi(.@loc$[1]),atoi(.@loc$[2]),cell_chkpass)){ mes "^FF0000* It is not possible to walk in this cell!^000000"; }
+											else
+											{
+												if(callfunc("F_SMsysOreCellCHK",1,.@loc$[0],atoi(.@loc$[1]),atoi(.@loc$[2]))){ mes "^FF0000* There is already ore in this cell!^000000"; }
+												else
+												{
+													if(getarraysize(.@SMsys_map$))
+														set .@fPass,callfunc("F_SMsysOreCellCHK",2,.@loc$[0],atoi(.@loc$[1]),atoi(.@loc$[2]),implode(.@SMsys_map$,","),implode(.@SMsys_x$,","),implode(.@SMsys_y$,","));
+														
+													if(.@fPass){ mes "^FF0000* You have already entered this location!^000000"; }
+													else
+													{
+														setarray .@SMsys_map$[getarraysize(.@SMsys_map$)],.@loc$[0];
+														setarray .@SMsys_x$[getarraysize(.@SMsys_x$)],.@loc$[1];
+														setarray .@SMsys_y$[getarraysize(.@SMsys_y$)],.@loc$[2];
+														setarray .@SMsys_r[getarraysize(.@SMsys_r)],0;
+														setarray .@SMsys_stack[getarraysize(.@SMsys_stack)],$SMsys_DefaultStack;													
+														setarray .@SMsys_time[getarraysize(.@SMsys_time)],$SMsys_DefaultTime;
+														if(getarraysize(.@SMsys_map$) == 1) dispbottom "=====[Mining GM-CP]=====";
+														dispbottom "["+getarraysize(.@SMsys_map$)+"]: "+.@loc$[0]+","+.@loc$[1]+","+.@loc$[2]+"";
+														
+														if(select("Add more:Next step")==2)
+														{
+															if(!getarraysize(.@SMsys_map$))
+															{
+																mes "You have not provided any data!";
+																deletearray .@SMsys_map$[0],getarraysize(.@SMsys_map$);
+																deletearray .@SMsys_x$[0],getarraysize(.@SMsys_x$);
+																deletearray .@SMsys_y$[0],getarraysize(.@SMsys_y$);
+															}
+															else set .@pass,1;
+															set .@loop2,1;
+														}
+													}
+												}
+											}
+										}
+									}
+									next;
+								}
+							}
+							else
+							{
+								getmapxy(.@mymap$,.@myx,.@myy,BL_PC);
+								if(!checkcell(.@mymap$,.@myx,.@myy,cell_chkpass)){ mes "^FF0000* It is not possible to walk in this cell!^000000"; set .@loop1,1; close; }
+								else if(callfunc("F_SMsysOreCellCHK",1,.@mymap$,.@myx,.@myy)){ mes "^FF0000* There is already ore in this cell!^000000"; set .@loop1,1; close; }
+								
+								setarray .@SMsys_map$[getarraysize(.@SMsys_map$)],.@mymap$;
+								setarray .@SMsys_x$[getarraysize(.@SMsys_x$)],.@myx;
+								setarray .@SMsys_y$[getarraysize(.@SMsys_y$)],.@myy;
+								setarray .@SMsys_r[getarraysize(.@SMsys_r)],0;
+								setarray .@SMsys_stack[getarraysize(.@SMsys_stack)],$SMsys_DefaultStack;													
+								setarray .@SMsys_time[getarraysize(.@SMsys_time)],$SMsys_DefaultTime;
+								set .@pass,1;
+								if(getarraysize(.@SMsys_map$) == 1) dispbottom "=====[Mining GM-CP]=====";
+								dispbottom "["+getarraysize(.@SMsys_map$)+"]: "+.@mymap$+","+.@myx+","+.@myy+"";
+								clear;
+							}
+							if(!.@myx) break;
+						
+						case 1:
+							mes "[Mining GM-CP]";
+							mes "Now define the rarity of the ore referring to the previously informed location order.";
+							next;
+							while(!.@loop3)
+							{
+								clear;
+								mes "[Mining GM-CP-RARITY]";
+								
+								for(set .@i,0; .@i<getarraysize(.@SMsys_map$); set .@i,.@i+1)
+								{
+									mes "["+(.@i+1)+"] ^"+$SMsys_rColor$[.@SMsys_r[.@i]]+""+.@SMsys_map$[.@i]+","+.@SMsys_x$[.@i]+","+.@SMsys_y$[.@i]+"^000000";
+									set .@slt$,.@slt$+"["+(.@i+1)+"] ^"+$SMsys_rColor$[.@SMsys_r[.@i]]+""+.@SMsys_map$[.@i]+","+.@SMsys_x$[.@i]+","+.@SMsys_y$[.@i]+"^000000:";
+								}
+								
+								set .@mn,select("Next step:"+.@slt$);
+								
+								if(.@mn == 1 && .@rAlt < getarraysize(.@SMsys_map$))
+								{
+									clear;
+									mes "[Mining GM-CP-RARITY]";
+									mes "You have not defined the rarities of all ores previously reported, are you sure you want to continue?";
+									mes "The unaltered ones will keep the random rarity between (^"+$SMsys_rColor$[$SMsys_RandOre[0]]+""+$SMsys_rTitle$[$SMsys_RandOre[0]]+"^000000~^"+$SMsys_rColor$[$SMsys_RandOre[1]]+""+$SMsys_rTitle$[$SMsys_RandOre[1]]+"^000000)!";
+									if(select("No, I want to change.:Yes, I will not change!")==2){ set .@loop3,1; set .@pass,2; break; }
+									set .@slt$,"";
+								}
+								else if(.@mn == 1){ set .@loop3,1; set .@pass,2; break; }
+								
+								if(.@mn != 1)
+								{
+									clear;
+									set .@opt,(.@mn-2);
+									mes "[Mining GM-CP-RARITY]";
+									mes "^00a3d9-------------------------------------------^000000";
+									mes "Choose rarity for:";
+									mes "^"+$SMsys_rColor$[.@SMsys_r[.@opt]]+""+.@SMsys_map$[.@opt]+","+.@SMsys_x$[.@opt]+","+.@SMsys_y$[.@opt]+"^000000";
+									set .@r,select("^"+$SMsys_rColor$[0]+"Random:^"+$SMsys_rColor$[1]+""+$SMsys_rTitle$[1]+":^"+$SMsys_rColor$[2]+""+$SMsys_rTitle$[2]+":^"+$SMsys_rColor$[3]+""+$SMsys_rTitle$[3]+":^"+$SMsys_rColor$[4]+""+$SMsys_rTitle$[4]+":^"+$SMsys_rColor$[5]+""+$SMsys_rTitle$[5]+"")-1;
+									setarray .@SMsys_r[.@opt],.@r;
+									set .@slt$,"";
+									set .@rAlt,.@rAlt+1;
+								}
+								next;
+							}
+							break;
+						
+						case 2:
+							mes "[Mining GM-CP]";
+							mes "Now define the amount of ore stacks referring to the previously informed location order.";
+							next;
+							while(!.@loop4)
+							{
+								clear;
+								mes "[Mining GM-CP-STACKS]";
+								set .@slt$,"";
+								
+								for(set .@i,0; .@i<getarraysize(.@SMsys_map$); set .@i,.@i+1)
+								{
+									mes "["+(.@i+1)+"] ^"+$SMsys_rColor$[.@SMsys_r[.@i]]+""+.@SMsys_map$[.@i]+","+.@SMsys_x$[.@i]+","+.@SMsys_y$[.@i]+" ("+.@SMsys_stack[.@i]+")^000000";
+									set .@slt$,.@slt$+"["+(.@i+1)+"] ^"+$SMsys_rColor$[.@SMsys_r[.@i]]+""+.@SMsys_map$[.@i]+","+.@SMsys_x$[.@i]+","+.@SMsys_y$[.@i]+"^000000 ("+.@SMsys_stack[.@i]+"):";
+								}
+								
+								set .@mn,select("Next step:"+.@slt$);
+								
+								if(.@mn == 1 && .@rAlts < getarraysize(.@SMsys_map$))
+								{
+									clear;
+									mes "[Mining GM-CP-STACKS]";
+									mes "You have not defined the stacks of all ores previously reported, are you sure you want to continue?";
+									mes "Unchanged ones will stick to default stacks ("+$SMsys_DefaultStack+")!";
+									if(select("No, I want to change.:Yes, I will not change!")==2){ set .@loop4,1; set .@pass,3; break; }
+									set .@slt$,"";
+								}
+								else if(.@mn == 1){ set .@loop4,1; set .@pass,3; break; }
+								
+								if(.@mn != 1)
+								{
+									clear;
+									set .@opt,(.@mn-2);
+									mes "[Mining GM-CP-STACKS]";
+									mes "^00a3d9-------------------------------------------^000000";
+									mes "Set the stack to:";
+									mes "^"+$SMsys_rColor$[.@SMsys_r[.@opt]]+""+.@SMsys_map$[.@opt]+","+.@SMsys_x$[.@opt]+","+.@SMsys_y$[.@opt]+" ("+.@SMsys_stack[.@opt]+")^000000";
+									mes "";									
+									mes "^FF0000Max: "+$SMsys_MaxStack+"^000000";
+									input .@stack;
+									
+									if(.@stack < 1 || .@stack > $SMsys_MaxStack){ mes "^FF0000* Invalid value!^000000"; }
+									else
+									{
+										setarray .@SMsys_stack[.@opt],.@stack;
+										set .@slt$,"";
+										set .@rAlts,.@rAlts+1;
+									}
+								}
+								next;
+							}
+							break;
+						
+						case 3:
+							mes "[Mining GM-CP]";
+							mes "Now you must define the respawn time (in seconds) of the ores referring to the order of the previously informed locations.";
+							next;
+							while(!.@loop5)
+							{
+								clear;
+								mes "[Mining GM-CP-TIME]";
+								set .@slt$,"";
+								
+								for(set .@i,0; .@i<getarraysize(.@SMsys_map$); set .@i,.@i+1)
+								{
+									mes "["+(.@i+1)+"] ^"+$SMsys_rColor$[.@SMsys_r[.@i]]+""+.@SMsys_map$[.@i]+","+.@SMsys_x$[.@i]+","+.@SMsys_y$[.@i]+" ["+.@SMsys_time[.@i]+" secs]^000000";
+									set .@slt$,.@slt$+"["+(.@i+1)+"] ^"+$SMsys_rColor$[.@SMsys_r[.@i]]+""+.@SMsys_map$[.@i]+","+.@SMsys_x$[.@i]+","+.@SMsys_y$[.@i]+"^000000 ["+.@SMsys_time[.@i]+" secs]:";
+								}
+								
+								set .@mn,select("Finalize:"+.@slt$);
+								
+								if(.@mn == 1 && .@rAltes < getarraysize(.@SMsys_map$))
+								{
+									clear;
+									mes "[Mining GM-CP-TIME]";
+									mes "You haven't set the respawn time for all ores previously entered, are you sure you want to continue?";
+									mes "Unchanged ones will stick to the default respawn time ("+$SMsys_DefaultTime+" secs)!";
+									if(select("No, I want to change.:Yes, I will not change!")==2){ set .@loop5,1; set .@pass,4; break; }
+									set .@slt$,"";
+								}
+								else if(.@mn == 1){ set .@loop5,1; set .@pass,4; break; }
+								
+								if(.@mn != 1)
+								{
+									clear;
+									set .@opt,(.@mn-2);
+									mes "[Mining GM-CP-TIME]";
+									mes "^00a3d9-------------------------------------------^000000";
+									mes "Set the respawn time to:";
+									mes "^00a3d9Obs: (in seconds)^000000";
+									mes "^"+$SMsys_rColor$[.@SMsys_r[.@opt]]+""+.@SMsys_map$[.@opt]+","+.@SMsys_x$[.@opt]+","+.@SMsys_y$[.@opt]+" ["+.@SMsys_time[.@opt]+" secs]^000000";
+									mes "";
+									input .@time;
+									
+									if(.@time < 1){ mes "^FF0000* Invalid value!^000000"; }
+									else
+									{
+										setarray .@SMsys_time[.@opt],.@time;
+										set .@slt$,"";
+										set .@rAltes,.@rAltes+1;
+									}
+								}
+								next;
+							}
+							break;
+						
+						case 4:
+							mes "[Mining GM-CP]";
+							mes "Now check the data in your general chat, after checking you can confirm the process.";							
+							dispbottom "=====[Mining GM-CP]=====";							
+							
+							for(set .@i,0; .@i<getarraysize(.@SMsys_map$); set .@i,.@i+1)
+								dispbottom "["+(.@i+1)+"]: Loc("+.@SMsys_map$[.@i]+","+.@SMsys_x$[.@i]+","+.@SMsys_y$[.@i]+") Stacks("+.@SMsys_stack[.@i]+") Rarity("+(.@SMsys_r[.@i]?$SMsys_rTitle$[.@SMsys_r[.@i]]:""+$SMsys_rTitle$[$SMsys_RandOre[0]]+"~"+$SMsys_rTitle$[$SMsys_RandOre[1]]+"")+") Respawn("+.@SMsys_time[.@i]+" secs)";
+							next;
+							if(select("Cancel:Confirm")==1) close;
+							
+							for(set .@i,0; .@i<getarraysize(.@SMsys_map$); set .@i,.@i+1)
+							{
+								query_sql "SELECT COUNT(`map`),`map`,`loc_x`,`loc_y`,`rarity`,`stacks`,`respawn_time` FROM `mir4_mining_db` WHERE `map`='"+.@SMsys_map$[.@i]+"'",.@rst,.@map_z$,.@xs_z$,.@ys_z$,.@raritys_z$,.@stacks_z$,.@respawn_timer_z$;
+							
+								if(!.@rst)
+									query_sql "INSERT INTO `mir4_mining_db` VALUES('"+.@SMsys_map$[.@i]+"','"+.@SMsys_x$[.@i]+"','"+.@SMsys_y$[.@i]+"','"+.@SMsys_r[.@i]+"','"+.@SMsys_stack[.@i]+"','"+.@SMsys_time[.@i]+"','')";
+								else
+									query_sql "UPDATE `mir4_mining_db` SET `loc_x`='"+implode(.@xs_z$,",")+","+.@SMsys_x$[.@i]+"',`loc_y`='"+implode(.@ys_z$,",")+","+.@SMsys_y$[.@i]+"',`rarity`='"+implode(.@raritys_z$,",")+","+.@SMsys_r[.@i]+"',`stacks`='"+implode(.@stacks_z$,",")+","+.@SMsys_stack[.@i]+"',`respawn_time`='"+implode(.@respawn_timer_z$,",")+","+.@SMsys_time[.@i]+"' WHERE `map`='"+.@SMsys_map$[.@i]+"'";
+								
+								//Add log
+								query_sql "INSERT INTO `mir4_mining_log` VALUES (null,'"+getcharid(3)+"','"+strcharinfo(0)+"','"+.@SMsys_map$[.@i]+","+.@SMsys_x$[.@i]+","+.@SMsys_y$[.@i]+"','"+.@SMsys_r[.@i]+"','"+.@SMsys_stack[.@i]+"','"+.@SMsys_time[.@i]+"','1',null,'"+gettimestr("%d/%m/%Y %H:%M:%S",21)+"')";
+								
+								query_sql "SELECT COUNT(`map`),`map`,`loc_x`,`loc_y`,`rarity`,`stacks`,`respawn_time` FROM `mir4_mining_db` WHERE `map`='"+.@SMsys_map$[.@i]+"'",.@rst,.@map_z$,.@xs_z$,.@ys_z$,.@raritys_z$,.@stacks_z$,.@respawn_timer_z$;
+								explode(.@ord$,.@xs_z$,",");
+								
+								if(getarraysize(getd("$@SMsys_D_"+.@SMsys_map$[.@i]+"$"))) set .@ord_ex,1;								
+								if(!.@SMsys_r[.@i]){ setarray .@SMsys_r[.@i],rand($SMsys_RandOre[0],$SMsys_RandOre[1]); set .@TypeRand,1; }
+								if(!atoi(.@SMsys_x$[.@i]) && !atoi(.@SMsys_y$[.@i]))
+								{
+									explode(.@xySUB$,callfunc("F_SMsysRandLocCHK",.@SMsys_map$[.@i]),",");
+									setarray .@SMsys_x$[.@i],.@xySUB$[0];
+									setarray .@SMsys_y$[.@i],.@xySUB$[1];
+									set .@LocRand,1;
+								}
+								
+								duplicatenpc("main_mining_sys",""+.@SMsys_stack[.@i]+"/"+.@SMsys_stack[.@i]+"",""+.@SMsys_map$[.@i]+"."+(.@ord_ex?getd("$@SMsys_D_"+.@SMsys_map$[.@i]+"$[0]"):(getarraysize(.@ord$)-1))+"."+.@SMsys_r[.@i]+"."+.@SMsys_time[.@i]+"."+.@LocRand+"."+.@TypeRand+"",.@SMsys_map$[.@i],atoi(.@SMsys_x$[.@i]),atoi(.@SMsys_y$[.@i]),DIR_SOUTH,$SMsys_RarityID[.@SMsys_r[.@i]]);
+								set .@real_npcname$,""+.@SMsys_stack[.@i]+"/"+.@SMsys_stack[.@i]+"#"+.@SMsys_map$[.@i]+"."+(.@ord_ex?getd("$@SMsys_D_"+.@SMsys_map$[.@i]+"$[0]"):(getarraysize(.@ord$)-1))+"."+.@SMsys_r[.@i]+"."+.@SMsys_time[.@i]+"."+.@LocRand+"."+.@TypeRand+"";
+								set .@npcid,getnpcid(0,.@real_npcname$);
+								setunittitle .@npcid,$SMsys_rTitle$[.@SMsys_r[.@i]];
+								setarray $@gOREID[getarraysize($@gOREID)],.@npcid;
+								setarray $@gORENAME$[getarraysize($@gORENAME$)],.@real_npcname$;
+								setarray getd(".@npcids_"+.@SMsys_map$[.@i]+"$["+getarraysize(getd(".@npcids_"+.@SMsys_map$[.@i]+"$"))+"]"),.@npcid;
+								if(inarray(.@maps$[0],.@SMsys_map$[.@i]) == -1) setarray .@maps$[getarraysize(.@maps$)],.@SMsys_map$[.@i];
+								if(inarray($@SMsys_Maps$[0],.@SMsys_map$[.@i]) == -1) setarray $@SMsys_Maps$[getarraysize($@SMsys_Maps$)],.@SMsys_map$[.@i];
+								if(.@ord_ex) deletearray getd("$@SMsys_D_"+.@SMsys_map$[.@i]+"$[0]"),1;								
+								set .@LocRand,0;
+								set .@TypeRand,0;
+								set .@ord_ex,0;
+								
+								deletearray .@ord$[0],getarraysize(.@ord$);
+								deletearray .@xs_z$[0],getarraysize(.@xs_z$);
+								deletearray .@ys_z$[0],getarraysize(.@ys_z$);
+								deletearray .@stacks_z$[0],getarraysize(.@stacks_z$);
+								deletearray .@raritys_z$[0],getarraysize(.@raritys_z$);
+								deletearray .@respawn_timer_z$[0],getarraysize(.@respawn_timer_z$);
+							}
+							
+							for(set .@i,0; .@i<getarraysize(.@maps$); set .@i,.@i+1)
+							{
+								query_sql "SELECT `npcgid` FROM `mir4_mining_db` WHERE `map`='"+.@maps$[.@i]+"'",.@rst$;
+								set .@val$,(.@rst$!=""?""+.@rst$+","+implode(getd(".@npcids_"+.@maps$[.@i]+"$"),",")+"":implode(getd(".@npcids_"+.@maps$[.@i]+"$"),","));
+								query_sql "UPDATE `mir4_mining_db` SET `npcgid` = '"+.@val$+"' WHERE `map`='"+.@maps$[.@i]+"'";
+							}
+							
+							mes "[Mining GM-CP]";
+							mes "Finished process.";
+							set .@loop1,1;
+							break;
+					}
+				}
+				close;
+			}
+			else
+			{
+				clear;
+				mes "[Mining GM-CP]";
+				mes "Choose the map.";				
+								
+				if(!getarraysize(.@map$)){ mes "^FF0000*There are no ores to remove!^000000"; close; }
+	
+				for(set .@i,0; .@i<getarraysize(.@map$); set .@i,.@i+1)
+				{
+					explode(.@x$,.@xs$[.@i],",");					
+					set .@ord,0;
+					set .@slt_maps$,.@slt_maps$+""+(.@i+1)+") "+.@map$[.@i]+" ["+getarraysize(.@x$)+"]:";
+					
+					set .@size_ord,(getarraysize(.@x$)+getarraysize(getd("$@SMsys_D_"+.@map$[.@i]+"$")));
+					
+					for(set .@j,0; .@j<.@size_ord; set .@j,.@j+1)
+					{
+						if(getarraysize(getd("$@SMsys_D_"+.@map$[.@i]+"$")) && inarray(getd("$@SMsys_D_"+.@map$[.@i]+"$"),.@ord) != -1)
+							setarray getd(".@"+.@map$[.@i]+"_Ord$["+getarraysize(getd(".@"+.@map$[.@i]+"_Ord$"))+"]"),"^FF0000Removed^000000";
+						else
+							setarray getd(".@"+.@map$[.@i]+"_Ord$["+getarraysize(getd(".@"+.@map$[.@i]+"_Ord$"))+"]"),""+.@map$[.@i]+"."+.@ord+"";
+						set .@ord,.@ord+1;
+					}
+					deletearray .@x$[0],getarraysize(.@x$);
+				}
+				set .@map_mn,select(.@slt_maps$)-1;
+				mes "Choose which ore you want to remove by Ord:";
+				
+				set .@slt_ord,select(implode(getd(".@"+.@map$[.@map_mn]+"_Ord$"),":"))-1;
+				
+				if(getarraysize(getd("$@SMsys_D_"+.@map$[.@map_mn]+"$")) && inarray(getd("$@SMsys_D_"+.@map$[.@map_mn]+"$"),""+.@slt_ord+"") != -1)
+				{
+					clear;
+					mes "[Mining GM-CP]";
+					mes "[ "+getarraysize(getd("$@SMsys_D_"+.@map$[.@map_mn]+"$"))+"x ] Ores removed in this map";
+					mes "^FF0000This ore has already been removed, after a reload this message will disappear or if new ores are added in relation to the amount that were removed.^000000";
+					close;
+				}
+				
+				set .@idx,-1;				
+				
+				for(set .@l,0; .@l<getarraysize($@gORENAME$); set .@l,.@l+1)
+					if(compare($@gORENAME$[.@l],getd(".@"+.@map$[.@map_mn]+"_Ord$["+.@slt_ord+"]")))
+					{ set .@idx,.@l; set .@mod,1; break; }
+				
+				if(.@idx == -1)
+					for(set .@l,0; .@l<getarraysize($@OreRespawn_time); set .@l,.@l+1)
+						if(compare($@OreRespawn_RealNPC$[.@l],getd(".@"+.@map$[.@map_mn]+"_Ord$["+.@slt_ord+"]")))
+						{ set .@idx,.@l; set .@mod,2; break; }
+				
+				if(.@idx != -1)
+				{
+					//Fragments the actual npcname to use the contained values
+					//==
+					set .@real_npcname$,(.@mod==1?$@gORENAME$[.@idx]:$@OreRespawn_RealNPC$[.@idx]);
+					set .@npcid,getnpcid(0,.@real_npcname$);
+					explode(.@stacks$,.@real_npcname$,"/");
+					explode(.@npcinfo0$,.@stacks$[1],"#");
+					explode(.@npcinfo$,.@npcinfo0$[1],".");
+					
+					set .@map$,.@map$[.@map_mn];
+					set .@ord,atoi(.@npcinfo$[1]);
+					set .@type,atoi(.@npcinfo$[2]);
+					set .@time,atoi(.@npcinfo$[3]);
+					set .@LocRand,atoi(.@npcinfo$[4]);
+					set .@TypeRand,atoi(.@npcinfo$[5]);					
+					
+					if(.@mod == 1)
+					{
+						getmapxy(.@nmap$,.@nx,.@ny,BL_NPC,.@real_npcname$);
+						duplicateremove($@gORENAME$[.@idx]);
+						deletearray $@gOREID[.@idx],1;
+						deletearray $@gORENAME$[.@idx],1;
+					}
+					else if(.@mod == 2)
+					{
+						set .@nx,$@OreRespawn_x[.@idx];
+						set .@ny,$@OreRespawn_y[.@idx];
+						set .@type,$@OreRespawn_t[.@idx];
+						set .@TypeRand,$@OreRespawn_rt[.@idx];
+						deletearray $@OreRespawn_time[.@idx],1;
+						deletearray $@OreRespawn_time2[.@idx],1;
+						deletearray $@OreRespawn_map$[.@idx],1;
+						deletearray $@OreRespawn_x[.@idx],1;
+						deletearray $@OreRespawn_y[.@idx],1;
+						deletearray $@OreRespawn_t[.@idx],1;
+						deletearray $@OreRespawn_o[.@idx],1;
+						deletearray $@OreRespawn_rt[.@idx],1;
+						deletearray $@OreRespawn_rxy[.@idx],1;
+						deletearray $@OreRespawn_stack[.@idx],1;						
+						deletearray $@OreRespawn_RealNPCID$[.@idx],1;
+					}
+
+					query_sql "SELECT `loc_x`,`loc_y`,`rarity`,`stacks`,`respawn_time`,`npcgid` FROM `mir4_mining_db` WHERE `map`='"+.@map$+"'",.@s_x$,.@s_y$,.@s_type$,.@s_stack$,.@s_time$,.@s_npcgid$;
+					
+					explode(.@sx$,.@s_x$,",");
+					explode(.@sy$,.@s_y$,",");
+					explode(.@sstack$,.@s_stack$,",");
+					explode(.@stype$,.@s_type$,",");
+					explode(.@stime$,.@s_time$,",");
+					explode(.@npcgid$,.@s_npcgid$,",");
+					
+					for(set .@s,0; .@s<getarraysize(.@npcgid$); set .@s,.@s+1)
+					{
+						if(atoi(.@npcgid$[.@s]) == .@npcid)
+						{ set .@idxi,.@s; break; }
+					}
+					
+					setarray .@data_log$[0],""+.@map$+","+.@nx+","+.@ny+"",(.@TypeRand?0:.@type),.@stacks$[0],.@time;
+					
+					//Add log
+					query_sql "INSERT INTO `mir4_mining_log` VALUES (null,'"+getcharid(3)+"','"+strcharinfo(0)+"','"+.@data_log$[0]+"','"+atoi(.@data_log$[1])+"','"+atoi(.@data_log$[2])+"','"+atoi(.@data_log$[3])+"','2',null,'"+gettimestr("%d/%m/%Y %H:%M:%S",21)+"')";
+																
+					deletearray .@sx$[.@idxi],1;
+					deletearray .@sy$[.@idxi],1;
+					deletearray .@sstack$[.@idxi],1;
+					deletearray .@stype$[.@idxi],1;
+					deletearray .@stime$[.@idxi],1;
+					deletearray .@npcgid$[.@idxi],1;
+					
+					if(!getarraysize(.@sx$))
+					{
+						query_sql "DELETE FROM `mir4_mining_db` WHERE `map`='"+.@map$+"'";
+						deletearray $@SMsys_Maps$[inarray($@SMsys_Maps$[0],.@map$)],1;
+					}
+					else
+						query_sql "UPDATE `mir4_mining_db` SET `loc_x`='"+implode(.@sx$,",")+"',`loc_y`='"+implode(.@sy$,",")+"',`rarity`='"+implode(.@stype$,",")+"',`stacks`='"+implode(.@sstack$,",")+"',`respawn_time`='"+implode(.@stime$,",")+"',`npcgid`='"+implode(.@npcgid$,",")+"' WHERE `map`='"+.@map$+"'";
+					setarray getd("$@SMsys_D_"+.@map$+"$["+getarraysize(getd("$@SMsys_D_"+.@map$+"$"))+"]"),""+.@slt_ord+"";				
+
+					clear;
+					mes "[Mining GM-CP]";
+					mes "^00a3d9Removed!^000000";
+					mes "Obs: It is recommended @reloadscript after some ores are removed for the system to reorganize the counts.";
+				}
+				else mes "^FF0000There was a problem and it was not possible to remove the ore!^000000";
+				close;
+			}
+			break;
+		
+		case 2:
+			clear;
+			mes "[Mining GM-CP]";
+			mes "You can disable/enable mining whenever you want.";
+			next;
+			set .@slt,select(($SMsys_Status?"^36d900ON":"^FF0000OFF")+"^000000")-1;
+			set $SMsys_Status,($SMsys_Status?0:1);
+			mes "System changed to: "+($SMsys_Status?"^36d900ON":"^FF0000OFF")+"^000000";
+			//[setki]Add log
+			query_sql "INSERT INTO `mir4_mining_log` VALUES (null,'"+getcharid(3)+"','"+strcharinfo(0)+"',null,null,null,null,null,'"+($SMsys_Status?2:1)+"','"+gettimestr("%d/%m/%Y %H:%M:%S",21)+"')";
+			close;
+		
+		case 3:
+			clear;
+			mes "[Mining GM-CP]";
+			mes "You can see logs of ore added or removed and when the system was down for maintenance.";
+			next;
+			switch(select("All Logs:Ore Added:Ore Removed:System Under Maintenance"))
+			{
+				case 1:
+					query_sql "SELECT * FROM `mir4_mining_log` ORDER BY `id` DESC",.@id,.@accid,.@name$,.@loc$,.@type,.@stack,.@time,.@act,.@sys,.@date$;
+					
+					if(!getarraysize(.@id)){ mes "^FF0000No logs were found.^000000"; close; }					
+					
+					clear;
+					mes "[Mining GM-CP]";
+					mes "A total of "+getarraysize(.@id)+" records were found!";
+					next;
+					
+					for(set .@i,0; .@i<getarraysize(.@id); set .@i,.@i+1)
+					{
+						mes "[ "+(.@i+1)+" / "+getarraysize(.@id)+" ]";
+						mes "^a55ba0LogID: "+.@id[.@i]+"^000000";
+						mes "AccountID: ^d90036"+.@accid[.@i]+"^000000";
+						mes "Name: ^d90036"+.@name$[.@i]+"^000000";
+						if(.@sys[.@i])
+							mes "Action: "+(.@sys[.@i]==1?"^36d900Turn on":"^FF0000Turn off")+"^000000 the system";
+						else
+						{
+							mes "Action: "+(.@sys[.@i]==1?"^36d900Added":"^FF0000Removed")+"^000000";
+							mes "Loc: ^00a3d9"+.@loc$[.@i]+"^000000";
+							mes "Rarity: "+(.@type[.@y]?"^$SMsys_rColor$[.@type[.@y]]"+$SMsys_rTitle$[.@type[.@y]]+"":("^"+$SMsys_rColor$[$SMsys_RandOre[0]]+""+$SMsys_rTitle$[$SMsys_RandOre[0]]+"^000000~^"+$SMsys_rColor$[$SMsys_RandOre[1]]+""+$SMsys_rTitle$[$SMsys_RandOre[1]]+"^000000"))+"";
+							mes "Stacks: ^00a3d9"+.@stack[.@i]+"^000000";
+							mes "Respawn: ^00a3d9"+.@time[.@i]+" secs^000000";
+						}
+						mes "^a55ba0Date: "+.@date$[.@i]+"^000000";
+						if((.@i+1)<getarraysize(.@id))
+							if(select("Next:Exit")==1) next; else break;
+						else break;
+					}
+					close;
+				
+				case 2:
+					query_sql "SELECT * FROM `mir4_mining_log` WHERE `action`='1' ORDER BY `id` DESC",.@id,.@accid,.@name$,.@loc$,.@type,.@stack,.@time,.@act,.@sys,.@date$;
+					
+					if(!getarraysize(.@id)){ mes "^FF0000No logs were found.^000000"; close; }					
+					
+					clear;
+					mes "[Mining GM-CP]";
+					mes "A total of "+getarraysize(.@id)+" records were found!";
+					next;
+					
+					for(set .@i,0; .@i<getarraysize(.@id); set .@i,.@i+1)
+					{
+						mes " [ "+(.@i+1)+" / "+getarraysize(.@id)+" ]";
+						mes "^a55ba0LogID: "+.@id[.@i]+"^000000";
+						mes "AccountID: ^d90036"+.@accid[.@i]+"^000000";
+						mes "Name: ^d90036"+.@name$[.@i]+"^000000";
+						mes "Action: ^36d900Added^000000";
+						mes "Loc: ^00a3d9"+.@loc$[.@i]+"^000000";
+						mes "Rarity: "+(.@type[.@y]?"^$SMsys_rColor$[.@type[.@y]]"+$SMsys_rTitle$[.@type[.@y]]+"":("^"+$SMsys_rColor$[$SMsys_RandOre[0]]+""+$SMsys_rTitle$[$SMsys_RandOre[0]]+"^000000~^"+$SMsys_rColor$[$SMsys_RandOre[1]]+""+$SMsys_rTitle$[$SMsys_RandOre[1]]+"^000000"))+"";
+						mes "Stacks: ^00a3d9"+.@stack[.@i]+"^000000";
+						mes "Respawn: ^00a3d9"+.@time[.@i]+" secs^000000";
+						mes "^a55ba0Date: "+.@date$[.@i]+"^000000";
+						if((.@i+1)<getarraysize(.@id))
+							if(select("Next:Exit")==1) next; else break;
+						else break;
+					}
+					close;
+				
+				case 3:
+					query_sql "SELECT * FROM `mir4_mining_log` WHERE `action`='2' ORDER BY `id` DESC",.@id,.@accid,.@name$,.@loc$,.@type,.@stack,.@time,.@act,.@sys,.@date$;
+					
+					if(!getarraysize(.@id)){ mes "^FF0000No logs were found.^000000"; close; }					
+					
+					clear;
+					mes "[Mining GM-CP]";
+					mes "A total of "+getarraysize(.@id)+" records were found!";
+					next;
+					
+					for(set .@i,0; .@i<getarraysize(.@id); set .@i,.@i+1)
+					{
+						mes " [ "+(.@i+1)+" / "+getarraysize(.@id)+" ]";
+						mes "^a55ba0LogID: "+.@id[.@i]+"^000000";
+						mes "AccountID: ^d90036"+.@accid[.@i]+"^000000";
+						mes "Name: ^d90036"+.@name$[.@i]+"^000000";
+						mes "Action: ^FF0000Removed^000000";
+						mes "Loc: ^00a3d9"+.@loc$[.@i]+"^000000";
+						mes "Rarity: "+(.@type[.@y]?"^$SMsys_rColor$[.@type[.@y]]"+$SMsys_rTitle$[.@type[.@y]]+"":("^"+$SMsys_rColor$[$SMsys_RandOre[0]]+""+$SMsys_rTitle$[$SMsys_RandOre[0]]+"^000000~^"+$SMsys_rColor$[$SMsys_RandOre[1]]+""+$SMsys_rTitle$[$SMsys_RandOre[1]]+"^000000"))+"";
+						mes "Stacks: ^00a3d9"+.@stack[.@i]+"^000000";
+						mes "Respawn: ^00a3d9"+.@time[.@i]+" secs^000000";
+						mes "^a55ba0Date: "+.@date$[.@i]+"^000000";
+						if((.@i+1)<getarraysize(.@id))
+							if(select("Next:Exit")==1) next; else break;
+						else break;
+					}
+					close;
+				
+				case 4:
+					query_sql "SELECT * FROM `mir4_mining_log` WHERE `system`='1' OR `system`='2' ORDER BY `id` DESC",.@id,.@accid,.@name$,.@loc$,.@type,.@stack,.@time,.@act,.@sys,.@date$;
+					
+					if(!getarraysize(.@id)){ mes "^FF0000No logs were found.^000000"; close; }					
+					
+					clear;
+					mes "[Mining GM-CP]";
+					mes "A total of "+getarraysize(.@id)+" records were found!";
+					next;
+					
+					for(set .@i,0; .@i<getarraysize(.@id); set .@i,.@i+1)
+					{
+						mes " [ "+(.@i+1)+" / "+getarraysize(.@id)+" ]";
+						mes "^a55ba0LogID: "+.@id[.@i]+"^000000";
+						mes "AccountID: ^d90036"+.@accid[.@i]+"^000000";
+						mes "Name: ^d90036"+.@name$[.@i]+"^000000";
+						mes "^a55ba0Date: "+.@date$[.@i]+"^000000";
+						mes "Action: "+(.@sys[.@i]==1?"^36d900Turn on":"^FF0000Turn off")+"^000000 the system";
+						if((.@i+1)<getarraysize(.@id))
+							if(select("Next:Exit")==1) next; else break;
+						else break;
+					}
+					close;
+			}			
+	}
+end;
+}
+
+//====* Mining NPC *====
+
+//Npc 1
+prontera,181,165,3	script	Master of Mining::Master of Mining	19006,{
+
+	mes "^00B2EE[ Master of Mining ]^000000";
+	mes "\n";
+	
+	if($SMsys_Status)
+	{ mes "The mining system is temporarily disabled!"; close; }
+
+	if(!minelvl)
+	{
+		mes "Would you like to learn the skill you need to be able to mine?";
+		if(select("Yes I would!:No...")==2) close;
+		
+		clear;
+		mes "^00B2EE[ Master of Mining ]^000000";
+		mes "\n";
+		mes "To learn the basic skill will cost 1m zeny!";
+		mes "\n";
+		mes "Would you like to continue?";
+		if(select("No...:Yes, confirm!")==1) close;
+		
+		clear;
+		mes "^00B2EE[ Master of Mining ]^000000";
+		
+		if(Zeny < 1000000){ mes "\n"; mes "^FF0000* You don't have enough zenys!^000000"; close; }
+		
+		set Zeny,Zeny-1000000;
+		set minelvl,1;
+		mes "Okay, now you need a pickaxe!";
+		mes "Now go to the ^265cffmaster of forge^000000 so you can make a pickaxe.";
+		close2;
+		navigateto("prontera",178,169,NAV_NONE);
+		end;
+	}	
+	
+	mes "What would you like to do?";
+	next;
+	switch(select("- ^0055FFOpen Mining Shop^000000:- Buy Entry Ticket:- Enhance Mining Skill")){
+//	switch(select("- ^0055FFOpen Mining Shop^000000:- Enhance Mining Skill")){
+		case 1:
+			callfunc "qshop",20;
+			end;
+
+		case 2:
+			mes "^00B2EE[ Master of Mining ]^000000";
+			mes "\n";
+			mes "Would you like to buy an entry ticket for the mining area?";
+			mes "This will cost you ^0055FF200 Proof of Donation^000000";
+			mes "or ^0055FF15,000,000^000000z for ^FF550024 hours^000000";
+			next;
+			switch(select("- Buy Ticket for 200 PODS:- Buy Ticket for 15,000,000z")){
+				case 1: 
+					mes "^00B2EE[ Master of Mining ]^000000";
+					mes "\n";
+					if(countitem(7179) < 200){
+						mes "You don't have enough Proof of Donations. Comeback when you have enough.";
+						end;
+					}
+					delitem 7179,200;
+					rentitem 55142,86400;
+					break;
+				case 2:
+					mes "^00B2EE[ Master of Mining ]^000000";
+					mes "\n";
+					if(Zeny < 15000000){
+						mes "You don't have enough Zeny. Comeback when you have enough.";
+						end;
+					}
+					Zeny -= 15000000;
+					rentitem 55142,86400;
+					break;
+			}
+			end;
+		case 3:
+			break;
+	}
+	
+	mes "\n";
+	mes "So you came to improve your skill?";
+	mes "Let's go to what matters!";
+	next;
+	clear;
+	mes "^00B2EE[ Master of Mining ]^000000";
+	mes "\n";
+	mes "Each type of stardust has a different chance to evolve, from +2 to +5 they are fixed, from +6 to +10 these chances are gradually reduced.";
+	next;
+	
+	mes "^00B2EE[ Master of Mining ]^000000";
+	mes "\n";
+	
+	if(getequipid(EQI_HAND_R) != 55122){ clear; mes "^00B2EE[ Master of Mining ]^000000"; mes "\n"; mes "^FF0000* The pickaxe is not equipped!^000000"; close; }
+	else set .@ref,getskilllv(2100);
+	
+	if(.@ref >= 10){ clear; mes "^00B2EE[ Master of Mining ]^000000"; mes "\n"; mes "^FF0000* Your skill is already at maximum level!^000000"; close; }
+	disable_items;
+	
+	setarray .@sdust[1],55136,55137,55138,55139;			
+	setarray .@chance[1],
+		(.@ref<6?3500:.@ref==6?3000:.@ref==7?2500:.@ref==8?2000:1500),
+		(.@ref<6?4000:.@ref==6?3500:.@ref==7?3000:.@ref==8?2500:1500),
+		(.@ref<6?5000:.@ref==6?4000:.@ref==7?3500:.@ref==8?3000:1500),
+		(.@ref<6?6000:.@ref==6?4500:.@ref==7?4000:.@ref==8?3500:1500);
+
+	if(countitem(.@sdust[1]) < 20 && countitem(.@sdust[2]) < 20 && countitem(.@sdust[3]) < 20 && countitem(.@sdust[4]) < 20)
+	{ mes "^FF0000* You don't have enough draco stardust [20x]!^000000"; close; }
+	
+	if(.@ref == 9)
+	{
+		clear;
+		mes "^00B2EE[ Master of Mining ]^000000";
+		set .@color1$,""+(countitem(55136) < 100?"^FF0000":"^59b300")+"";
+		set .@color2$,""+(countitem(55137) < 100?"^FF0000":"^59b300")+"";
+		set .@color3$,""+(countitem(55138) < 100?"^FF0000":"^59b300")+"";
+		set .@color4$,""+(countitem(55139) < 100?"^FF0000":"^59b300")+"";
+		
+		mes "\n^73b9ffNv."+.@ref+" -> Nv."+(.@ref+1)+" Mining Skill^000000";				
+		mes " \n"+.@color1$+">[100x] "+getitemname(55136)+"^000000";
+		mes " \n"+.@color2$+">[100x] "+getitemname(55137)+"^000000";
+		mes " \n"+.@color3$+">[100x] "+getitemname(55138)+"^000000";
+		mes " \n"+.@color4$+">[100x] "+getitemname(55139)+"^000000";
+		if(select("Cancel:Refine!!:Chance of Success ["+(((1500%10000)*100)/10000)+"%]")==1) close;
+		if(@menu != 2) close;
+		
+		if(countitem(55136) < 100 || countitem(55137) < 100 || countitem(55138) < 100 || countitem(55139) < 100)
+		{ clear; mes "^00B2EE[ Master of Mining ]^000000"; mes "\n"; mes "^FF0000* You don't have enough resources!^000000"; close; }
+		
+		if(getequipid(EQI_HAND_R) != 55122){ clear; mes "^00B2EE[ Master of Mining ]^000000"; mes "\n"; mes "^FF0000* The pickaxe is not equipped!^000000"; close; }
+		set .@sort,rand(1,10000);
+		delitem 55136,100;
+		delitem 55137,100;
+		delitem 55138,100;
+		delitem 55139,100;
+		if(.@sort <= 1500){ specialeffect2 610; set minelvl,10; unequip EQI_HAND_R; equip 55122; clear; mes "^00B2EE[ Master of Mining ]^000000";  mes "^2693ffYour skill has been improved!!^000000"; close; }
+		else
+		{ specialeffect2 155; clear; mes "^00B2EE[ Master of Mining ]^000000";  mes "^9326ffUnfortunately refine failed!^000000"; close; }			
+	}
+	
+	mes "Choose the resource you want to use to improve your skill!";
+	menu 
+		""+(countitem(.@sdust[1])>=20?"["+countitem(.@sdust[1])+"x] "+getitemname(.@sdust[1])+"":"")+"",-,
+		""+(countitem(.@sdust[2])>=20?"["+countitem(.@sdust[2])+"x] "+getitemname(.@sdust[2])+"":"")+"",-,
+		""+(countitem(.@sdust[3])>=20?"["+countitem(.@sdust[3])+"x] "+getitemname(.@sdust[3])+"":"")+"",-,
+		""+(countitem(.@sdust[4])>=20?"["+countitem(.@sdust[4])+"x] "+getitemname(.@sdust[4])+"":"")+"",-;
+		set .@type,(@menu);
+	
+	clear;
+	mes "^00B2EE[ Master of Mining ]^000000";
+	mes "\n";	
+
+	set .@qtd,10*(.@ref+1);
+	set .@color$,""+(countitem(.@sdust[.@type]) < .@qtd?"^FF0000":"^59b300")+"";
+	
+	mes "\n^73b9ffNv."+.@ref+" -> Nv."+(.@ref+1)+" Mining Skill^000000";
+	mes "\n  "+.@color$+">["+.@qtd+"x] "+getitemname(.@sdust[.@type])+"^000000";
+	mes "\n";
+	mes "Chance of Success: "+(((.@chance[.@type]%10000)*100)/10000)+"%";			
+	if(select("Cancel:Refine!!")==1) close;
+	
+	if(countitem(.@sdust[.@type]) < .@qtd){ clear; mes "^00B2EE[ Master of Mining ]^000000"; mes "^FF0000* You don't have enough resources!^000000"; close; }	
+	if(getequipid(EQI_HAND_R) != 55122){ clear; mes "^00B2EE[ Master of Mining ]^000000"; mes "\n"; mes "^FF0000* The pickaxe is not equipped!^000000"; close; }
+	set .@sort,rand(1,10000);
+	delitem .@sdust[.@type],.@qtd;
+	if(.@sort <= .@chance[.@type]){ specialeffect2 610; set minelvl,minelvl+1; unequip EQI_HAND_R; equip 55122; }
+	else
+	{ specialeffect2 611; mes "^9326ffUnfortunately refine failed!^000000"; close; }
+	
+	 mes "^2693ffYour skill has been improved!!^000000";
+	close;
+
+}
+
+//Npc 2
+prontera,178,169,3	script	Master of Forge	2_M_OLDBLSMITH,{
+
+	mes "^00B2EE[ Master of Forge ]^000000";
+	mes "\n";
+	
+	if($SMsys_Status)
+	{ mes "The mining system is temporarily disabled!"; close; }
+	
+	mes "So what do you want from the master of forge?";
+	next;
+	switch(select(">Use the Forge:>Refine Pickaxe"))
+	{
+		case 1:
+			clear;
+			mes "^00B2EE[ Master of Forge ]^000000";
+			mes "\n";
+			mes "Choose the function you want to use the forge for!";
+			set .@slt,select("-Create Ingot:-Create Stardust:-Create Anvil:");
+			//set .@slt,select("-Create Ingot:-Create Stardust:-Create Anvil:-Create Pickaxe");
+			
+			if(.@slt < 3)
+			{
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				mes "\n";				
+				setarray .@ids[1],(.@slt==1?55124:55125),(.@slt==1?55126:55127),(.@slt==1?55128:55129),(.@slt==1?55130:55131);							
+				setarray .@bar[1],(.@slt==1?55132:55136),(.@slt==1?55133:55137),(.@slt==1?55134:55138),(.@slt==1?55135:55139);
+
+				if(countitem(.@ids[1]) < 120 && countitem(.@ids[2]) < 120 && countitem(.@ids[3]) < 120 && countitem(.@ids[4]) < 120)
+				{ mes "^FF0000* You don't have enough resources [120x]!^000000"; close; }
+
+				mes "Choose resources!";
+				menu 
+				""+(countitem(.@ids[1])>=120?"["+countitem(.@ids[1])+"x] "+getitemname(.@ids[1])+"":"")+"",-,
+				""+(countitem(.@ids[2])>=120?"["+countitem(.@ids[2])+"x] "+getitemname(.@ids[2])+"":"")+"",-,
+				""+(countitem(.@ids[3])>=120?"["+countitem(.@ids[3])+"x] "+getitemname(.@ids[3])+"":"")+"",-,
+				""+(countitem(.@ids[4])>=120?"["+countitem(.@ids[4])+"x] "+getitemname(.@ids[4])+"":"")+"",-;
+				set .@type,(@menu);
+				
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				if(.@slt==1) mes "\n";
+				mes "Choose quantity.";
+				mes "\n";
+				mes "^73b9ff[1x "+(.@slt==1?"Bar":"Dust")+"] =^000000";
+				mes "\n^7373ff ?100x "+(.@slt==1?"ore":"ore dust")+"^000000";
+				if(.@slt==2) mes "\n^7373ff ?5x "+getitemname(1001)+"^000000";
+				mes "\n^73b9ff+20 Resource rate used per unit.^000000";
+
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				mes "\n";
+				mes "Enter the amount of "+(.@slt==1?"bars":"stardust")+" you want to create!";			
+				input .@qtd;
+
+				if(.@qtd < 1){ mes "^FF0000* Invalid value!^000000"; close; }
+				
+				set .@zeny,10000*.@qtd;
+				set .@fee,.@qtd*20;
+				set .@color1$,""+(countitem(.@ids[.@type]) < (.@qtd*100)?"^FF0000":"^59b300")+"";
+				set .@color2$,""+(countitem(.@ids[.@type]) < ((.@qtd*100)+.@fee)?"^FF0000":"^59b300")+"";
+				set .@color3$,""+(countitem(1001) < (.@qtd*5)?"^FF0000":"^59b300")+"";
+				
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				mes "^73b9ff["+.@qtd+"x] "+getitemname(.@bar[.@type])+"^000000";				
+				mes "\n  "+.@color1$+">["+(.@qtd*100)+"x] "+getitemname(.@ids[.@type])+"^000000";
+				mes "\n  "+.@color2$+">[+"+.@fee+"] 20 Fee Per Unit^000000";
+				if(.@slt==2) mes "\n  "+.@color3$+">["+(.@qtd*5)+"x] "+getitemname(1001)+"^000000";
+				if(.@slt==1) mes "\n";
+				mes "\nTotal: "+((.@qtd*100)+.@fee)+"x "+getitemname(.@ids[.@type])+"";
+				mes "Zeny: "+.@zeny+"";				
+				
+				if(select("Cancel:Conclude")==1) close;
+				
+				if(countitem(.@ids[.@type]) < ((.@qtd*100)+.@fee)){ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* You don't have enough resources!^000000"; close; }
+				if(countitem(1001) < (.@qtd*5) && .@slt==2){ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* you don't own "+getitemname(1001)+" enough!^000000"; close; }
+				if(Zeny < .@zeny){ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* You don't have enough zenys!^000000"; close; }				
+				if(!checkweight(.@ids[.@type],.@qtd)){ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* You are too heavy!^000000"; close; }
+				
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				mes "\n";
+				mes "The forge will always be lit!!!";
+				delitem .@ids[.@type],((.@qtd*100)+.@fee);
+				set Zeny,Zeny-.@zeny;
+				if(.@slt==2) delitem 1001,(.@qtd*5);
+				getitem .@bar[.@type],.@qtd;
+				close;
+			}
+			else if(.@slt == 3)
+			{
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				mes "\n";
+				
+				if(countitem(55123) < 50){ mes "^FF0000* You don't have enough resources [50x]!^000000"; close; }
+				
+				mes "How many anvils do you want to forge?";				
+				if(select("["+(countitem(55123)/50)+"x] All:Enter")==1)
+					set .@qtd,(countitem(55123)/50);
+				else
+				{
+					clear;
+					mes "^00B2EE[ Master of Forge ]^000000";
+					mes "\n";
+					mes "Enter the amount!";					
+					input .@qtd;
+					
+					if(.@qtd < 1){ mes "^FF0000* Invalid value!^000000"; close; }
+				}
+				
+				set .@color$,""+(countitem(55123) < (.@qtd*50)?"^FF0000":"^59b300")+"";
+				set .@zeny,(10000*.@qtd);
+				
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				mes "\n";
+				mes "^73b9ff["+.@qtd+"x] "+getitemname(55140)+"^000000";				
+				mes "\n  "+.@color$+">["+(.@qtd*50)+"x] "+getitemname(55123)+"^000000";
+				mes "\n";
+				mes "Total: "+(.@qtd*50)+"x "+getitemname(55123)+"";
+				mes "Zeny: "+.@zeny+"";
+				if(select("Cancel:Conclude")==1) close;
+				
+				if(countitem(55123) < (.@qtd*50)){ clear; mes "^FF0000* You don't have enough resources!^000000"; close; }				
+				if(Zeny < .@zeny){ clear; mes "^FF0000* You don't have enough zenys!^000000"; close; }				
+				if(!checkweight(55140,.@qtd)){ clear; mes "^FF0000* You are too heavy!^000000"; close; }
+				
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				mes "\n";
+				mes "The forge will always be lit!!!";
+				delitem 55123,(.@qtd*50);
+				set Zeny,Zeny-.@zeny;
+				getitem 55140,.@qtd;
+				close;
+			}			
+			else if(.@slt == 4)
+			{
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				
+				set .@color1$,""+(countitem(1066) < 50?"^FF0000":"^59b300")+"";
+				set .@color2$,""+(countitem(999) < 35?"^FF0000":"^59b300")+"";
+				set .@color3$,""+(countitem(720) < 15?"^FF0000":"^59b300")+"";
+				set .@color4$,""+(countitem(984) < 10?"^FF0000":"^59b300")+"";
+				set .@color5$,""+(countitem(985) < 10?"^FF0000":"^59b300")+"";
+				
+				mes "^73b9ff[1x] "+getitemname(55122)+"^000000";				
+				mes " \n"+.@color1$+">[50x] "+getitemname(1066)+" (1066)^000000";
+				mes " \n"+.@color2$+">[35x] "+getitemname(999)+" (999)^000000";
+				mes " \n"+.@color3$+">[15x] "+getitemname(720)+" (720)^000000";
+				mes " \n"+.@color4$+">[10x] "+getitemname(984)+" (984)^000000";
+				mes " \n"+.@color5$+">[10x] "+getitemname(985)+" (985)^000000";
+				if(select("Cancel:Create Pickaxe")==1) close;
+				
+				if(countitem(1066) < 50 || countitem(999) < 35 || countitem(720) < 15 || countitem(984) < 10  || countitem(985) < 10)
+				{ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* You don't have enough resources!^000000"; close; }		
+				if(!checkweight(55122,1)){ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* You are too heavy!^000000"; close; }
+				
+				delitem 1066,50;
+				delitem 999,35;
+				delitem 720,15;
+				delitem 984,10;
+				delitem 985,10;
+				getitem 55122,1;
+				
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				mes "\n";
+				mes "Well done, your item has been created!";
+				close;
+			}
+			
+		case 2:
+			clear;
+			mes "^00B2EE[ Master of Forge ]^000000";
+			mes "\n";
+			mes "Each type draco of bar has a different refine chance, from +1 to +5 they are fixed, from +6 to +10 these chances are gradually reduced.";
+			next;
+			
+			mes "^00B2EE[ Master of Forge ]^000000";
+			mes "You can refine up to +5 without risk of the pickaxe breaking if you fail to refine, to refine from +5 to +6 onwards there is a chance of breaking the item if you fail!";
+			next;
+			
+			mes "^00B2EE[ Master of Forge ]^000000";
+			mes "\n";
+			
+			if(getequipid(EQI_HAND_R) != 55122){ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* The pickaxe is not equipped!^000000"; close; }
+			else set .@ref,getequiprefinerycnt(EQI_HAND_R);
+			
+			if(.@ref >= 10){ clear; mes " [- Mining Master] -]"; mes "\n"; mes "^FF0000* Your pickaxe is already at maximum refine!^000000"; close; }
+			
+			disable_items;
+			
+			setarray .@bar[1],55132,55133,55134,55135;	
+			setarray .@anv[1],10,20,30,40,50,60,70,80,90,100;
+			setarray .@chance[1],
+				(.@ref<6?5000:.@ref==6?3000:.@ref==7?2500:.@ref==8?2000:1500),
+				(.@ref<6?6000:.@ref==6?4000:.@ref==7?3000:.@ref==8?2500:1500),
+				(.@ref<6?7000:.@ref==6?5000:.@ref==7?3500:.@ref==8?3000:1500),
+				(.@ref<6?8000:.@ref==6?6000:.@ref==7?4000:.@ref==8?3500:1500);
+			
+			if(.@ref >= 5)
+				set .@broken,(.@ref==5?1500:.@ref==6?2000:.@ref==7?2500:.@ref==8?3000:4000);
+
+			if(countitem(.@bar[1]) < 10 && countitem(.@bar[2]) < 10 && countitem(.@bar[3]) < 10 && countitem(.@bar[4]) < 10)
+			{ mes "^FF0000* You don't have enough resources!^000000"; close; }
+			
+			if(.@ref == 9)
+			{
+				clear;
+				mes "^00B2EE[ Master of Forge ]^000000";
+				set .@color1$,""+(countitem(55132) < 100?"^FF0000":"^59b300")+"";
+				set .@color2$,""+(countitem(55133) < 100?"^FF0000":"^59b300")+"";
+				set .@color3$,""+(countitem(55134) < 100?"^FF0000":"^59b300")+"";
+				set .@color4$,""+(countitem(55135) < 100?"^FF0000":"^59b300")+"";
+				set .@color5$,""+(countitem(55140) < 100?"^FF0000":"^59b300")+"";
+				
+				mes "\n ^73b9ff+"+.@ref+" -> +"+(.@ref+1)+" "+getitemname(55122)+"^000000";				
+				mes " \n"+.@color1$+">[100x] "+getitemname(55132)+"^000000";
+				mes " \n"+.@color2$+">[100x] "+getitemname(55133)+"^000000";
+				mes " \n"+.@color3$+">[100x] "+getitemname(55134)+"^000000";
+				mes " \n"+.@color4$+">[100x] "+getitemname(55135)+"^000000";
+				mes " \n"+.@color5$+">[100x] "+getitemname(55140)+"^000000";
+				if(select("Cancel:Refine!!:Chance of Success ["+(((1500%10000)*100)/10000)+"%]:Chance to Break ["+(((.@broken%10000)*100)/10000)+"%]")==1) close;
+				if(@menu != 2) close;
+				
+				if(countitem(55132) < 100 || countitem(55133) < 100 || countitem(55134) < 100 || countitem(55135) < 100  || countitem(55140) < 100)
+				{ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* You don't have enough resources!^000000"; close; }
+				
+				if(getequipid(EQI_HAND_R) != 55122){ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* The pickaxe is not equipped!^000000"; close; }
+				set .@sort,rand(1,10000);
+				delitem 55132,100;
+				delitem 55133,100;
+				delitem 55134,100;
+				delitem 55135,100;
+				delitem 55140,100;
+				if(.@sort <= 1500){ successrefitem EQI_HAND_R,1,getcharid(0),1; clear; mes "^00B2EE[ Master of Forge ]^000000";  mes "^2693ffYour pickaxe has been refined!^000000"; close; }
+				else if(.@broken)
+				{
+					specialeffect2 155;
+					set .@rbronk,rand(1,10000);
+					if(.@rbronk <= .@broken)
+					{ failedrefitem EQI_HAND_R; clear; mes "^00B2EE[ Master of Forge ]^000000";   mes "^d93600The refine failed, pickaxe broke!^000000"; close; }
+					else{ clear; mes "^00B2EE[ Master of Forge ]^000000";  mes "^9326ffUnfortunately refine failed!^000000"; close; }
+				}
+				else
+				{ specialeffect2 155; clear; mes "^00B2EE[ Master of Forge ]^000000";  mes "^9326ffUnfortunately refine failed!^000000"; close; }			
+			}
+			
+			mes "Choose the resource you want to use to refine the pickaxe!";
+			menu 
+				""+(countitem(.@bar[1])>=10?"["+countitem(.@bar[1])+"x] "+getitemname(.@bar[1])+"":"")+"",-,
+				""+(countitem(.@bar[2])>=10?"["+countitem(.@bar[2])+"x] "+getitemname(.@bar[2])+"":"")+"",-,
+				""+(countitem(.@bar[3])>=10?"["+countitem(.@bar[3])+"x] "+getitemname(.@bar[3])+"":"")+"",-,
+				""+(countitem(.@bar[4])>=10?"["+countitem(.@bar[4])+"x] "+getitemname(.@bar[4])+"":"")+"",-;
+				set .@type,(@menu);
+			
+			clear;
+			mes "^00B2EE[ Master of Forge ]^000000";
+			if(.@ref < 5) mes "\n";	
+			
+			set .@qtd,10*(.@ref+1);
+			set .@color$,""+(countitem(.@bar[.@type]) < .@qtd?"^FF0000":"^59b300")+""; 
+			set .@color2$,""+(countitem(55140) < .@anv[.@ref+1]?"^FF0000":"^59b300")+""; 			
+				
+			mes "\n ^73b9ff+"+.@ref+" -> +"+(.@ref+1)+" "+getitemname(55122)+"^000000";
+			mes "\n  ?"+.@color$+">["+.@qtd+"x] "+getitemname(.@bar[.@type])+"^000000";
+			mes "\n  ?"+.@color2$+">["+.@anv[.@ref+1]+"x] "+getitemname(55140)+"^000000";
+			mes "\n\nChance of Success: "+(((.@chance[.@type]%10000)*100)/10000)+"%";
+			if(.@broken) mes "Chance to Break: "+(((.@broken%10000)*100)/10000)+"%";			
+			if(select("Cancel:Refine!!")==1) close;
+			
+			if(countitem(.@bar[.@type]) < .@qtd || countitem(55140) < .@anv[.@ref+1]){ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "^FF0000* You don't have enough resources!^000000"; close; }	
+			if(getequipid(EQI_HAND_R) != 55122){ clear; mes "^00B2EE[ Master of Forge ]^000000"; mes "\n"; mes "^FF0000* The pickaxe is not equipped!^000000"; close; }
+			set .@sort,rand(1,10000);
+			delitem .@bar[.@type],.@qtd;
+			delitem 55140,.@anv[.@ref+1];
+			if(.@sort <= .@chance[.@type]) successrefitem EQI_HAND_R,1,getcharid(0),1;
+			else if(.@broken)
+			{
+				specialeffect2 155;
+				set .@rbronk,rand(1,10000);
+				if(.@rbronk <= .@broken)
+				{ failedrefitem EQI_HAND_R; mes "^d93600The refine failed, pickaxe broke!^000000"; }
+				else mes "^9326ffUnfortunately refine failed!^000000";
+				close;
+			}
+			else
+			{ specialeffect2 155; mes "^9326ffUnfortunately refine failed!^000000"; close; }
+			
+			mes "^2693ffYour pickaxe has been refined!^000000";
+			close;
+	}
+}
+
+//Mir4 Mining Sys Respawn Control
+//==
+-	script	SM_CtrlMain	FAKE_NPC,{
+
+//Removes respawn ores
+OnSMOreRemov:
+
+	sleep 300;
+	if($@RemovLoop) end;
+	set $@RemovLoop,1;
+
+	freeloop(1);
+	while(1)
+	{
+		set .@total,getarraysize($@SM_OreRemov$);
+		for(set .@i,0; .@i<.@total; set .@i,.@i+1)
+			duplicateremove($@SM_OreRemov$[.@i]);
+		deletearray $@SM_OreRemov$[0],.@total;
+		
+		if(!getarraysize($@SM_OreRemov$)) break;
+	}
+	freeloop(0);
+	set $@RemovLoop,0;
+	end;
+
+//Controls the respawn of ores
+OnOreRespawn:
+
+	if($@orActive) end;
+	set $@orActive,1;
+	
+	sleep 500;
+	freeloop(1);
+	while(1)
+	{
+		for(set .@i,getarraysize($@OreRespawn_time)-1; .@i>=0; set .@i,.@i-1)
+		{
+			if(gettimetick(2) > $@OreRespawn_time2[.@i] && $@OreRespawn_time2[.@i])
+			{
+				//Check/Set random ore type rarity
+				//==
+				if($@OreRespawn_rt[.@i]) set .@ore_id,rand($SMsys_RandOre[0],$SMsys_RandOre[1]);
+				else set .@ore_id,$@OreRespawn_t[.@i];
+				
+				//Check/Set random x,y
+				//==
+				if($@OreRespawn_rxy[.@i])
+				{
+					explode(.@xySUB$,callfunc("F_SMsysRandLocCHK",$@OreRespawn_map$[.@i]),",");
+					set .@x,atoi(.@xySUB$[0]);
+					set .@y,atoi(.@xySUB$[1]);
+				}
+				else
+				{ set .@x,$@OreRespawn_x[.@i]; set .@y,$@OreRespawn_y[.@i]; }				
+				
+				//Spawned ore & Set news data vars & Remove data spawn vars
+				//==
+				duplicatenpc("main_mining_sys",""+$@OreRespawn_stack[.@i]+"/"+$@OreRespawn_stack[.@i]+"",""+$@OreRespawn_map$[.@i]+"."+$@OreRespawn_o[.@i]+"."+.@ore_id+"."+$@OreRespawn_time[.@i]+"."+$@OreRespawn_rxy[.@i]+"."+$@OreRespawn_rt[.@i]+"",$@OreRespawn_map$[.@i],.@x,.@y,DIR_SOUTH,$SMsys_RarityID[.@ore_id]);				
+				set .@real_npcname$,""+$@OreRespawn_stack[.@i]+"/"+$@OreRespawn_stack[.@i]+"#"+$@OreRespawn_map$[.@i]+"."+$@OreRespawn_o[.@i]+"."+.@ore_id+"."+$@OreRespawn_time[.@i]+"."+$@OreRespawn_rxy[.@i]+"."+$@OreRespawn_rt[.@i]+"";
+				sleep 50;				
+				specialeffect $SMsys_spdEffect[.@ore_id],AREA,.@real_npcname$;
+				//==
+				set .@npcid,getnpcid(0,.@real_npcname$);
+				setunittitle .@npcid,$SMsys_rTitle$[.@ore_id];
+				setarray $@gOREID[getarraysize($@gOREID)],.@npcid;
+				setarray $@gORENAME$[getarraysize($@gORENAME$)],.@real_npcname$;
+				//==				
+				query_sql "SELECT `npcgid` FROM `mir4_mining_db` WHERE `map`='"+$@OreRespawn_map$[.@i]+"'",.@rst$;
+				query_sql "UPDATE `mir4_mining_db` SET `npcgid` = '"+replacestr(.@rst$,$@OreRespawn_RealNPCID$[.@i],""+.@npcid+"")+"' WHERE `map`='"+$@OreRespawn_map$[.@i]+"'";
+				//==
+				deletearray $@OreRespawn_time[.@i],1;
+				deletearray $@OreRespawn_time2[.@i],1;
+				deletearray $@OreRespawn_map$[.@i],1;
+				deletearray $@OreRespawn_x[.@i],1;
+				deletearray $@OreRespawn_y[.@i],1;
+				deletearray $@OreRespawn_t[.@i],1;
+				deletearray $@OreRespawn_o[.@i],1;
+				deletearray $@OreRespawn_rt[.@i],1;
+				deletearray $@OreRespawn_rxy[.@i],1;
+				deletearray $@OreRespawn_stack[.@i],1;
+				deletearray $@OreRespawn_RealNPC$[.@i],1;
+				deletearray $@OreRespawn_RealNPCID$[.@i],1;
+			}
+		}
+		if(!getarraysize($@OreRespawn_time)) break;
+		else sleep 10000;		
+	}
+	freeloop(0);
+	set $@orActive,0;
+	
+end;
+}
+
+//Mining Core
+//==
+-	script	main_mining_sys	FAKE_NPC,{
+OnMining:
+
+	if($SMsys_Status)
+	{ message strcharinfo(0),"The mining system is temporarily disabled!"; end; }
+	
+	if(getd("."+getnpcid(0)+"_status$") != "")
+	{
+		if(getd("."+getnpcid(0)+"_status$") == strcharinfo(0)) end;
+		message strcharinfo(0),""+getd("."+getnpcid(0)+"_status$")+" is mining. It is not possible to mine here!";
+		if(@autofarm) set @autofarm,0;
+		end;
+	}
+	
+	if(getequipid(EQI_HAND_R) != $SMsys_reqeqp || !minelvl)
+	{
+		if(!minelvl){ message strcharinfo(0),"You don't have the skill to mine!"; navigateto("prontera",181,165,NAV_NONE); }
+		else if(getequipid(EQI_HAND_R)!=$SMsys_reqeqp) message strcharinfo(0),"You must equip the pickaxe to mine!";
+		if(@autofarm) set @autofarm,0;
+		end;
+	}
+	
+	if(getstatus(SC_WEIGHT90))
+	{ message strcharinfo(0),"Your inventory is full!"; if(@autofarm){ set @autofarm,0; } end; }	
+	
+	sleep2 400;
+	getmapxy(.@map1$,.@x1,.@y1,BL_PC);
+	getmapxy(.@map2$,.@x2,.@y2,BL_PC);
+	getmapxy(.@m$,.@x,.@y,BL_NPC);
+	
+	if(distance(.@x,.@y,.@x1,.@y1) > 1)
+	{
+		message strcharinfo(0),"You are too far away!";
+		unitwalkto getcharid(3),getnpcid(0);
+		end;
+	}
+	
+	//Check existence of ore or player double action
+	//==	
+	if(@mining || inarray($@gOREID[0],getnpcid(0)) == -1){ message strcharinfo(0),"Invalid action!"; end; }
+	
+	//camerainfo 45000,2600,-7000,getcharid(0),.@x,.@y;	
+	setd "."+getnpcid(0)+"_status$",strcharinfo(0);
+	set @mining,getnpcid(0);
+	
+	//Fragments the actual npcname to use the contained values
+	//==
+	explode(getd("."+strnpcinfo(1)+"_stacks$"),strnpcinfo(1),"/");
+	explode(.@npcinfo$,strnpcinfo(2),".");
+	set .@setki,0;
+	set .@npcunique$,strnpcinfo(2);
+	set .@stacks,atoi(getd("."+strnpcinfo(1)+"_stacks$[0]"));
+	set .@stotal,atoi(getd("."+strnpcinfo(1)+"_stacks$[1]"));
+	set .@ord,atoi(.@npcinfo$[1]);
+	set .@type,atoi(.@npcinfo$[2]);
+	set .@time,atoi(.@npcinfo$[3]);
+	set .@LocRand,atoi(.@npcinfo$[4]);
+	set .@TypeRand,atoi(.@npcinfo$[5]);
+	
+	if(getgroupid() >= 99) dispbottom "[MineINFO-GM] Ord: "+.@m$+"."+.@ord+"";
+		
+	set .@itemID$,(.@type==5?"Higher_Draco_Ore":.@type==4?"High_Draco_Ore":.@type==3?"Normal_Draco_Ore":"Simple_Draco_Ore");
+	disable_items;
+
+	freeloop(1);
+	while(.@map2$ == .@map1$ && .@x1 == .@x2 && .@y1 == .@y2)
+	{
+		set .@i,.@i+1;		
+
+		if($SMsys_Status){ message strcharinfo(0),"The mining system is temporarily disabled!"; break; }
+		if(Hp < 2) break;
+		if(.@map2$ != .@map1$ || .@x1 != .@x2 || .@y1 != .@y2) break;
+		if(getequipid(EQI_HAND_R)!=$SMsys_reqeqp){ message strcharinfo(0),"Pickaxe is not equipped!"; break; }
+		
+		set .@reduce,getequiprefinerycnt(EQI_HAND_R);
+		soundeffect "mining_effect ("+rand(1,4)+").wav",0;
+		moveframe(10);
+		cutin "miner_"+.@type+"_"+.@i+"",1;
+        if(getd("."+getnpcid(0)+"_status$") != "" && getd("."+getnpcid(0)+"_status$") != strcharinfo(0))
+        {
+            warp "m_mining",0,0;
+            if(@autofarm) set @autofarm,0;
+            end;
+        }		
+		if(.@reduce) set .@timing,(.@reduce<=10?1000-(.@reduce*50):(5*100));
+		else set .@timing,1000;
+		
+		sleep2 .@timing;
+		getmapxy(.@map2$,.@x2,.@y2,BL_PC);
+			
+		if(.@i >= 10)
+		{
+			callfunc("F_SMsysDrops",.@type);
+			
+			//set .@iGetOre,(.@stotal*getskilllv(2100))/100;
+			set .@iGetOre,getskilllv(2100);
+			set .@iGetAll,.@iGetAll+.@iGetOre;
+			set .@stacks,.@stacks-1;
+			
+			setnpcdisplay(""+getnpcid(0),.@stacks+"/"+.@stotal+"#"+.@npcunique$+"");
+			
+			if(!checkweight("Draco_Ore_Rejects",(.@iGetOre?.@iGetOre:1)) || getstatus(SC_WEIGHT90))
+			{
+				setarray .@item[0],getiteminfo(.@itemID$,17);
+				setarray .@qtd[0],(.@iGetOre?.@iGetOre:1);		
+				setarray .@txt$,"["+gettimestr("%d/%m/%Y %H:%M:%S",21)+"]: Here's "+.@qtd[0]+"x "+getitemname(.@item[0])+", you left a lot of resources on the ground or you couldn't get them because you had too much weight!";
+				mail getcharid(0),"[Server]","Mining Resources...",.@txt$,0,.@item,.@qtd;
+				set .@weight,1;
+				break;
+			}
+			else getitem .@itemID$,(.@iGetOre?.@iGetOre:1);
+			
+			if(!(.@stacks%5))
+			{
+				if(.@stacks)
+				{
+					set .@ts,(.@stacks*(.@timing*10))/1000;
+					set .@h,.@ts/3600;
+					set .@m,(.@ts-(.@h*3600))/60;
+					set .@s,.@ts%60;
+					npctalk "Time left: "+(.@h<10?"0"+.@h:.@h)+"H:"+(.@m<10?"0"+.@m:.@m)+"M:"+(.@s<10?"0"+.@s:.@s)+"s ("+.@stacks+"/"+.@stotal+")",strnpcinfo(3),bc_self,0xFFC926;
+				}
+				set .@dcalc,($SMsys_iGetDust*.@iGetOre)/100;
+				getitem ""+.@itemID$+"_Dust",(.@dcalc?.@dcalc:1);
+			}
+			if(.@stacks < 1){ set .@terminal,1; break; }
+			set .@i,0;
+		}
+	}
+	freeloop(0);	
+	enable_items;
+	
+	set @mining,0;
+	setd "."+getnpcid(0)+"_status$","";
+	
+	if(.@iGetAll)
+	{
+		if(checkweight("Draco_Ore_Rejects",((($SMsys_iGetDust*.@iGetAll)/100)?(($SMsys_iGetDust*.@iGetAll)/100):1)) && !.@weight)
+			getitem "Draco_Ore_Rejects",((($SMsys_iGetDust*.@iGetAll)/100)?(($SMsys_iGetDust*.@iGetAll)/100):1);
+		else
+		{
+			setarray .@item[0],getiteminfo("Draco_Ore_Rejects",17);
+			setarray .@qtd[0],((($SMsys_iGetDust*.@iGetAll)/100)?(($SMsys_iGetDust*.@iGetAll)/100):1);		
+			setarray .@txt$,"["+gettimestr("%d/%m/%Y %H:%M:%S",21)+"]: Here's "+.@qtd[0]+"x "+getitemname(.@item[0])+", you left a lot of resources on the ground or you couldn't get them because you had too much weight!";
+			mail getcharid(0),"[Server]","Mining Resources...",.@txt$,0,.@item,.@qtd;
+		}
+	}
+	
+	//camerainfo 70000,0,-6000,getcharid(0),0,0;	
+	cutin "",255;
+	
+	if(.@weight){ dispbottom "[Mining]: Your inventory is full!"; if(@autofarm){ set @autofarm,0; } }
+	
+	if(.@terminal)
+	{
+		//Respawn Save data
+		if(.@time)
+		{
+			//Respawn set data
+			//==
+			setarray $@OreRespawn_time[getarraysize($@OreRespawn_time)],.@time;
+			setarray $@OreRespawn_time2[getarraysize($@OreRespawn_time2)],(gettimetick(2)+.@time);
+			setarray $@OreRespawn_map$[getarraysize($@OreRespawn_map$)],.@m$;
+			setarray $@OreRespawn_x[getarraysize($@OreRespawn_x)],.@x;
+			setarray $@OreRespawn_y[getarraysize($@OreRespawn_y)],.@y;
+			setarray $@OreRespawn_t[getarraysize($@OreRespawn_t)],.@type;			
+			setarray $@OreRespawn_o[getarraysize($@OreRespawn_o)],.@ord;
+			setarray $@OreRespawn_rt[getarraysize($@OreRespawn_rt)],.@TypeRand;
+			setarray $@OreRespawn_rxy[getarraysize($@OreRespawn_rxy)],.@LocRand;
+			setarray $@OreRespawn_stack[getarraysize($@OreRespawn_stack)],.@stotal;
+			setarray $@OreRespawn_RealNPC$[getarraysize($@OreRespawn_RealNPC$)],.@npcunique$;
+			setarray $@OreRespawn_RealNPCID$[getarraysize($@OreRespawn_RealNPCID$)],getnpcid(0);
+		}
+		//==
+		set .@idx,inarray($@gOREID[0],getnpcid(0));
+		setarray $@SM_OreRemov$[getarraysize($@SM_OreRemov)],$@gORENAME$[.@idx];
+		deletearray $@gOREID[.@idx],1;
+		deletearray $@gORENAME$[.@idx],1;
+		
+		donpcevent "SM_CtrlMain::OnSMOreRemov";
+		if(!$@orActive) donpcevent "SM_CtrlMain::OnOreRespawn";
+	}
+
+end;
+}
+//clashcity,79,268,3	duplicate(Master of Mining)	Master of Mining#city	19006
+prontera,185,161,3	duplicate(Master of Mining)	Master of Mining#farm	19006
+
+-	script	::MiningLoad	-1,{
+OnPCLoadMapEvent:
+	if(strcharinfo(3) == "m_mining"){
+		getinventorylist;
+		for(.@i=0;.@i < @inventorylist_count ;.@i++){
+			if(@inventorylist_id[.@i] == 55142)
+				end;
+		}
+		dispbottom "You don't have a mining pass.",0xFF0000;
+		warp "SavePoint",0,0;
+	}
+end;
+
+OnPCDieEvent:
+	if(strcharinfo(3) == "m_mining"){
+		getmapxy(.@map$,.@x,.@y,BL_PC);
+		setarray .@itemid[0],55131,55130,55129,55128,55127,55126,55125,55124,55123,55143,55144,55145,55146,55147;
+		for(.@i=0;.@i<getarraysize(.@itemid);.@i++){
+			.@rand = rand(10000);
+			if(.@rand < 3000){
+				if(countitem(.@itemid[.@i]) > 10){
+					.@amt = rand(1,10);
+					delitem .@itemid[.@i],.@amt;
+					makeitem .@itemid[.@i],.@amt,.@map$,.@x+rand(-2,2),.@y+rand(-2,2);
+				}
+			}
+		}
+	}
+end;
+}
+/*
+prontera,172,199,3	script	Trial Mining	M4MINING,{
+
+	mes "[ ^0055FFTrial Mining^000000 ]";
+	mes "Trial Mining 11PM to 2AM";
+	mes "^FFFFFF_^000000";
+	if(gettimetick(2) >= 1689444000){
+		mes "Mining Trial has ended.";
+		end;
+	}
+	if(#RentedPickaxe){
+		mes "You already got the trial Pickaxe";
+		end;
+	}
+	if(gettimetick(2) >= 1689444000){
+		mes "Mining Trial has ended";
+		end;
+	}
+	rentitem 55142,(1689444000-gettimetick(2));	
+	rentitem 55122,(1689444000-gettimetick(2));
+	set #RentedPickaxe,1;
+	end;
+end;
+}
+*/
+-	script	::MiningBoss	-1,{
+
+OnTimer60000:
+	if($@MineBossID){
+		getfreecell("m_mining",.@x,.@y,82,68,10,10,1);
+		unitwarp $@MineBossID,"m_mining",.@x,.@y;
+		initnpctimer;
+	}
+end;
+
+OnInit:
+	initnpctimer;
+OnTimer43200000:
+	if($@MineBossID) end;
+	if(rand(1,2) == 1){
+		monster "m_mining",82,67,strmobinfo(1,28012),28012,1,"MiningBoss::OnMineBossDie";
+	} else {
+		monster "m_mining",82,67,strmobinfo(1,28013),28013,1,"MiningBoss::OnMineBossDie";
+	}
+	$@MineBossID = $@mobid[0];
+end;
+
+OnMineBossDie:
+	$@MineBossID = 0;
+	initnpctimer;
+end;
+}

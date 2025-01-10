@@ -1,0 +1,91 @@
+main_of,243,21,5	script	Supply Converter	10301,{
+
+	mes .name$;
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "I convert things swiftly!!";
+	mes "Is there anything you like to convert?";
+	next;
+	.@opt = select(.Menu$)-1;
+	mes .name$;
+	mes "Please enter the desired times you want to exchange";
+	next;
+	input .@amount,1,30000;
+	mes .name$;
+	mes "You want to convert ^0055FF"+.@amount*.AmountFrom[.@opt]+"x "+getitemname(.ItemIDFrom[.@opt])+"^000000 to ^0055FF"+.@amount*.AmountTo[.@opt]+"x "+getitemname(.ItemIDTo[.@opt])+"^000000.";
+	mes "^FFFFFF_^000000";
+	mes "Would you like to proceed?.";
+	next;
+	if(select("Yes Please..:Cancel")==2) end;
+	if(countitem(.ItemIDFrom[.@opt]) < .@amount*.AmountFrom[.@opt]){
+		mes .name$;
+		mes "I'm sorry, but i cannot process your request because you lack of ^0055FF"+getitemname(.ItemIDFrom[.@opt])+"^000000.";
+		end;
+	}
+	if(!checkweight(.ItemIDTo[.@opt],.@amount*.AmountTo[.@opt])){
+		mes .name$;
+		mes "I'm sorry, but i cannot process your request because you ^FF0000lack inventory space^000000.";
+		end;
+	}
+	mes .name$;
+	delitem .ItemIDFrom[.@opt],.@amount*.AmountFrom[.@opt];
+	getitem .ItemIDTo[.@opt],.@amount*.AmountTo[.@opt];
+	mes "Alright!~";
+	mes "The conversion is a success!";
+	mes "Hoping that you love my service.";
+close;
+
+OnInit:
+	if(.Loaded) end;
+	.name$ = "^00B2EE[ Supply Converter ]^000000";
+
+	setarray .ItemIDFrom[0],11503,11504,715,716,717;
+	setarray .AmountFrom[0],2,2,100,100,100;
+	setarray .ItemIDTo[0],11504,11503,55077,55076,55075;
+	setarray .AmountTo[0],1,1,1,1,1;
+	
+	for(.@i=0;.@i<getarraysize(.ItemIDFrom);.@i++)
+		.Menu$ += .AmountFrom[.@i]+"x "+getitemname(.ItemIDFrom[.@i])+" to "+.AmountTo[.@i]+"x "+getitemname(.ItemIDTo[.@i]) +":";
+	.Menu$ = .Menu$ + "Cancel";
+	set .Loaded,1;
+end;
+}
+
+pay_arche,44,120,5	duplicate(Supply Converter)	Supply Converter#payarche	10301
+izlude,137,121,3	duplicate(Supply Converter)	Supply Converter#izlude	10301
+alberta,39,243,5	duplicate(Supply Converter)	Supply Converter#alberta	10301
+geffen,124,65,3	duplicate(Supply Converter)	Supply Converter#grff	10301
+//prontera,165,159,1	duplicate(Supply Converter)	Supply Converter#prt	10301
+umbala,95,160,1	duplicate(Supply Converter)	Supply Converter#umb	10301
+prt_fild08,57,57,1	duplicate(Supply Converter)	Supply Converter#prtfild	10301
+morocc,155,82,7	duplicate(Supply Converter)	Supply Converter#morocc	10301
+payon,186,226,1	duplicate(Supply Converter)	Supply Converter#payon	10301
+aldebaran,133,115,5	duplicate(Supply Converter)	Supply Converter#alde	10301
+xmas,142,136,1	duplicate(Supply Converter)	Supply Converter#xmas	10301
+comodo,190,139,1	duplicate(Supply Converter)	Supply Converter#comodo	10301
+yuno,163,88,1	duplicate(Supply Converter)	Supply Converter#yuno	10301
+gonryun,153,126,1	duplicate(Supply Converter)	Supply Converter#gonryun	10301
+louyang,206,114,3	duplicate(Supply Converter)	Supply Converter#louyang	10301
+ayothaya,186,160,7	duplicate(Supply Converter)	Supply Converter#ayothaya	10301
+lighthalzen,153,84,3	duplicate(Supply Converter)	Supply Converter#lhz	10301
+hugel,102,139,3	duplicate(Supply Converter)	Supply Converter#hugel	10301
+rachel,123,107,5	duplicate(Supply Converter)	Supply Converter#rachel	10301
+veins,212,137,5	duplicate(Supply Converter)	Supply Converter#veins	10301
+moscovia,216,194,3	duplicate(Supply Converter)	Supply Converter#moscovia	10301
+mid_camp,189,236,3	duplicate(Supply Converter)	Supply Converter#midcamp	10301
+splendide,192,156,3	duplicate(Supply Converter)	Supply Converter#spl	10301
+dicastes01,192,197,3	duplicate(Supply Converter)	Supply Converter#dicastes	10301
+mora,40,144,5	duplicate(Supply Converter)	Supply Converter#mora	10301
+dewata,191,188,5	duplicate(Supply Converter)	Supply Converter#dewata	10301
+malangdo,124,144,5	duplicate(Supply Converter)	Supply Converter#malangdo	10301
+malaya,243,201,5	duplicate(Supply Converter)	Supply Converter#malaya	10301
+malaya,300,340,5	duplicate(Supply Converter)	Supply Converter#malaya1	10301
+lasagna,159,158,5	duplicate(Supply Converter)	Supply Converter#lasagna	10301
+lou_fild01,190,168,3	duplicate(Supply Converter)	Supply Converter#loufild	10301
+louyang,84,249,7	duplicate(Supply Converter)	Supply Converter#lou2	10301
+jawaii,193,291,5	duplicate(Supply Converter)	Supply Converter#jawaii	10301
+thor_camp,94,335,5	duplicate(Supply Converter)	Supply Converter#thorcamp	10301
+einbroch,173,199,1	duplicate(Supply Converter)	Supply Converter#einbroch	10301
+ghouse1,139,120,5	duplicate(Supply Converter)	Supply Converter#ghouse1	10301
+ghouse2,139,120,5	duplicate(Supply Converter)	Supply Converter#ghouse2	10301
+ghouse3,139,120,5	duplicate(Supply Converter)	Supply Converter#ghouse3	10301
+amatsu,102,91,5	duplicate(Supply Converter)	Supply Converter#ama2	10301

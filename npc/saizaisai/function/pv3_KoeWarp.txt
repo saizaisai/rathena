@@ -1,0 +1,76 @@
+-	script	::warpkoe	-1,{
+end;
+OnAtJoinKoe:
+		if(!getmapflag(strcharinfo(3),mf_town)){
+			dispbottom "[King of Emperium] You can only use this command at towns.",0xFF0000;
+			end;
+		}
+		deletearray .MapsName$[0], getarraysize(.MapsName$);
+        deletearray .Maps$[0], getarraysize(.Maps$);
+        deletearray .Warp1$, getarraysize(.Warp1$);
+        deletearray .Warp2$, getarraysize(.Warp2$);
+		setarray .MapsName$[0],
+						"Gloss Arena",
+						"Grid Arena",
+						"Mash Arena",
+						"Town Arena";
+	
+		setarray .Maps$[0],
+						"koe_gloss",
+						"koe_grid",
+						"koe_mash",
+						"koetown";
+							
+		setarray .Warp1$[0],	//Non owner warps
+						"North,15,85,West,15,15,South,85,15,East,85,85", 		// Gloss Arena
+						"North,15,85,West,15,15,South,85,15,East,85,85", 		// Grid Arena
+						"North,15,85,West,15,15,South,85,15,East,85,85", 		// Mash Arena
+						"North,100,179,West,35,100,South,100,43,East,165,101"; 		// Town Arena
+						
+		setarray .Warp2$[0],	//Owner Warps
+						"North,15,85,West,15,15,South,85,15,East,85,85", 		// Gloss Arena
+						"North,15,85,West,15,15,South,85,15,East,85,85", 		// Grid Arena
+						"North,15,85,West,15,15,South,85,15,East,85,85", 		// Mash Arena
+						"North,99,111,West,89,98,South,99,88,East,110,98"; 		// Town Arena
+						
+		for(.@i=0;.@i<getarraysize(.Maps$);.@i++){
+			if(getd("$@koe_"+.Maps$[.@i]+"_start")){
+				.@active = 1;
+				.@Maps$[.@x] = .Maps$[.@i];
+				.@MapsName$[.@x++] = .MapsName$[.@i];
+			}
+		}
+		if(!.@active){
+			dispbottom "[King of Emperium] No Active King of Emperium Session.",0xFF0000;
+			end;
+		}
+		mes "^00B2EE [ King of Emperium ]^000000";
+		mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+		mes "Which arena are you going to join?.";
+		next;
+		.@menu$ = "";
+		set .Size,getarraysize($KOE_CONTROL);
+		for(.@i=0;.@i<.Size;.@i+=3)
+			if(gettime(DT_DAYOFWEEK) == $KOE_CONTROL[.@i]-1 && gettime(DT_HOUR) == $KOE_CONTROL[.@i+1]-1){
+				.@menu$ = .@menu$+"~ "+.MapsName$[$KOE_CONTROL[.@i+2]-1]+":";
+				.@sel[.@j++] = $KOE_CONTROL[.@i+2]-1;
+			}
+		.@warp = select(.@menu$)-1;
+		if(getd("$koe_"+.Maps$[.@sel[.@warp]])==getcharid(2)) //owner warps
+			explode(.@Warps$,.Warp2$[.@sel[.@warp]],",");
+		else
+			explode(.@Warps$,.Warp1$[.@sel[.@warp]],",");
+		.@warppoints = getarraysize(.@Warps$);
+		.@menu2$ ="";
+		for(.@i=0;.@i<.@warppoints;.@i+=3)
+			.@menu2$ = .@menu2$ + .@Warps$[.@i]+":";
+		.@loc = select(.@menu2$)-1;
+		next;
+		warp .Maps$[.@sel[.@warp]],atoi(.@Warps$[(.@loc*3)+1]),atoi(.@Warps$[(.@loc*3)+2]);
+		end;
+end;
+
+OnInit:
+	bindatcmd "joinkoe","warpkoe::OnAtJoinKoe",0,99;
+end;
+}

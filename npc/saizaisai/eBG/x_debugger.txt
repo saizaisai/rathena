@@ -1,0 +1,27 @@
+-	script	bg_debugger	-1,{
+	end;
+
+OnPCLoadMapEvent:
+	if(getmapflag(strcharinfo(3), MF_BATTLEGROUND)) {
+		.@sd_unique = get_unique_id();
+		.@sd_aid = getcharid(3);
+		.@sd_cid = getcharid(0);
+		getmapunits(BL_PC, strcharinfo(3), .@units[0]);
+		for(.@i = 0; .@i < getarraysize(.@units); .@i++) {
+			detachrid;
+			if(attachrid(.@units[.@i])) {
+				if(.@sd_unique && get_unique_id() == .@sd_unique && getcharid(0) != .@sd_cid) {
+					if(attachrid(.@sd_aid)) {
+						sleep2 100;
+						message strcharinfo(0), "[Battleground] You are not allowed to join with two accounts.";
+						sleep2 500;
+						atcommand "@kick "+strcharinfo(0);
+					}
+				}
+			}
+		}
+	} 
+	end;
+}
+
+//@reloadnpcfile npc/xro/battleground/bg_debugger.txt

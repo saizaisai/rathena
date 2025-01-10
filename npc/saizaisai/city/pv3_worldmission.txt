@@ -1,0 +1,481 @@
+//===== rAthena Script =======================================
+//= tr0n's Mission Board
+//===== By: ==================================================
+//= tr0n
+//===== Current Version: =====================================
+//= 1.4.4
+//===== Compatible With: ===================================== 
+//= rAthena Project
+//===== Description: =========================================
+//= Easily add collection and hunting quests.
+//===== Additional Comments: =================================  
+// 1.0.0 Release
+// 1.1.0 Added zeny reward
+// 1.2.0 Rewrote checkmob and killcounter
+// 1.3.1 Added level restriction
+// 1.3.4 Added Reward Item Amount
+// 1.4.4 Added Quest delay
+//============================================================
+
+-	pointshop	bountys_shop	-1,#PAY_MISSION,12114:1,12115:1,12116:1,12117:1,12118:5,12119:5,12120:5,12121:5,12203:10,12204:10,12205:10,12206:10,12207:10,12202:10,31452:200,31798:200,31437:200
+
+prontera,150,167,5	script	World Mission	837,{
+
+OnWorldMission:
+	if(c_run==1){
+		mes "^00B2EE[ Mission Board ]^000000";
+		mes "^0000FF"+getd("." + currentquest$ + "_collectionname$")+"^000000";
+		mes "--------------------------------";
+		for( set .@j, 0; .@j < getarraysize(getd("."+ currentquest$ + "_collectionitem")); set .@j,.@j+2) {
+			mes "^FF0000"+getitemname(getd("."+currentquest$+"_collectionitem["+.@j+"]"))+" - "+countitem(getd("."+currentquest$+"_collectionitem["+.@j+"]"))+"/"+getd("."+currentquest$+"_collectionitem["+(.@j+1)+"]")+" ea.^000000";
+		}
+		mes "--------------------------------";
+		mes "^00B2EE[ Reward ]^000000";
+		mes "Item: ^0000FF"+((getd("." +currentquest$+"_collectionprize"))?getitemname(getd("." +currentquest$+"_collectionprize"))+" - "+getd("." +currentquest$+"_collectionamount")+" ea.^000000":"Nothing^000000");
+		mes "Zeny: ^0000FF"+getd("." +currentquest$+"_collectionzeny")+"^000000";
+		mes "Base EXP: ^0000FF"+getd("." +currentquest$+"_collectionexp["+0+"]")+"^000000";
+		mes "Job EXP: ^0000FF"+getd("." +currentquest$+"_collectionexp["+1+"]")+"^000000";
+		next;
+		switch(select("> Finish Mission","> ^FF0000Abort Mission^000000","Shop")){
+		case 1:
+			goto L_checkitems;
+			end;
+		case 2:
+			mes "^00B2EE[ Mission Board ]^000000";
+			mes "^FF0000Mission Aborted^000000.";
+			set currentquest$, "";
+			set c_run, 0; 
+			close;
+		case 3:
+			callshop "bountys_shop", 1;
+			end;
+		}
+	}
+	
+	
+	if(h_run==1){
+		mes "^00B2EE[ Mission Board ]^000000";
+		mes "^0000FF"+getd("." + currentquest$ + "_huntingname$")+"^000000";
+		mes "--------------------------------";
+		for( set .@j, 0; .@j < getarraysize(getd("."+ currentquest$ + "_huntingmob")); set .@j,.@j+2) {
+			set .@currentmob, getd("."+currentquest$+"_huntingmob["+(.@j)+"]");
+			mes "^FF0000"+strmobinfo(1,getd("."+currentquest$+"_huntingmob["+.@j+"]"))+" - "+getd(currentquest$+"_"+.@currentmob+"_"+(.@j+1)+"_killcount")+"/"+getd("."+currentquest$+"_huntingmob["+(.@j+1)+"]")+" ea.^000000";
+		}
+		mes "--------------------------------";
+		mes "^00B2EE[ Reward ]^000000";
+		mes "1. Item: ^0000FF"+((getd("." +currentquest$+"_huntingprize"))?getitemname(getd("." +currentquest$+"_huntingprize"))+" - "+getd("." +currentquest$+"_huntingamount")+" ea.^000000":"Nothing^000000");
+		mes "2. Item: ^0000FF"+((getd("." +currentquest$+"_huntingprize1"))?getitemname(getd("." +currentquest$+"_huntingprize1"))+" - "+getd("." +currentquest$+"_huntingamount1")+" ea.^000000":"Nothing^000000");
+		mes "3. Zeny: ^0000FF"+getd("." +currentquest$+"_huntingzeny")+"^000000";
+		mes "4. Base EXP: ^0000FF"+getd("." +currentquest$+"_huntingexp["+0+"]")+"^000000";
+		mes "5. Job EXP: ^0000FF"+getd("." +currentquest$+"_huntingexp["+1+"]")+"^000000";
+		next;
+		switch(select("> Finish Mission","> ^FF0000Abort Mission^000000","Shop")){
+		case 1:
+			goto L_checkmobs;
+			end;
+		case 2:
+			mes "^00B2EE[ Mission Board ]^000000";
+			mes "^FF0000Mission Aborted^000000.";
+			for(set .@x, 1; .@x < getarraysize(getd("."+currentquest$+"_huntingmob")); set .@x,.@x+2){
+				set .@currentmob, getd("."+currentquest$+"_huntingmob["+(.@x-1)+"]");
+				setd(currentquest$+"_"+.@currentmob+"_"+.@x+"_killcount", 0);
+			}
+			set currentquest$, "";
+			set h_run, 0;
+			close;
+		case 3:
+			callshop "bountys_shop", 1;
+			end;
+		}
+	}
+
+L_questmenu:
+	mes "^00B2EE[ Mission Board ]^000000";
+	mes "Hello "+strcharinfo(0)+"!";
+	mes "What mission you want today?";
+	next;
+	
+	switch(select((.collection)?"> Treasure Mission":"",
+				  (.hunting)?"> Hunting Mission":"",
+				  "> Shop",
+				  "> ^FF0000Exit^000000")) {
+	
+		case 1:
+			set .@collectmenu$, "";
+			for( set .@i,0; .@i < .collectionquestcount; set .@i,.@i+1) {
+				if (.@i) 
+				set .@collectmenu$, .@collectmenu$+":";
+				
+				set .@time_left, getd(.@i+1 + "_collection_delay")-gettimetick(2);
+				
+				if(BaseLevel >= getd("." +(.@i+1)+"_collectionmin") && BaseLevel <= getd("." +(.@i+1)+"_collectionmax")){
+					set .@collectmenu$, .@collectmenu$ +"> "+( (.@time_left <= 0 && BaseLevel <= getd("." +(.@i+1)+"_collectionmax")) ? "^008000" : "^FF0000" )+"[Base Lvl " + getd("." +(.@i+1)+"_collectionmin") + " - " + getd("." +(.@i+1)+"_collectionmax") + "]^000000 " + getd("." + (.@i+1) + "_collectionname$");
+				}
+				
+			}
+			
+			set .@selection,select(.@collectmenu$);
+			if(gettimetick(2) < getd(.@selection + "_collection_delay")){
+				set .@time_left, getd(.@selection + "_collection_delay")-gettimetick(2);
+				mes "^00B2EE[ Mission Board ]^000000";
+				if(.@time_left < 60) 
+					mes "You have to wait ^0000FF"+.@time_left+" seconds^000000 to do this quest again.";
+				if(.@time_left < 3600) 
+					mes "You have to wait ^0000FF"+.@time_left/60+" minutes^000000 to do this quest again.";
+					mes "You have to wait ^0000FF"+.@time_left/60/60+" hours^000000 to do this quest again.";
+				close;
+			}
+			
+			mes "^00B2EE[ Mission Board ]^000000";
+			mes "^0000FF"+getd("." + .@selection + "_collectionname$")+"^000000";
+			mes "--------------------------------";
+			for( set .@j, 0; .@j < getarraysize(getd("."+ .@selection + "_collectionitem")); set .@j,.@j+2) {
+				mes "^FF0000"+getitemname(getd("."+.@selection+"_collectionitem["+.@j+"]"))+" - "+getd("."+.@selection+"_collectionitem["+(.@j+1)+"]")+" ea.^000000";
+			}
+			mes "--------------------------------";
+			
+			mes "^00B2EE[ Reward ]^000000";
+			mes "Item: ^0000FF"+((getd("." +.@selection+"_collectionprize"))?getitemname(getd("." +.@selection+"_collectionprize"))+" - "+getd("." +.@selection+"_collectionamount")+" ea.^000000":"Nothing^000000");
+			mes "Zeny: ^0000FF"+getd("." +.@selection+"_collectionzeny")+"^000000";
+			mes "Base EXP: ^0000FF"+getd("." +.@selection+"_collectionexp["+0+"]")+"^000000";
+			mes "Job EXP: ^0000FF"+getd("." +.@selection+"_collectionexp["+1+"]")+"^000000";
+			next;
+			
+			if(select("> Accept Mission:> Decline Mission") == 2){
+				close;
+			}
+			
+			if(BaseLevel >= getd("." +.@selection+"_collectionmin") && BaseLevel <= getd("." +.@selection+"_collectionmax"))
+			{
+				mes "^00B2EE[ Mission Board ]^000000";
+				mes "Mission Accepted..";
+				set c_run, 1;
+				set currentquest$, .@selection;
+				close;
+			}
+			else
+			{
+				mes "^00B2EE[ Mission Board ]^000000";
+				if(BaseLevel <= 90){
+					mes "^FF0000You don't have the required";
+					mes "Level to do this quest^000000.";
+				}else{
+					mes "^FF0000Your Level is too high to do this mission.^000000.";
+				}
+				close;
+			}
+	
+		case 2:
+			set .@huntmenu$, "";
+			for( set .@i,0; .@i < .huntingquestcount; set .@i,.@i+1) {
+				if (.@i) set .@huntmenu$,.@huntmenu$+":";
+				set .@time_left, getd(.@i+1 + "_hunting_delay")-gettimetick(2);
+				
+				if(BaseLevel >= getd("." +(.@i+1)+"_huntingmin") && BaseLevel <= getd("." +(.@i+1)+"_huntingmax")){
+					set .@huntmenu$, .@huntmenu$ + "> "+( (.@time_left <= 0 && BaseLevel <= getd("." +(.@i+1)+"_huntingmin")) ? "^008000" : "^FF0000" )+"[Base Lvl " + getd("." +(.@i+1)+"_huntingmin") + " - " + getd("." +(.@i+1)+"_huntingmax") + "]^000000 " + getd("." + (.@i+1) + "_huntingname$");
+				}
+			}
+			set .@selection,select(.@huntmenu$);
+			if(gettimetick(2) < getd(.@selection + "_hunting_delay")){
+				set .@time_left, getd(.@selection + "_hunting_delay")-gettimetick(2);
+				mes "^00B2EE[ Mission Board ]^000000";
+				if(.@time_left < 60) mes "You have to wait ^0000FF"+.@time_left+" seconds^000000 to do this quest again.";
+				if(.@time_left < 3600) mes "You have to wait ^0000FF"+.@time_left/60+" minutes^000000 to do this quest again.";
+				mes "You have to wait ^0000FF"+.@time_left/60/60+" hours^000000 to do this quest again.";
+				close;
+			}
+			mes "^00B2EE[ Mission Board ]^000000";
+			mes "^0000FF"+getd("." + .@selection + "_huntingname$")+"^000000";
+			mes "--------------------------------";
+			for( set .@j, 0; .@j < getarraysize(getd("."+ .@selection + "_huntingmob")); set .@j,.@j+2) {
+				mes "^FF0000"+strmobinfo(1,getd("."+.@selection+"_huntingmob["+.@j+"]"))+" - "+getd("."+.@selection+"_huntingmob["+(.@j+1)+"]")+" ea.^000000";
+			}
+			mes "--------------------------------";
+			mes "^00B2EE[ Reward ]^000000";
+			mes "1. Item: ^0000FF"+((getd("." +.@selection+"_huntingprize"))?getitemname(getd("." +.@selection+"_huntingprize"))+" - "+getd("." +.@selection+"_huntingamount")+" ea.^000000":"Nothing^000000");
+			mes "2. Item: ^0000FF"+((getd("." +.@selection+"_huntingprize1"))?getitemname(getd("." +.@selection+"_huntingprize1"))+" - "+getd("." +.@selection+"_huntingamount1")+" ea.^000000":"Nothing^000000");
+			mes "3. Zeny: ^0000FF"+getd("." +.@selection+"_huntingzeny")+"^000000";
+			mes "4. Base EXP: ^0000FF"+getd("." +.@selection+"_huntingexp["+0+"]")+"^000000";
+			mes "5. Job EXP: ^0000FF"+getd("." +.@selection+"_huntingexp["+1+"]")+"^000000";
+			
+			next; 
+			if(select("> Accept Mission:> Decline Mission") == 2){
+				close;
+			}
+		
+			if(BaseLevel >= getd("." +.@selection+"_huntingmin") && BaseLevel <= getd("." +.@selection+"_huntingmax"))
+			{
+				mes "^00B2EE[ Mission Board ]^000000";
+				mes "Mission Accepted..";
+				set h_run, 1;
+				set currentquest$, .@selection;
+				close;
+			}
+			else
+			{
+				mes "^00B2EE[ Mission Board ]^000000";
+				if(BaseLevel <= 90){
+					mes "^FF0000You don't have the required";
+					mes "Level to do this quest^000000.";
+				}else{
+					mes "^FF0000Your Level is too high to do this mission.^000000.";
+				}
+				close;
+			}
+	
+		case 3:
+			callshop "bountys_shop", 1;
+			end;
+		case 4:
+		end;
+	}
+close;
+
+L_checkitems:
+	for( set .@k,0; .@k < getarraysize(getd("."+currentquest$+"_collectionitem")); set .@k,.@k+2) {
+		if(countitem(getd("."+currentquest$+"_collectionitem["+.@k+"]")) >= getd("."+currentquest$+"_collectionitem["+(.@k+1)+"]") ){
+			set .@checkitem,.@checkitem+2;
+			set .@checkname, getd("."+currentquest$+"_collectionitem["+.@k+"]");
+		}
+	}
+	
+	if(.@checkitem < getarraysize(getd("."+currentquest$+"_collectionitem"))){
+		mes "^00B2EE[ Mission Board ]^000000";
+		mes "You don't have everything.";
+		mes "[Required Collection]";
+		for( set .@j, 0; .@j < getarraysize(getd("."+ currentquest$ + "_collectionitem")); set .@j,.@j+2) {		
+			mes "^FF0000"+getitemname(getd("."+currentquest$+"_collectionitem["+.@j+"]"))+": "+ getd("."+currentquest$+"_collectionitem["+(.@j+1)+"]") +" ea.^000000"; 			
+		}		
+		close;
+	}
+	
+	for( set .@delcount,0; .@delcount < getarraysize(getd("."+currentquest$+"_collectionitem")); set .@delcount, .@delcount+2) {
+		delitem getd("."+currentquest$+"_collectionitem["+.@delcount+"]"), getd("."+currentquest$+"_collectionitem["+(.@delcount+1)+"]");		
+	}
+	
+	//COLLECTION MISSION
+	for( set .@j, 0; .@j < getarraysize(getd("."+ currentquest$ + "_collectionitem")); set .@j,.@j+2) {	
+		set .@currentitem, getd("."+currentquest$+"_collectionitem["+.@j+"]");
+		set .@itemcount, getd("."+currentquest$+"_collectionitem["+(.@j+1)+"]");		
+		message strcharinfo(0),"Your Total Collection of "+ getitemname(.@currentitem) +" "+ .@currentitem +" Collected. ";
+		// setd(.@currentitem, getd(.@currentitem)+.@itemcount );
+	}
+			
+	mes "^00B2EE[ Mission Board ]^000000";
+	mes "Congratulation! Here is your Reward.";
+	if(getd("." +currentquest$+"_collectionprize")!=0) 
+	getitem(getd("." +currentquest$+"_collectionprize"), getd("." +currentquest$+"_collectionamount"));
+	set Zeny,Zeny+getd("." +currentquest$+"_collectionzeny");
+	getexp getd("." +currentquest$+"_collectionexp["+0+"]"),getd("." +currentquest$+"_collectionexp["+1+"]");
+	setd(currentquest$ + "_collection_delay"),gettimetick(2)+.quest_delay;
+	set currentquest$, "";
+	set c_run, 0;
+	 
+	set #PAY_MISSION, #PAY_MISSION + 1;
+	dispbottom "You got 1 mission pts. Your Total Mission "+ #PAY_MISSION +"pts.";
+		
+	close2; 
+	cutin "",255; 
+end;
+	
+L_checkmobs:
+	set .@goal, (getarraysize(getd("."+currentquest$+"_huntingmob"))/2);
+	for(set .@i, 1; .@i < getarraysize(getd("."+currentquest$+"_huntingmob")); set .@i,.@i+2){
+		set .@currentmob, getd("."+currentquest$+"_huntingmob["+(.@i-1)+"]");
+		if(getd(currentquest$+"_"+.@currentmob+"_"+.@i+"_killcount")==getd("."+currentquest$+"_huntingmob["+.@i+"]")){
+			set .@checkmonster, .@checkmonster+1;
+			if(.@checkmonster==.@goal){
+				goto L_checkmobs2;
+			}
+			continue;
+		}
+		goto L_checkmobs2;
+	}
+	
+L_checkmobs2:
+	if(.@checkmonster<.@goal){
+		mes "^00B2EE[ Mission Board ]^000000";
+		mes "You didn't kill everything.";
+		close;
+	}
+	mes "^00B2EE[ Mission Board ]^000000";
+	mes "Congratulation! Here is your Reward.";
+	for(set .@x, 1; .@x < getarraysize(getd("."+currentquest$+"_huntingmob")); set .@x,.@x+2){
+		set .@currentmob, getd("."+currentquest$+"_huntingmob["+(.@x-1)+"]");
+		setd(currentquest$+"_"+.@currentmob+"_"+.@x+"_killcount", 0);
+	}
+	if(getd("." +currentquest$+"_huntingprize")!=0) getitem (getd("." +currentquest$+"_huntingprize"), getd("." +currentquest$+"_huntingamount"));
+	if(getd("." +currentquest$+"_huntingprize1")!=0) getitem (getd("." +currentquest$+"_huntingprize1"), getd("." +currentquest$+"_huntingamount1"));
+	set Zeny, Zeny+getd("." +currentquest$+"_huntingzeny");
+	getexp getd("." +currentquest$+"_huntingexp["+0+"]"),getd("." +currentquest$+"_huntingexp["+1+"]");
+	setd(currentquest$ + "_hunting_delay"),gettimetick(2)+.quest_delay;
+	set currentquest$, "";
+	set h_run, 0;
+	
+	set #PAY_MISSION, #PAY_MISSION + 1;
+	dispbottom "You got 1 mission pts. Your Total Mission "+#PAY_MISSION+"pts.";
+	
+	close2; 
+	cutin "",255; 
+end;
+
+OnNPCKillEvent:
+	if(h_run!=1) end;
+	for(set .@i, 1; .@i < getarraysize(getd("."+currentquest$+"_huntingmob")); set .@i,.@i+2){
+		if(killedrid==getd("."+currentquest$+"_huntingmob["+(.@i-1)+"]")){
+			set .@currentmob, getd("."+currentquest$+"_huntingmob["+(.@i-1)+"]");
+			if(getd(currentquest$+"_"+.@currentmob+"_"+.@i+"_killcount")>=getd("."+currentquest$+"_huntingmob["+.@i+"]")) end;
+			setd(currentquest$+"_"+.@currentmob+"_"+.@i+"_killcount", getd(currentquest$+"_"+.@currentmob+"_"+.@i+"_killcount")+1);
+			dispbottom getd("."+currentquest$+"_huntingname$")+": ("+ getd(currentquest$+"_"+.@currentmob+"_"+.@i+"_killcount")+"/"+getd("."+currentquest$+"_huntingmob["+.@i+"]")+")";
+				
+			//SET RECORD MONSTER KILLS  
+			setd("killed_"+.@currentmob, getd("killed_"+.@currentmob)+1);
+			set .MobName$, getmonsterinfo(.@currentmob, 0);  
+			message strcharinfo(0),"Your Total Kills of "+.MobName$+" "+ getd("killed_"+.@currentmob) +" Killed. ";
+		 
+			end;
+		}
+		continue;
+	}
+end;
+	
+OnInit:
+
+	//bindatcmd("worldmission", strnpcinfo(3)+"::OnWorldMission");
+
+	function AddCollection;
+	function AddHunting;
+
+	//Activate/Deactive quest categories here
+	set .collection, 1;
+	set .hunting, 1;
+	
+	//Quest Delay (seconds)
+	//24 hours = 86400 seconds
+	set .quest_delay, 43200;
+	
+	//Checks if quests are loaded (prevents out of index)
+	if(.questsloaded==1) end;
+	
+		set .questsloaded, 1;
+		
+		//Add Collection Quests here
+		// Veterans Supply: 14002
+		
+		//AddCollection("<Quest Name>",<Min Lvl>,<Max Lvl>,<Reward|Item ID>,<Reward|Item Amount>,<Zeny Reward>,   	   <Base EXP>,       <Job EXP>,<Item ID>,<Item Amount>,...);
+		//AddCollection("Poring Jellos",         1,      255,           7227,2,        10000,	rand(2000000,500000),  rand(500000,250000),  909,rand(50,150));
+		
+		//COLLECTION MISSION
+		AddCollection("Resin",					98,	99,		14003,rand(1,5),        10000,	rand(10000,30000),rand(10000,30000),  907,rand(50,100));
+		AddCollection("Spore Doll ",			98,	99,		14003,rand(1,5),        10000,	rand(10000,30000),rand(10000,30000),  743,rand(20,50));
+		AddCollection("Skel-Bone",				98,	99,		14003,rand(1,5),        10000,	rand(10000,30000),rand(10000,30000),  932,rand(50,100));
+		AddCollection("Bear's Footskin",		98,	99,		14003,rand(1,3),        10000,	rand(10000,30000),rand(10000,30000),  948,rand(50,100));
+		AddCollection("Dokebi Horn",			98,	99,		14003,rand(2,5),        10000,	rand(10000,30000),rand(10000,30000),  1021,rand(50,120));
+		AddCollection("Trunk",					98,	99,		14003,rand(1,2),        10000,	rand(10000,30000),rand(10000,30000),  1019,rand(80,150));
+		AddCollection("Nine Tails",				98,	99,		14003,rand(1,3),        10000,	rand(10000,30000),rand(10000,30000),  1022,rand(50,100));
+		AddCollection("Short Daenggie",			98,	99,		14003,rand(1,3),        10000,	rand(10000,30000),rand(10000,30000),  1094,rand(50,100));
+		AddCollection("Black hair",				98,	99,		14003,rand(1,3),        10000,	rand(10000,30000),rand(10000,30000),  1020,rand(50,100));
+		
+		//ARMOR COLLECTION MISSION
+		AddCollection("Girl's Diary [1]",		98,	99,		14003,rand(1,3),        10000,	rand(10000,30000),rand(10000,30000),  1558,rand(5,10));
+		AddCollection("Nurse Cap",				98,	99,		14003,rand(1,3),        10000,	rand(10000,30000),rand(10000,30000),  2277,rand(5,10));
+		AddCollection("Muffler [1]",			98,	99,		14003,rand(1,3),        10000,	rand(10000,30000),rand(10000,30000),  2504,rand(2,5));
+		AddCollection("Shoes [1]",				98,	99,		14003,rand(1,3),        10000,	rand(10000,30000),rand(10000,30000),  2404,rand(2,5));
+		AddCollection("Ninja Suit",				98,	99,		14003,rand(1,3),        10000,	rand(10000,30000),rand(10000,30000),  2337,rand(5,10));
+		
+		//RARE CARDS COLLECTIONS MISSION 33019 ELITE SAGE SUPLY [NT]
+		AddCollection("Elder Willow Card",		98,	99,		14003,rand(1,5),        10000,	rand(10000,30000),rand(10000,30000),  4052,rand(5,10));
+		AddCollection("Bigfoot Card",			98,	99,		14003,rand(1,5),        10000,	rand(10000,30000),rand(10000,30000),  4074,rand(5,10));
+		AddCollection("Zombie Card",			98,	99,		14003,rand(1,5),        10000,	rand(10000,30000),rand(10000,30000),  4038,rand(5,10));
+		AddCollection("Archer Skeleton Card",	98,	99,		14003,rand(2,5),        10000,	rand(10000,30000),rand(10000,30000),  4094,rand(5,10));
+		AddCollection("Dokebi Card",			98,	99,		14003,rand(2,5),        10000,	rand(10000,30000),rand(10000,30000),  4098,rand(5,10));
+		
+		AddCollection("Hydra Card",				98,	99,		14003,rand(5,10),        10000,	rand(10000,30000),rand(10000,30000),  4035,rand(2,5));
+		AddCollection("Soldier Skeleton Card",	98,	99,		14003,rand(5,10),        10000,	rand(10000,30000),rand(10000,30000),  4086,rand(2,5));
+		AddCollection("Nine Tail Card",			98,	99,		14003,rand(2,5),        10000,	rand(10000,30000),rand(10000,30000),  4159,rand(5,10));
+		AddCollection("Munak Card",				98,	99,		14003,rand(2,5),        10000,	rand(10000,30000),rand(10000,30000),  4090,rand(5,10));
+		AddCollection("Bongun Card",			98,	99,		14003,rand(2,5),        10000,	rand(10000,30000),rand(10000,30000),  4212,rand(5,10));
+		
+		//Add Hunting Quests here 
+		//AddHunting("<Quest Name>"  ,<Min Lvl>,<Max Lvl>,<Reward>, <Amount>,<Zeny Reward>,<Base EXP>,<Job EXP>,<Monster ID>,<Monster Amount>,...);   
+		
+		//PAYON HUNTING MISSIONS
+		AddHunting("Kill Spore",			98,	99,		13534,rand(1,2),13810,rand(1,3),     10000,		rand(5000,10000),rand(5000,10000),		1014,rand(100,120));
+		AddHunting("Kill Zombie",			98,	99,		13534,rand(1,2),13810,rand(1,3),     10000,		rand(5000,10000),rand(5000,10000),		1015,rand(100,120));
+		AddHunting("Kill Wolf",				98,	99,		13534,rand(1,2),13810,rand(1,3),     10000,		rand(5000,10000),rand(5000,10000),		1013,rand(100,120));
+		AddHunting("Kill Elder Willow",		98,	99,		13534,rand(1,2),13810,rand(1,3),     10000,		rand(10000,15000),rand(10000,15000),	1033,rand(75,120));
+		AddHunting("Kill Bigfoot",			98,	99,		13534,rand(1,2),13810,rand(1,3),     10000,		rand(10000,15000),rand(10000,15000),	1060,rand(50,120));
+		AddHunting("Kill Dokebi",			98,	99,		13534,rand(1,5),13810,rand(1,5),     10000,  	rand(10000,15000),rand(10000,15000),	1110,rand(50,120));
+		AddHunting("Kill Greatest General",	98,	99,		13534,rand(1,5),13810,rand(1,5),     10000,  	rand(10000,15000),rand(10000,15000),	1277,rand(50,120));
+		AddHunting("Kill Hydra",			98,	99,		13534,rand(1,5),13810,rand(1,5),     10000,  	rand(10000,15000),rand(10000,15000),	1068,rand(100,120));
+		AddHunting("Kill Soldier Skeleton",	98,	99,		13534,rand(1,5),13810,rand(1,5),     10000,  	rand(10000,15000),rand(10000,15000),	1028,rand(50,120));
+		AddHunting("Kill Munak",			98,	99,		13534,rand(1,5),13810,rand(1,5),     10000,  	rand(10000,15000),rand(10000,15000),	1026,rand(50,120));
+		AddHunting("Kill Bongun",			98,	99,		13534,rand(1,5),13810,rand(1,5),     10000,  	rand(10000,15000),rand(10000,15000),	1188,rand(50,120));
+		AddHunting("Kill Sohee",			98,	99,		13534,rand(1,5),13810,rand(1,5),     10000,  	rand(10000,15000),rand(10000,15000),	1170,rand(50,120));
+		AddHunting("Kill Nine Tail",		98,	99,		13534,rand(1,3),13810,rand(1,3),     10000,  	rand(10000,15000),rand(10000,15000),	1180,rand(50,100));
+		AddHunting("Kill Horong",			98,	99,		13534,rand(1,3),13810,rand(1,3),     10000,  	rand(10000,15000),rand(10000,15000),	1129,rand(50,100));
+	while(1) {
+	.@npc_id = getnpcid(0);
+		hateffect_npc 340, false, .@npc_id;
+		hateffect_npc 340, true, .@npc_id;
+	showscript "Mission Hunter", getnpcid(0);
+	sleep 1000;
+	} 
+end;
+		
+
+function AddCollection {
+	set .collectionquestcount,.collectionquestcount+1;
+	setd ("." +.collectionquestcount+"_collectionname$", getarg(0));
+	setd ("." +.collectionquestcount+"_collectionmin", getarg(1));
+	setd ("." +.collectionquestcount+"_collectionmax", getarg(2));
+	setd ("." +.collectionquestcount+"_collectionprize", getarg(3));
+	setd ("." +.collectionquestcount+"_collectionamount", getarg(4));
+	setd ("." +.collectionquestcount+"_collectionzeny", getarg(5));
+	set .@argcount, 6;
+	set .@size, getarraysize(getd("."+ .collectionquestcount + "_collectionexp"));
+	setd ("." +.collectionquestcount+"_collectionexp["+.@size+"]",getarg(.@argcount)); 
+	setd ("." +.collectionquestcount+"_collectionexp["+(.@size+1)+"]",getarg(.@argcount+1)); 
+	set .@argcount, .@argcount+2;
+	while(getarg(.@argcount,-1)!=-1 && getarg(.@argcount+1,-1)!=-1) {
+		set .@size, getarraysize(getd("."+ .collectionquestcount + "_collectionitem"));
+		setd ("."+.collectionquestcount+"_collectionitem["+.@size+"]",getarg(.@argcount)); 
+		setd ("."+.collectionquestcount+"_collectionitem["+(.@size+1)+"]",getarg(.@argcount+1));
+		set .@argcount,.@argcount+2;
+	}
+	return;
+}
+
+function AddHunting {
+	set .huntingquestcount,.huntingquestcount+1;
+	setd ("." +.huntingquestcount+"_huntingname$", getarg(0));
+	setd ("." +.huntingquestcount+"_huntingmin", getarg(1));
+	setd ("." +.huntingquestcount+"_huntingmax", getarg(2));
+	setd ("." +.huntingquestcount+"_huntingprize", getarg(3));
+	setd ("." +.huntingquestcount+"_huntingamount", getarg(4));
+	setd ("." +.huntingquestcount+"_huntingprize1", getarg(5));
+	setd ("." +.huntingquestcount+"_huntingamount1", getarg(6));
+	
+	setd ("." +.huntingquestcount+"_huntingzeny", getarg(7));
+	set .@size, getarraysize(getd("."+ .huntingquestcount + "_huntingexp"));
+	set .@argcount, 8;
+	setd ("." +.huntingquestcount+"_huntingexp["+.@size+"]",getarg(.@argcount));
+	setd ("." +.huntingquestcount+"_huntingexp["+(.@size+1)+"]",getarg(.@argcount+1)); 
+	set .@argcount, .@argcount+2;
+	while(getarg(.@argcount,-1)!=-1 && getarg(.@argcount+1,-1)!=-1) {
+		set .@size, getarraysize(getd("."+ .huntingquestcount + "_huntingmob"));
+		setd ("."+.huntingquestcount+"_huntingmob["+.@size+"]",getarg(.@argcount)); 
+		setd ("."+.huntingquestcount+"_huntingmob["+(.@size+1)+"]",getarg(.@argcount+1));
+		set .@argcount, .@argcount+2;
+	}
+	return;
+}
+
+OnPCLoadMapEvent:
+	if( strcharinfo(3) == strnpcinfo(4) )
+	   showevent 1,0;
+	end;
+}
+
+
+prontera	mapflag	loadevent

@@ -1,0 +1,126 @@
+-	script	bot_report::REPORTBOT	-1,{
+
+OnReportBot:
+	if(callsub(OnCheckMapflag) || inarray(.Maps$,strcharinfo(3)) >= 0){
+		dispbottom "[Bot Verification] You cannot use @reportbot on this map.",0xFF0000;
+		end;
+	}
+	.@name$ = implode(.@atcmd_parameters$," ");
+	if(!convertpcinfo(.@name$,CPC_ACCOUNT)){
+		dispbottom "[Bot Verification] Usage: @reportbot {Player Name}",0xFF0000;
+		dispbottom "[Bot Verification] The player is not online or Invalid use of @reportbot",0xFF0000;
+		end;
+	}
+	.@aid = convertpcinfo(.@name$,CPC_ACCOUNT);
+	.@cid = convertpcinfo(.@name$,CPC_CHAR);
+	.@time = getvar(@BOTREPORT,.@cid);
+	.@recent = getvar(@BOTRECENT,.@cid);
+	if(strcharinfo(3) != strcharinfo(3,.@cid)){
+		dispbottom "[Bot Verification] You must be on the same map as the player you are reporting.",0xFF0000;
+		end;
+	}
+	if(.@time > gettimetick(2) || .@recent > gettimetick(2)){
+		dispbottom "[Bot Verification] This player has been reported recently.",0xFF0000;
+		end;
+	}
+	if(checkidle(.@name$) > 20){
+		dispbottom "[Bot Verification] This player is idle and cannot been reported.",0xFF0000;
+		end;
+	}
+	dispbottom "[Bot Verification] The player has been reported and a bot verification will check the player.";
+	callsub OnBotChecking,.@aid,.@cid;
+end;
+
+OnBotChecking:
+	attachrid getarg(0);
+	@BOTRECENT = gettimetick(2)+.Timeout;
+	setpcblock PCBLOCK_ALL,true;
+	ignoretimeout(1);
+	while(1){
+		initnpctimer strnpcinfo(3),getcharid(3);
+		if(.@tries >= .Tries){
+			logmes strcharinfo(0)+" has been banned due to bot verification incorrect answers.";
+			atcommand "@ban "+.BanTime$+" "+strcharinfo(0);
+			end;
+		}
+		mes .name$;
+		mes "You have been reported as a bot.";
+		mes "Please insert the ^FF0000RED^000000 highlighted message at the input box.";
+		mes "Message: ";
+		.@redchar$ = "";
+		for(.@i=0;.@i<.RedCharacters;.@i++)
+			.@redchar$ += charat(.Characters$,rand(getstrlen(.Characters$)));
+		.@message$ = callsub(OnMessage,.@redchar$);
+		mes "-> "+.@message$;
+		next;
+		input .@str$;
+		if(.@str$ == .@redchar$){
+			mes .name$;
+			mes "Sorry for the disturbance!";
+			mes "You are immune to bot verification for "+callfunc("Time2Str",gettimetick(2)+.Delay)+".";
+			stopnpctimer strnpcinfo(3),getcharid(3);
+			@BOTREPORT = gettimetick(2)+.Delay;
+			setpcblock PCBLOCK_ALL,false;
+			end;
+		} else {
+			mes .name$;
+			mes "You insert incorrect characters!";
+			mes "Please try again.";
+			mes "Tries: ^FF0000"+(++.@tries)+"^000000";
+			next;
+		}
+	}
+end;
+
+OnTimer60000:
+	logmes strcharinfo(0)+" has been kicked due to bot verification timeout.";
+	atcommand "@kick "+strcharinfo(0);
+	//logmes strcharinfo(0)+" has been banned due to bot verification timeout.";
+	//atcommand "@ban "+.BanTime$+" "+strcharinfo(0);
+end;
+
+OnMessage:
+	.@str$ = "^03C04A";
+	.@idx = rand(.GreenCharacters);
+	for(.@i=0;.@i<.GreenCharacters;.@i++){
+		if(.@idx == .@i) .@str$ += "^FF0000"+getarg(0)+"^03C04A";
+		.@str$ += charat(.Characters$,rand(getstrlen(.Characters$)));
+	}
+	.@str$ += "^000000";
+return .@str$;
+
+OnCheckMapflag:
+	for(.@i=0;.@i<getarraysize(.Mapflags);.@i++)
+		if(getmapflag(strcharinfo(3),.Mapflags[0])) return 1;
+return 0;
+
+OnInit:
+	.name$ = "[ ^FF5500Bot Verification^000000 ]";
+	
+	.Delay = 3600;			// Delay between bot report in seconds.
+	.Tries = 3;				// Times of tries before getting flag as bot.
+	.RedCharacters = 5;		// Total of Red characters highlighted in message.
+	.GreenCharacters = 15;	// Total of Green characters highlighted in message.
+	.BanTime$ = "+60mn";	// time usage: adjustment (+/- value) and element (y/a, m, d/j, h, mn, s)
+	setarray .Mapflags[0],	// Disable @reportbot on maps with this mapflags
+						MF_TOWN,
+						MF_GVG,
+						MF_GVG_CASTLE;
+	
+	setarray .Maps$[0],		// Disable @reportbot on this maps
+						"prontera";
+
+	.Characters$ = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRTSUVWXYZ1234567890!@#$%^&*()";
+	
+	bindatcmd "reportbot","REPORTBOT::OnReportBot",0,99;
+end;
+}
+/* This are the available Mapflags you can use 
+MF_NOMEMO,MF_NOTELEPORT,MF_NOSAVE,MF_NOBRANCH,MF_NOPENALTY,MF_NOZENYPENALTY,MF_PVP,MF_PVP_NOPARTY,MF_PVP_NOGUILD,MF_GVG,MF_GVG_NOPARTY,MF_NOTRADE
+MF_NOSKILL,MF_NOWARP,MF_PARTYLOCK,MF_NOICEWALL,MF_SNOW,MF_FOG,MF_SAKURA,MF_LEAVES,MF_NOGO,MF_CLOUDS,MF_CLOUDS2,MF_FIREWORKS,MF_GVG_CASTLE,
+MF_GVG_DUNGEON,MF_NIGHTENABLED,MF_NOBASEEXP,MF_NOJOBEXP,MF_NOMOBLOOT,MF_NOMVPLOOT,MF_NORETURN,MF_NOWARPTO,MF_PVP_NIGHTMAREDROP,MF_RESTRICTED,
+MF_NOCOMMAND,MF_NODROP,MF_JEXP,MF_BEXP,MF_NOVENDING,MF_LOADEVENT,MF_NOCHAT,MF_NOEXPPENALTY,MF_GUILDLOCK,MF_TOWN,MF_AUTOTRADE,MF_ALLOWKS,
+MF_MONSTER_NOTELEPORT,MF_PVP_NOCALCRANK,MF_BATTLEGROUND,MF_RESET,MF_NOMAPCHANNELAUTOJOIN,MF_NOUSECART,MF_NOITEMCONSUMPTION,MF_NOSUNMOONSTARMIRACLE,
+MF_NOMINEEFFECT,MF_NOLOCKON,MF_NOTOMB,MF_SKILL_DAMAGE,MF_NOCOSTUME,MF_GVG_TE_CASTLE,MF_GVG_TE,MF_HIDEMOBHPBAR,MF_NOLOOT,MF_NOEXP,MF_PRIVATEAIRSHIP_SOURCE,
+MF_PRIVATEAIRSHIP_DESTINATION,MF_SKILL_DURATION,MF_LOOTEVENT,MF_NOECALL,MF_BG_CONSUME,MF_WOE_CONSUME,MF_BG_TOPSCORE
+*/

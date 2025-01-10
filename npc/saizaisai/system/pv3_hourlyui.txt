@@ -1,0 +1,62 @@
+prontera,0,0,0	script	Mileage	4_F_02,{
+end;
+OnOpen:
+	disable_items;
+	mes "^00B2EE[ Mileage System ]^000000";
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Goodnight"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "You have "+#Goldpc_Points+" Mileage Points";
+    mes "How can I help you today?";
+	switch(select("^3CB371[-]^000000 Open Shop:^3CB371[-]^000000 Nothing, thanks")){
+		case 1:
+			close2;
+			callshop "StorePresence",1;
+			npcshopattach "StorePresence";
+			end;
+		case 2:
+			clear;
+			mes "^00B2EE[ Mileage System ]^000000";
+			mes "Ok come back when you need my services";
+			close;
+	end;
+	}
+
+OnBuyItem:
+	for(set .@i,0; .@i<getarraysize(@bought_nameid); set .@i,.@i+1)
+		for(set .@j,0; .@j<getarraysize(.Shop); set .@j,.@j+2)
+			if (@bought_nameid[.@i] == .Shop[.@j]) {
+				set .@cost, .@cost+(.Shop[.@j+1]*@bought_quantity[.@i]);
+				break;
+			}
+	if (.@cost > getd(.Points$)) {
+		mes "^00B2EE[ Mileage System ]^000000";
+		mes "You? does not have enough points.";
+	}
+	else {
+		mes "Purchased Items:";
+		mes "-----------------------------------";
+		for(set .@i,0; .@i<getarraysize(@bought_nameid); set .@i,.@i+1) {
+			getitem @bought_nameid[.@i], @bought_quantity[.@i];
+			mes "^777777"+@bought_quantity[.@i]+"x "+getitemname(@bought_nameid[.@i])+"^000000";
+		}
+		mes " ";
+		mes "---------- Total: ^0055FF"+.@cost+" pt.^000000 -------";
+		delgoldpoints .@cost;
+	}
+	deletearray @bought_nameid[0], getarraysize(@bought_nameid);
+	deletearray @bought_quantity[0], getarraysize(@bought_quantity);
+end;
+
+OnInit:
+	set .Level,0;   		//
+	set .Points$,"#Goldpc_Points";	// variavel pontos
+	bindatcmd "presence", strnpcinfo(0)+"::On3x",60,60;
+	setarray .Shop[0],		// itens
+	  14533,3,12210,3,12424,1,12427,1,12710,2,14536,1;
+	
+	npcshopdelitem "StorePresence",909;
+	for(set .@i,0; .@i<getarraysize(.Shop); set .@i,.@i+2)
+		npcshopadditem "StorePresence",.Shop[.@i],.Shop[.@i+1];
+	
+}
+//=====| Store Presence | =======//
+-	shop	StorePresence	-1,909:-1

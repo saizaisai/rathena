@@ -1,0 +1,702 @@
+-	script	SpikeROItems	-1,{
+freeloop();
+  OnSpikeStreamerBox:
+        // 1% Chance
+        setarray .SuperRare1[0],
+		//50907,  // Fairy
+		50952,  // Frog Hood
+		//51432,  // New Ash Hat 
+		51706,  // Red Baseball Cap
+		//50907,  //Fairy
+		//50907,  //Fairy
+		50952,  //Frog Hood
+		50952,  //Frog Hood
+		//51432,  //New Ash Hat 
+		//51432,  //New Ash Hat 
+		//51443,  //Night Spell
+		51757,  //Costume Red Side Cap 
+		51767,  //Costume Red Welding Mask 
+		51757,  //Costume Red Side Cap 
+		51767,  //Costume Red Welding Mask 
+		51706,  //Red Baseball Cap
+		51706;  //Red Baseball Cap
+
+        // 10% Chance
+        setarray .Rare1[0],
+		50184, // Costume Mice Aura
+		50486,  // Card Ring 
+		50502,  // Chaos Ring
+		//51443,  // Night Spell
+		51921,  // Sappo Balloon
+		//50486,  //Card Ring 
+		//50486,  //Card Ring 
+		50502,  //Chaos Ring
+		50502,  //Chaos Ring
+		//51443,  //Night Spell
+		51674,  //Costume Pyramid Hat
+		51680,  // Costume Rainbow Cloud
+		51921,  //Sappo Balloon
+		51921;  //Sappo Balloon
+
+
+        // 89% Chance
+        setarray .Common1[0],
+			//50487,  // Costume Caterpillar Back Pack 
+			52024,	// Costume String Hat
+			52098,	// Costume Sunflower Ring
+			52032,	// Costume Sunflower Ring
+			50511,  // Costume Chinese Knot
+			5229,   // Costume Brown Deviruchi Hat
+			5609,   // Costume Chung Hairband 
+			5609,   // Costume Chung Hairband 
+			5254,   // Costume Deviling Hat
+			5583,   // Costume Eden Team Hat
+			5146,   // Costume Elephant Hat
+			5390,   // Costume Frozen Twin Pompom
+			5056,   // Costume Fruit Love
+			18506,  // Costume Hattah Mask
+			5319,   // Costume Hello Mother Hat
+			5392,   // Costume Louyang New Year Hat
+			5237,   // Costume Pink Beanie
+			5237,   // Costume Pink Beanie
+			5511,   // Costume Samambaia
+			5133,   // Costume Sheep Hat
+			5133,   // Costume Sheep Hat
+			19507,  // Costume Shining Sun 
+			5682,   // Costume Triangle Rune Cap
+			5316,   // Costume Umbrella Hat
+			5229,   // Costume Brown Deviruchi Hat
+			5140,   // Costume Charming Ribbon
+			5140,   // Costume Charming Ribbon
+			5609,   // Costume Chung Hairband 
+			5254,   // Costume Deviling Hat
+			5583,   // Costume Eden Team Hat
+			5146,   // Costume Elephant Hat
+			5390,   // Costume Frozen Twin Pompom
+			5056,   // Costume Fruit Love
+			18506,  // Costume Hattah Mask
+			5319,   // Costume Hello Mother Hat
+			5392,   // Costume Louyang New Year Hat
+			5392,   // Costume Louyang New Year Hat
+			5393,   // Costume Love Valentine's Hat
+			5237,   // Costume Pink Beanie
+			5511,   // Costume Samambaia
+			5310,   // Costume Shining Electric Bulb Hairband
+			19507,  // Costume Shining Sun 
+			5682,   // Costume Triangle Rune Cap
+			5316,   // Costume Umbrella Hat
+			5056,   // Costume Fruit lovely
+			5229,   // Costume Brown Deviruchi Hat
+			5140,   // Costume Charming Ribbon
+			5254,   // Costume Deviling Hat
+			5583,   // Costume Eden Team Hat
+			5146,   // Costume Elephant Hat
+			5390,   // Costume Frozen Twin Pompom
+			5056,   // Costume Fruit Love
+			18506,  // Costume Hattah Mask
+			5319,   // Costume Hello Mother Hat
+			5393,   // Costume Love Valentine's Hat
+			5393,   // Costume Love Valentine's Hat
+			5133,   // Costume Sheep Hat
+			5310,   // Costume Shining Electric Bulb Hairband
+			5310,   // Costume Shining Electric Bulb Hairband
+			19507,  // Costume Shining Sun 
+			5682,   // Costume Triangle Rune Cap
+			5316,   // Costume Umbrella Hat
+			51674,  // Costume Pyramid Hat
+			51680,  // Costume Rainbow Cloud
+			50037,  // Costume Angeling Pack
+			50059,  // Costume Arabian Rose
+			50064,  // Costume Archangeling Pack
+			51569,  // Costume Pink Passion Balloon
+			51605,  // Costume Privateer Hat
+			52155, // White Bat Rucksack
+			61285, // Costume Poring Sunglass
+			51593, // Costume Poring Ring
+			50613, // Costue Cyan Warpra's Hat
+			60877, // Costume Republic Hat
+			60293, // Costume Sakura Mist Hat
+			5511;   // Costume Samambaia
+			
+        set .rand,rand(1,100);
+        if(.rand == 1){
+            getitem .SuperRare1[rand(getarraysize(.SuperRare1))],1;
+            announce "["+strcharinfo(0)+"] Obtained a rare item [1% chance] from Spike Streamer Box ",0;
+        }else if(.rand >= 2 && .rand <= 11){
+            getitem .Rare1[rand(getarraysize(.Rare1))],1;
+        }else if(.rand >= 12 && .rand <= 100){
+            getitem .Common1[rand(getarraysize(.Common1))],1;
+        }
+        end;
+
+
+    OnSpikeStreamerPremium:
+        // 1% Chance
+        setarray .SuperRare2[0],
+			//50507, //Costume Cheshire Ears  
+			//52039, //Costume Sword Ring 	
+			//51721, //Red Dragon Helm upper
+			51591, //Poring Aura
+			//50732, //Doraemon Spirit lower
+			51884, //Planet Aura lower
+			//50483, //Capa Fire Wolf olwer
+			50513, //Chopper Hat upper
+			51679, //Costume Rainbow Ring Hat
+			51884, // Costume Planet Aura
+			51432, // Costume New Ash Hat
+			51293, // Costume Kinetic Visor
+			51811, // Costume Garden Candy
+			56747, // Costume Gym Buddy
+			50044, // Costume Animated Angel Wings
+			50005, // Costume 711 Ceclius Hat
+			61519, // Costume Let It Snow
+			51523; //Pegasus Hat upper
+			
+        // 10% Chance
+        setarray .Rare2[0],
+		50479, // Costume Candy Xmas Ring	
+		51591, //Poring Aura
+		51884, //Planet Aura lower
+		50513, //Chopper Hat upper
+		51432, // Costume New Ash Hat
+		51293, // Costume Kinetic Visor
+		51811, // Costume Garden Candy
+		51523; //Pegasus Hat upper
+
+        // 89% Chance
+        setarray .Common2[0],
+		51591, //Poring Aura
+		51884, //Planet Aura lower
+		50513, //Chopper Hat upper
+		51523; //Pegasus Hat upper
+		
+        set .rand,rand(1,100);
+        if(.rand == 1){
+            getitem .SuperRare2[rand(getarraysize(.SuperRare2))],1;
+            announce "["+strcharinfo(0)+"] Obtained a rare item [1% chance] from Spike Streamer Box [Premium]",0;
+        }else if(.rand >= 2 && .rand <= 11){
+            getitem .Rare2[rand(getarraysize(.Rare2))],1;
+        }else if(.rand >= 12 && .rand <= 100){
+            getitem .Common2[rand(getarraysize(.Common2))],1;
+        }
+    end;
+
+    OnSpikeMysteryBox:
+        // 1% Chance
+        setarray .SuperRare3[0],
+		52554, //Wings of Lucifer
+		52555, //Wings of Raguel
+		51277; //Costume Jiggly Puff Fairy Spirit
+		//1955,//Costume Shiny Gold LBH
+		//1292; //Kaura
+
+        // 10% Chance
+        setarray .Rare3[0],
+		54168, //Costume Sweet Balloon Hat
+		//50321, //Costume Black Waterflame Majestic
+		50908, //Costume Halo Black
+		54196, //Costume Flapping Angel Wing Special
+		//50475, //Cafu Animated Cyclop Ears
+		50530, //Ratatouille Hat
+		50677, //Deviling Wings
+		51352, //Lupus Wig upper
+		//51279, //Juliana Guardian Doll lower
+		50415, //Broly Wig Black upper
+		50421, //Broly Wig Gold Upper
+		50445, //Buffoon Hat upper
+		50821, //Dying Will Yellow upper
+		51459, //Twin Canon lower
+		50663, //Design Glasses middle
+		50188, //Evo Hat
+		50269, //Costume Black Felinus
+		//50929, //Costume Flaming Majestic Goat
+		52123, //Costume Visor Dragon Gold
+		50269, //Costume Black Felinus
+		51562, //Costume Pink Felinus Wig
+		50921; //Costume Felinus Wig 
+		//52249, //Snow Aura Yellow
+		//52268, //Snow Aura Blue
+		//52269, //Snow Aura Green
+		//52270, //Snow Aura Orange
+		//52271, //Snow Aura Pink
+		//52272, //Snow Aura Purple
+		//52273, //Snow Aura Red
+		//50731; //Donut Balloon
+			
+
+        // 89% Chance
+        setarray .Common3[0],
+		//51955, //Golden Baphomet Horns
+		54168, //Costume Sweet Balloon Hat
+		50530, //Ratatouille Hat
+		50677, //Deviling Wings
+		51352, //Lupus Wig upper
+		//50415, //Broly Wig Black upper
+		50445, //Buffoon Hat upper
+		50821, //Dying Will Yellow upper
+		//52123, //Costume Visor Dragon Gold
+		50269, //Costume Black Felinus
+		50921; //Costume Felinus Wig 
+		
+        set .rand,rand(1,100);
+        if(.rand == 1){
+            getitem .SuperRare3[rand(getarraysize(.SuperRare3))],1;
+            announce "["+strcharinfo(0)+"] Obtained a rare item [1% chance] from Spike Mystery Box ",0;
+        }else if(.rand >= 2 && .rand <= 11){
+            getitem .Rare3[rand(getarraysize(.Rare3))],1;
+        }else if(.rand >= 12 && .rand <= 100){
+            getitem .Common3[rand(getarraysize(.Common3))],1;
+        }
+    end;
+
+    OnSpikeMysteryPremium:
+        // 1% Chance
+        setarray .SuperRare4[0],
+		//54044, // Costume Black Seraphim Wing
+		//54045, // Costume Blue Seraphim Wing
+		//54046, // Costume Green Seraphim Wing
+		//54047, // Costume Grey Seraphim Wing
+		//54048, // Costume Red Seraphim Wing
+		//54050, // Costume Yellow Seraphim Wing
+		//52547, //Valkyrie Wing 
+		52554, //Wings of Lucifer 
+		52555, //Wings of Raguel
+		52556, //Wings of Raphael
+		52536, //Wings of Gabriel 
+		52523, //Wings of Michael
+		51749, //Red Perfect Helios
+		51571, //Pink Perfect Helios
+		52196, //White Perfect Helios
+		50444, //Buffoon Cape
+		51313, //Blue Perfect Helios
+		51113, //Green Perfect Helios 
+		51024, //Gold Perfect Helios
+		50600, //Cyan Perfect Helios
+		50389, //Blue Perfect Helios
+		//51200, //Costume Hiccarus Devil Slayer Cape 
+		52575, //Costume Big Ribbon Cloak
+		//54174, //Costume Spectre Cape
+		50302; //Black Perfect Helios
+			
+
+        // 10% Chance
+        setarray .Rare4[0],
+		//54044, // Costume Black Seraphim Wing
+		//54045, // Costume Blue Seraphim Wing
+		//54046, // Costume Green Seraphim Wing
+		//54047, // Costume Grey Seraphim Wing
+		//54048, // Costume Red Seraphim Wing
+		//54050, // Costume Yellow Seraphim Wing		
+		//54174, //Costume Spectre Cape
+//		52547, //Valkyrie Wing 
+		52554, //Wings of Lucifer 
+ 		52555, //Wings of Raguel
+		52556, //Wings of Raphael
+		52536, //Wings of Gabriel 
+		52523, //Wings of Michael
+		51749, //Red Perfect Helios
+		51571, //Pink Perfect Helios
+		52196, //White Perfect Helios
+		50444, //Buffoon Cape
+		51313, //Blue Perfect Helios
+		51113, //Green Perfect Helios 
+		51024, //Gold Perfect Helios
+		50600, //Cyan Perfect Helios
+		50389, //Blue Perfect Helios
+		//51200, //Costume Hiccarus Devil Slayer Cape 
+		52575, //Costume Big Ribbon Cloak
+		//54209, //Costume Zen Aura Blue
+		//54210, //Costume Zen Aura Green
+		//54211, //Costume Zen Aura Orange
+		//54212, //Costume Zen Aura Pink
+		//54213, //Costume Zen Aura Purple
+		//54214, //Costume Zen Aura Red
+		//54215, //Costume Zen Aura Yellow
+		50302; //Black Perfect Helios
+
+        // 89% Chance
+        setarray .Common4[0],
+		//54174, //Costume Spectre Cape			
+//		52547, //Valkyrie Wing 
+		52554, //Wings of Lucifer 
+		52555, //Wings of Raguel
+		52556, //Wings of Raphael
+		52536, //Wings of Gabriel 
+		52523, //Wings of Michael
+		51749, //Red Perfect Helios
+		51571, //Pink Perfect Helios
+		52196, //White Perfect Helios
+		51313, //Blue Perfect Helios
+		51113, //Green Perfect Helios 
+		51024, //Gold Perfect Helios
+		50600, //Cyan Perfect Helios
+		52575, //Costume Big Ribbon Cloak
+		50389, //Blue Perfect Helios 
+		50302; //Black Perfect Helios
+		
+        if(.rand == 1){
+            getitem .SuperRare4[rand(getarraysize(.SuperRare4))],1;
+            announce "["+strcharinfo(0)+"] Obtained a rare item [1% chance] from Spike Mystery Box [Premium]",0;
+        }else if(.rand >= 1 && .rand <= 11){
+            getitem .Rare4[rand(getarraysize(.Rare4))],1;
+        }else if(.rand >= 12 && .rand <= 100){
+            getitem .Common4[rand(getarraysize(.Common4))],1;
+        }
+    end;
+
+
+  OnWorldBossBox:
+    setarray .Item,     7619,   13611,  7620,   13610,  13602,  13583,  7619,   13611,  7620,13610,13602,13583,5453,5297,5278,5277,5574,5293,2202,5490,5421,5529,5171,5362,5155,55010,674,55010,674,12103,12103;
+    setarray .Quantity, 1,      1,      1,      1,      1,      1,      1,      1,      1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,200,1,200,1,2,2;
+
+    set .rand,rand(0,(getarraysize(.Item) - 1));
+    getitem .Item[.rand],.Quantity[.rand];
+    end;
+
+    OnBloodyBranch:
+        if(getgroupid() > 5 && getgroupid() != 99 && getgroupid() != 100){
+            showscript "Game Masters cannot use Bloody Branch";
+            dispbottom "Game Masters cannot use Bloody Branch";
+            end;
+        }
+        //setarray .enabledmap$,"06guild_01","06guild_02","06guild_03","06guild_04","06guild_05","06guild_06","06guild_07","06guild_08","pvp_n_1-1";
+        //if(inarray(.enabledmap$,strcharinfo(3)) == -1 && !(getgroupid() > 5 && getgroupid() <= 99)){
+        //    showscript "You can only use 'Bloody Branch' in the branch room";
+        //    dispbottom "You can only use 'Bloody Branch' in the branch room";
+        //    end;
+        //}
+	if(!compare(strcharinfo(3),"0613") && strcharinfo(3) != "06guild_01"){
+		showscript "You can only use 'Bloody Branch' in the branch room",getcharid(3),SELF;
+		end;
+	}
+        OnSummon:
+        // .10% Chance
+        setarray .VeryRare5[0],
+	    1917, //Wounded Morroc
+            1873, //Beelzebub
+            2022, //Nidhoggur's Shadow
+            1751; //Valkyrie Randgris
+
+        // 10% Chance
+        setarray .SuperRare5[0],
+            1871, //Falling Bishop
+            1832, //Ifrit
+            1734, //Kiel D-01
+            1779; //Ktullanux
+
+        // 40% Chance
+        setarray .Rare5[0],
+            1511, //Amon Ra
+            1785, //Atroce
+            2068, //Boitata
+            1719, //Detardeurus
+            1658, //Egnigem Cenia
+            1418, //Evil Snake Lord
+            1046, //Doppelganger
+            1768, //Gloom Under Night
+            1086, //Golden Thief Bug
+            1252, //Hatii
+            1688, //Lady Tanee
+            1373, //Lord of the Dead
+            1583, //Tao Gunka
+            1312, //Turtle General
+            1251, //Stormy Knight
+            1685, //Vesper
+            1623; //RSX-0806
+
+        // 50% Chance
+        setarray .Common5[0],
+            1096, //Angeling
+            1388, //Arc Angeling
+            1582, //Deviling
+            1120, //Ghostring
+            1087, //Orc Hero
+            1190, //Orc Lord
+            1038, //Osiris
+            1157, //Pharaoh
+            1159, //Phreeoni
+            1630, //White Lady
+            1492, //Samurai Specter
+            1885, //Gopinich
+            1147, //Maya
+            1059, //Mistress
+            1150, //Moonlight Flower
+            1039, //Baphomet
+            1389, //Dracula
+            1112, //Drake
+            1115, //Eddga
+            1272; //Dark Lord
+			
+		
+        set .rand,rand(1,1000);
+        if(.rand >= 1 && .rand <= 10){
+            atcommand "@monster " + .VeryRare5[rand(getarraysize(.VeryRare5))];
+        }else if(.rand >= 11 && .rand <= 140){
+            atcommand "@monster " + .SuperRare5[rand(getarraysize(.SuperRare5))];
+        }else if(.rand >= 141 && .rand <= 500){
+            atcommand "@monster " + .Rare5[rand(getarraysize(.Rare5))];
+        }else if(.rand >= 501 && .rand <= 1000){
+            atcommand "@monster " + .Common5[rand(getarraysize(.Common5))];
+        }
+        delitem 12103,1;
+    end;
+	
+OnFourthJobCostume:
+	changebase Class;
+	if(Class==4013){ changebase 4065; setlook LOOK_BODY2,2;}
+	if(Class==4016){ changebase 4077; setlook LOOK_BODY2,2;}
+	if(Class==4020){ changebase 4075; setlook LOOK_BODY2,2;}
+	if(Class==4019){ changebase 4078; setlook LOOK_BODY2,2;}
+	if(Class==24  ){ changebase 4215;}
+	if(Class==4021){ changebase 4076; setlook LOOK_BODY2,2;}
+	if(Class==4009){ changebase 4063; setlook LOOK_BODY2,2;}
+	if(Class==4010){ changebase 4061; setlook LOOK_BODY2,2;}
+	if(Class==4008){ changebase 4060; setlook LOOK_BODY2,2;}
+	if(Class==25 && Sex == 1){ changebase 4211;}
+	if(Class==25 && Sex == 0){ changebase 4212;}
+	if(Class==4015){ changebase 4073;setlook LOOK_BODY2,2;}
+	if(Class==4017){ changebase 4074;setlook LOOK_BODY2,2;}
+	if(Class==4012){ changebase 4062;setlook LOOK_BODY2,2;}
+	if(Class==4049){ changebase 4240;}
+	if(Class==4018){ changebase 4079;setlook LOOK_BODY2,2;}
+	if(Class==4047){ changebase 4239;}
+	if(Class==4046){ changebase 4239;}
+	if(Class==4011){ changebase 4064;setlook LOOK_BODY2,2;}
+	if(Class==4064){ setlook LOOK_BODY2,2;}
+	end;
+//
+//----- 2nd Class -----
+OnSecondJob:
+	changebase Class;
+	if(Class==4008){ changebase  7; end; } //Lord Knight
+	if(Class==4009){ changebase  8; end; } //High Priest
+	if(Class==4010){ changebase  9; end; } //High Wizard
+	if(Class==4011){ changebase 10; end; } //Whitesmith
+	if(Class==4012){ changebase 11; end; } //Sniper
+	if(Class==4013){ changebase 12; end; } //Assassin Cross
+	if(Class==4015){ changebase 14; end; } //Paladin
+	if(Class==4016){ changebase 15; end; } //Champion
+	if(Class==4017){ changebase 16; end; } //Professor
+	if(Class==4018){ changebase 17; end; } //Stalker
+	if(Class==4019){ changebase 18; end; } //Creator
+	if(Class==4020){ changebase 19; end; } //Clown
+	if(Class==4021){ changebase 20; end; } //Gypsy
+end;
+
+//---- Baby 2nd Class ----
+OnSecondJobBaby:
+	changebase Class;
+	if(Class==4008){ changebase 4030; end; } //Lord Knight
+	if(Class==4009){ changebase 4031; end; } //High Priest
+	if(Class==4010){ changebase 4032; end; } //High Wizard
+	if(Class==4011){ changebase 4033; end; } //Whitesmith
+	if(Class==4012){ changebase 4034; end; } //Sniper
+	if(Class==4013){ changebase 4035; end; } //Assassin Cross
+	if(Class==4015){ changebase 4037; end; } //Paladin
+	if(Class==4016){ changebase 4038; end; } //Champion
+	if(Class==4017){ changebase 4039; end; } //Professor
+	if(Class==4018){ changebase 4040; end; } //Stalker
+	if(Class==4019){ changebase 4041; end; } //Creator
+	if(Class==4020){ changebase 4042; end; } //Clown
+	if(Class==4021){ changebase 4043; end; } //Gypsy
+end;
+
+//----- 3rd Class (Transcendent) -----
+OnThirdJob:
+	changebase Class;
+	if(Class==4008){ changebase 4054; end; } //Lord Knight
+	if(Class==4009){ changebase 4057; end; } //High Priest
+	if(Class==4010){ changebase 4055; end; } //High Wizard
+	if(Class==4011){ changebase 4058; end; } //Whitesmith
+	if(Class==4012){ changebase 4056; end; } //Sniper
+	if(Class==4013){ changebase 4059; end; } //Assassin Cross
+	if(Class==4015){ changebase 4066; end; } //Paladin
+	if(Class==4016){ changebase 4070; end; } //Champion
+	if(Class==4017){ changebase 4067; end; } //Professor
+	if(Class==4018){ changebase 4072; end; } //Stalker
+	if(Class==4019){ changebase 4071; end; } //Creator
+	if(Class==4020){ changebase 4068; end; } //Clown
+	if(Class==4021){ changebase 4069; end; } //Gypsy
+end;
+
+//---- Baby 3rd Class ----
+OnThirdJobBaby:
+	changebase Class;
+	if(Class==4008){ changebase 4096; end; } //Lord Knight
+	if(Class==4009){ changebase 4099; end; } //High Priest
+	if(Class==4010){ changebase 4097; end; } //High Wizard
+	if(Class==4011){ changebase 4100; end; } //Whitesmith
+	if(Class==4012){ changebase 4098; end; } //Sniper
+	if(Class==4013){ changebase 4101; end; } //Assassin Cross
+	if(Class==4015){ changebase 4102; end; } //Paladin
+	if(Class==4016){ changebase 4106; end; } //Champion
+	if(Class==4017){ changebase 4103; end; } //Professor
+	if(Class==4018){ changebase 4108; end; } //Stalker
+	if(Class==4019){ changebase 4107; end; } //Creator
+	if(Class==4020){ changebase 4104; end; } //Clown
+	if(Class==4021){ changebase 4105; end; } //Gypsy
+end;
+
+//---- Expanded Baby ----
+OnExpandedBaby:
+	changebase Class;
+	if(Class==  23){ changebase 4045; end; } //Super Novice
+	if(Class==  24){ changebase 4228; end; } //Gunslinger
+	if(Class==4047){ changebase 4226;} //Star Gladiator
+	if(Class==4049){ changebase 4227;} //Soul Linker
+	if(Class==  25){ changebase 4222;} //Ninja
+end;
+
+//---- Expanded 2nd Class----
+OnExpandedSecondJob:
+	changebase Class;
+	if(Class==  23){ changebase 4190; end; } //Super Novice
+	if(Class==  24){ changebase 4215; end; } //Gunslinger
+	if(Class==4047){ changebase 4239;} //Star Gladiator
+	if(Class==4049){ changebase 4240;} //Soul Linker
+	if(Class==  25 && Sex == 0){ changebase 4212;} //Ninja
+	if(Class==  25 && Sex == 1){ changebase 4211;} //Ninja
+end;
+
+//---- Expanded 2nd Class Baby ----
+OnExpandedSecondJobBaby:
+	changebase Class;
+	if(Class==  24){ changebase 4229; end; } //Gunslinger
+	if(Class==4047){ changebase 4241;} //Star Gladiator
+	if(Class==4049){ changebase 4242;} //Soul Linker
+	if(Class==  25 && Sex == 0){ changebase 4224;} //Ninja
+	if(Class==  25 && Sex == 1){ changebase 4223;} //Ninja
+end;
+
+}
+
+function	script	SpaceEgg1	{
+
+	setarray .@Prizes[0],
+			14003,2,10000,	// Elite Siege Box
+			7179,5,7000,	// 5 Pods
+			7179,10,6000,	// 10 Pods
+			7179,15,5000,	// 15 Pods
+			7179,20,4000,	// 20 Pods
+			7179,25,3000,	// 25 Pods
+			7179,30,2000,	// 30 Pods
+			7179,50,1000,	// 50 Pods
+			7179,100,200,	// 100 Pods
+			5379,1,100,	// Balloon Hat
+			18877,1,300,	// Baron's Evil Eye
+			5293,1,100,	// Ramen Hat
+			5277,1,100,	// Yellow Bandana
+			5452,1,100,	// Silver Dragon Helm
+			18539,1,300,	// Skull Cap
+			50615,1,200,	// Cygnus Helm
+			5376,1,100,	// Flying Evil Wing
+			5423,1,100,	// I love china
+			5800,1,100,	// Blush of Groom
+			51978,1,100,	// Smoking Pipe
+			5579,1,300,	// Costume Wanderer's Sakkat
+			51542,1,500,	// Costume Pilipinas Cap
+			52090,1,500,	// Costume Urahara Hat
+			50622,1,500,	// Costume Nut Cracker
+			50121,1,100,	// Costume Raizen
+			50122,1,100,	// Costume Raizen
+			50123,1,100,	// Costume Raizen
+			50124,1,100,	// Costume Raizen
+			50125,1,100,	// Costume Raizen
+			50126,1,100,	// Costume Raizen
+			50127,1,100,	// Costume Raizen
+			52296,1,100,	// Costume Beli Aura
+			52297,1,100,	// Costume Beli Aura
+			52298,1,100,	// Costume Beli Aura
+			52299,1,100,	// Costume Beli Aura
+			52300,1,100,	// Costume Beli Aura
+			52301,1,100,	// Costume Beli Aura
+			52302,1,100,	// Costume Beli Aura
+			52303,1,100,	// Costume Beli Aura
+			52500,1,100,	// Costume Angel Wing
+			52502,1,100,	// Costume Fallen Wing
+			55056,1,100,	// Costume Battle Pass Mystery Box 1
+			55057,1,100,	// Costume Battle Pass Mystery Box 2
+			55050,1,50,	// Costume 2nd Job Baby
+			5451,1,50,	// Gold Dragon Helm
+			55361,1,75;	// Costume Spare Card
+
+	.@rand = rand(1,10000);
+	for(.@i=0;.@i<getarraysize(.@Prizes);.@i+=3)
+		if(.@rand <= .@Prizes[.@i+2]){
+			.@iid[.@x] = .@Prizes[.@i];
+			.@amt[.@x] = .@Prizes[.@i+1];
+			.@x++;
+		}
+	.@getitem = rand(.@x);
+	getitem .@iid[.@getitem],.@amt[.@getitem];
+	if(inarray(.Announce,.@iid[.@getitem]) >= 0)
+		announce "Congratulations! "+strcharinfo(0)+" just received "+(.@amt[.@getitem]>1 ? .@amt[.@getitem]+"x":"")+" "+getitemname(.@iid[.@getitem])+" from "+strnpcinfo(0)+"!",0;
+
+	return;
+}
+
+function	script	SpaceEgg4	{
+
+	setarray .@Prizes[0],
+			14003,1,10000,	// Elite Siege Box
+			673,1,7000,	// 1 Bronze
+			675,1,3500,	// 1 Silver Coin
+			675,2,2000,	// 2 Silver Coins
+			5379,1,100,	// Balloon Hat
+			18877,1,300,	// Baron's Evil Eye
+			5293,1,100,	// Ramen Hat
+			5277,1,100,	// Yellow Bandana
+			5452,1,100,	// Silver Dragon Helm
+			18539,1,100,	// Skull Cap
+			5376,1,100,	// Flying Evil Wing
+			5423,1,100,	// I love china
+			5800,1,100,	// Blush of Groom
+			51978,1,100,	// Smoking Pipe
+			52157,1,500,	// Costume White Beret
+			52175,1,500,	// Costume White Gangster Scarf
+			52135,1,500,	// Costume Waffle Mouth
+			52192,1,1000,	// Costume White Neck Tie
+			5575,1,1000,	// Costume Rice Ball
+			5523,1,1000,	// Costume Sakura Mist Hat
+			5528,1,1000,	// Costume Frog Prince
+			5365,1,1000,	// Costume Magnolia Hat
+			54130,1,500,	// Flock of Bats
+			54188,1,500,	// Yellow Flock of Bats
+			54175,1,500,	// White Flock of Bats
+			54167,1,500,	// Red Flock of Bats
+			54155,1,500,	// Purple Flock of Bats
+			54150,1,500,	// Pink Flock of Bats
+			54145,1,500,	// Orange Flock of Bats
+			54134,1,500,	// Green Flock of Bats
+			54089,1,500,	// Brown Flock of Bats
+			54085,1,500,	// Blue Flock of Bats
+			54082,1,500,	// Aqua Flock of Bats
+			54294,1,300,	// Psychic Chess Ring
+			54288,1,300,	// Green Eyes
+			52296,1,100,	// Costume Beli Aura
+			52297,1,100,	// Costume Beli Aura
+			52298,1,100,	// Costume Beli Aura
+			52299,1,100,	// Costume Beli Aura
+			52300,1,100,	// Costume Beli Aura
+			52301,1,100,	// Costume Beli Aura
+			52302,1,100,	// Costume Beli Aura
+			52303,1,100,	// Costume Beli Aura
+			52508,1,100,	// Costume Wing of Happiness
+			50615,1,50,	// Cygnus Helm
+			5451,1,50,	// Gold Dragon Helm
+			5374,1,75;	// Gigantic Baphomet Helm
+
+	.@rand = rand(1,10000);
+	for(.@i=0;.@i<getarraysize(.@Prizes);.@i+=3)
+		if(.@rand <= .@Prizes[.@i+2]){
+			.@iid[.@x] = .@Prizes[.@i];
+			.@amt[.@x] = .@Prizes[.@i+1];
+			.@x++;
+		}
+	.@getitem = rand(.@x);
+	getitem .@iid[.@getitem],.@amt[.@getitem];
+	if(inarray(.Announce,.@iid[.@getitem]) >= 0)
+		announce "Congratulations! "+strcharinfo(0)+" just received "+(.@amt[.@getitem]>1 ? .@amt[.@getitem]+"x":"")+" "+getitemname(.@iid[.@getitem])+" from "+strnpcinfo(0)+"!",0;
+
+	return;
+}

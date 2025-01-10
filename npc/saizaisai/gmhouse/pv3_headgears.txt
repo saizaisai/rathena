@@ -1,0 +1,130 @@
+s_room,43,65,5	script	Headgears#101	90,{
+
+	mes "Please select";
+	set .@sel,select(.menu$)-1;
+	callshop "clashhg"+.@sel,1;
+	npcshopattach "clashhg"+.@sel;
+end;
+
+OnBuyItem:
+	if(getgmlevel()>=99) getitem @bought_nameid[0],1;
+	mes "You chose Item ID: "+@bought_nameid[0];
+	showscript "Item ID: "+@bought_nameid[0];
+	set .@q[0],@bought_nameid[0];
+	setarray @qe[1], getiteminfo(.@q[0], ITEMINFO_LOCATIONS), getiteminfo(.@q[0], ITEMINFO_VIEW);
+	if (@qe[2] > 0 && ((@qe[1] & EQP_HEAD_LOW) || (@qe[1] & EQP_HEAD_TOP) || (@qe[1] & EQP_HEAD_MID) || (@qe[1] & EQP_COSTUME_HEAD_TOP) || (@qe[1] & EQP_COSTUME_HEAD_MID) || (@qe[1] & EQP_COSTUME_HEAD_LOW) || (@qe[1] & EQP_GARMENT) || (@qe[1] & EQP_COSTUME_GARMENT)))
+		set .@preview,1;
+	addtimer 1000, strnpcinfo(0)+"::OnEnd";
+	while(1) {
+		switch(select(" ~ Preview: ~ ^777777Cancel^000000")) {
+		case 1:
+			setarray @qe[3], getlook(LOOK_HEAD_BOTTOM), getlook(LOOK_HEAD_TOP), getlook(LOOK_HEAD_MID), getlook(LOOK_ROBE), 1;
+			if ((@qe[1] & 1) || (@qe[1] & 4096)) changelook LOOK_HEAD_BOTTOM, @qe[2];
+			else if ((@qe[1] & 256) || (@qe[1] & 1024)) changelook LOOK_HEAD_TOP, @qe[2];
+			else if ((@qe[1] & 512) || (@qe[1] & 2048)) changelook LOOK_HEAD_MID, @qe[2];
+			else if ((@qe[1] & 4) || (@qe[1] & 8192)) changelook LOOK_ROBE, @qe[2];
+			break;
+		case 2:
+			close;
+		}
+	}
+
+OnEnd:
+	if (@qe[7]) {
+		changelook LOOK_HEAD_BOTTOM, @qe[3];
+		changelook LOOK_HEAD_TOP, @qe[4];
+		changelook LOOK_HEAD_MID, @qe[5];
+		changelook LOOK_ROBE, @qe[6];
+	}
+	deletearray @qe[0],8;
+	end;
+OnInit:
+	freeloop(1);
+	for(.@i=50000;.@i<65000;.@i++){
+		if( getiteminfo(.@i,ITEMINFO_BUY) == -1) continue;
+		//debugmes "Test: "+getiteminfo(.@i,ITEMINFO_LOCATIONS);
+		if( getiteminfo(.@i,ITEMINFO_LOCATIONS) == 4096 ||
+			getiteminfo(.@i,ITEMINFO_LOCATIONS) == 2048 ||
+			getiteminfo(.@i,ITEMINFO_LOCATIONS) == 1024){
+			npcshopadditem "clashhg"+.@n,.@i,100;
+			//debugmes "Added "+getitemname(.@i);
+			.@x++;
+			if(.@x>=100){
+				.@n++;
+				npcshopdelitem "clashhg"+.@n,512;
+				.@x = 0;
+			}
+		}
+	}
+	for(.@i=0;.@i<=.@n;.@i++)
+		.menu$ += "Clash Headgear "+.@i+":";
+	npcshopdelitem "clashhg0",512;
+	freeloop(0);
+	PUBTITLE:
+	showscript "Headgears";
+	sleep 3000;
+	goto PUBTITLE;	
+end;
+
+}
+-	shop	clashhg0	-1,512:-1
+-	shop	clashhg1	-1,512:-1
+-	shop	clashhg2	-1,512:-1
+-	shop	clashhg3	-1,512:-1
+-	shop	clashhg4	-1,512:-1
+-	shop	clashhg5	-1,512:-1
+-	shop	clashhg6	-1,512:-1
+-	shop	clashhg7	-1,512:-1
+-	shop	clashhg8	-1,512:-1
+-	shop	clashhg9	-1,512:-1
+-	shop	clashhg10	-1,512:-1
+-	shop	clashhg11	-1,512:-1
+-	shop	clashhg12	-1,512:-1
+-	shop	clashhg13	-1,512:-1
+-	shop	clashhg14	-1,512:-1
+-	shop	clashhg15	-1,512:-1
+-	shop	clashhg16	-1,512:-1
+-	shop	clashhg17	-1,512:-1
+-	shop	clashhg18	-1,512:-1
+-	shop	clashhg19	-1,512:-1
+-	shop	clashhg20	-1,512:-1
+-	shop	clashhg21	-1,512:-1
+-	shop	clashhg22	-1,512:-1
+-	shop	clashhg23	-1,512:-1
+-	shop	clashhg24	-1,512:-1
+-	shop	clashhg25	-1,512:-1
+-	shop	clashhg26	-1,512:-1
+-	shop	clashhg27	-1,512:-1
+-	shop	clashhg28	-1,512:-1
+-	shop	clashhg29	-1,512:-1
+-	shop	clashhg30	-1,512:-1
+-	shop	clashhg31	-1,512:-1
+-	shop	clashhg32	-1,512:-1
+-	shop	clashhg33	-1,512:-1
+-	shop	clashhg34	-1,512:-1
+-	shop	clashhg35	-1,512:-1
+-	shop	clashhg36	-1,512:-1
+-	shop	clashhg37	-1,512:-1
+-	shop	clashhg38	-1,512:-1
+-	shop	clashhg39	-1,512:-1
+-	shop	clashhg40	-1,512:-1
+-	shop	clashhg41	-1,512:-1
+-	shop	clashhg42	-1,512:-1
+-	shop	clashhg43	-1,512:-1
+-	shop	clashhg44	-1,512:-1
+-	shop	clashhg45	-1,512:-1
+-	shop	clashhg46	-1,512:-1
+-	shop	clashhg47	-1,512:-1
+-	shop	clashhg48	-1,512:-1
+-	shop	clashhg49	-1,512:-1
+-	shop	clashhg50	-1,512:-1
+-	shop	clashhg51	-1,512:-1
+-	shop	clashhg52	-1,512:-1
+-	shop	clashhg53	-1,512:-1
+-	shop	clashhg54	-1,512:-1
+-	shop	clashhg55	-1,512:-1
+-	shop	clashhg56	-1,512:-1
+-	shop	clashhg57	-1,512:-1
+-	shop	clashhg58	-1,512:-1
+-	shop	clashhg59	-1,512:-1
+-	shop	clashhg60	-1,512:-1

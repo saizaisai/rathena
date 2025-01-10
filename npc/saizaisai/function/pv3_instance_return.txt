@@ -1,0 +1,25 @@
+/*
+  ALTER TABLE `char` ADD `last_instance_map` varchar(11) NOT NULL default '' after `show_equip`;
+  ALTER TABLE `char` ADD `last_instance_x` smallint(4) unsigned NOT NULL default '0' after `last_instance_map`;
+  ALTER TABLE `char` ADD `last_instance_y` smallint(4) unsigned NOT NULL default '0' after `last_instance_x`;
+*/
+-	script	return_instance	-1,{
+end;
+OnPCLogoutEvent:
+	if(instance_id(IM_PARTY)){
+		getmapxy(.@m$,.@x,.@y,BL_PC);
+		if(check_instance_map(.@m$,instance_id(IM_PARTY))){
+			query_sql "UPDATE `char` SET `last_instance_map` = '"+.@m$+"', `last_instance_x` = '"+.@x+"', `last_instance_y` = '"+.@y+"' WHERE `char_id` = '"+getcharid(0)+"'";
+		}else{
+			query_sql "UPDATE `char` SET `last_instance_map` = '', `last_instance_x` = '0', `last_instance_y` = '0' WHERE `char_id` = '"+getcharid(0)+"'";
+		}
+	}
+	end;
+OnPCLoginEvent:
+	if(instance_id(IM_PARTY)){
+		query_sql "select `last_instance_map`,`last_instance_x`,`last_instance_y` from `char` where `char_id`='"+getcharid(0)+"' ",.@map$,.@map_x,.@map_y;
+		if(.@map$ != "")
+			instance_warp .@map$,.@map_x,.@map_y,instance_id(IM_PARTY);
+	}
+end;
+}

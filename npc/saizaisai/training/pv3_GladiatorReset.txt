@@ -1,0 +1,46 @@
+//-	script	SG Resetter	-1,{
+prontera,169,240,3	script	SG Resetter	644,{
+	sc_start SC_ANKLE,200,0;
+	
+	if (Class != 4047 && Class != 4239){
+		showscript "You must be a 'Star Gladiator' to use this NPC";
+		end;
+	}
+	mes "^00B2EE[ SG Resetter ]^000000";
+	mes "Hi! I can reset your 'feelings' or 'hatred'.";
+	mes "^FFFFFF_^000000";
+	mes "Feel Reset: ^0055FF1.500,000z^000000";
+	mes "Hate Reset: ^0055FF3.000,000z^000000";
+	next;
+	switch(select("Reset '^0055FFFeeling^000000':Reset '^FF5500Hatred^000000'")){
+		case 1:
+			if(Zeny < 1500000)
+				goto L_NotEnough;
+			Zeny -= 1500000;
+			resetfeel;
+			showscript "Star Gladiator 'feelings' removed.",getcharid(3),SELF;
+			break;
+		case 2:
+			if(Zeny < 3000000)
+				goto L_NotEnough;
+			Zeny -= 3000000;
+			resethate;
+			showscript "Star Gladiator 'hatred' removed.",getcharid(3),SELF;
+			break;
+	}
+end;
+
+L_NotEnough:
+	mes "^00B2EE[ SG Resetter ]^000000";
+	mes "You don't have enough zeny.";
+end;
+
+OnInit:
+	// Interval in seconds
+	.interval = 1;
+	while(1) {
+	showscript "SG Resetter", getnpcid(0);
+	sleep 1000;
+	}
+	end;
+}

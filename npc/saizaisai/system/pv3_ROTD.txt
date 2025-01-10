@@ -1,0 +1,514 @@
+//|==============================================================|
+//|		 _  __           _____                 _                 |
+//|		| |/ /          / ____|               | |       		 |
+//|		| ' /_   _  ___| (___   __ _ ___ _   _| | _____ 		 |
+//|		|  <| | | |/ _ \\___ \ / _` / __| | | | |/ / _ \		 |
+//|		| . \ |_| | (_) |___) | (_| \__ \ |_| |   <  __/         |
+//|		|_|\_\__, |\___/_____/ \__,_|___/\__,_|_|\_\___|		 |
+//|	  		  __/ |                                     		 |
+//|   		 |___/            									 |
+//|																 |
+//|===== rAthena Script =========================================|
+//|===== Cr-ditos: ==============================================|
+//|= KyoSasuke													 |
+//|===== Versao do NPC: =========================================|
+//|= 1.0														 |
+//|===== Tabela SQL: ============================================|
+/*
+CREATE TABLE IF NOT EXISTS `rotd_system` (
+  `race` varchar(20) NOT NULL,
+  `race_id` int(11) NOT NULL,
+  `zeny` int(11) NOT NULL,
+  `win` int(11) NOT NULL,
+  `week` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO `rotd_system` (`race`, `race_id`, `zeny`, `win`, `week`) VALUES
+('Formless', 0, 0, 0, 0),
+('Undead', 1, 0, 0, 0),
+('Brute', 2, 0, 0, 0),
+('Plant', 3, 0, 0, 0),
+('Insect', 4, 0, 0, 0),
+('Fish', 5, 0, 0, 0),
+('Demon', 6, 0, 0, 0),
+('DemiHuman', 7, 0, 0, 0),
+('Angel', 8, 0, 0, 0),
+('Dragon', 9, 0, 0, 0),
+('Total', 10, 0, 0, 0);
+
+CREATE TABLE IF NOT EXISTS `rotd_control` (
+  `ID` int(11) NOT NULL,
+  `RID` int(11) NOT NULL,
+  `bonus` int(11) NOT NULL,
+  `total_zeny` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO `rotd_control` (`ID`, `RID`, `bonus`, `total_zeny`) VALUES
+(1, 0, 73, 0);
+
+CREATE TABLE `roth_logs` (
+  `nome` varchar(30) NOT NULL,
+  `zeny` int(100) NOT NULL,
+  `elemento` varchar(30) NOT NULL,
+  `data` varchar(13) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `rotd_time` (
+  `id` int(11) NOT NULL,
+  `time` int(15) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO `rotd_time` (`id`, `time`) VALUES
+(1, 1652171379);
+*/
+prontera,143,170,5	script	ROTD	2_BULLETIN_BOARD,{
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='0'",.@Formless;
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='1'",.@Undead;
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='2'",.@Brute;
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='3'",.@Plant;
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='4'",.@Insect;
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='5'",.@Fish;
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='6'",.@Demon;
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='7'",.@DemiHuman;
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='8'",.@Angel;
+	query_sql "SELECT `zeny` FROM `rotd_system` WHERE `race_id`='9'",.@Dragon;
+	query_sql "SELECT `total_zeny` FROM `rotd_control` WHERE `ID`='1'",.@total;
+	query_sql "SELECT `race`, `zeny`, `race_id` FROM `rotd_system` ORDER BY `zeny` DESC LIMIT 1",.@proxrace$,.@proxzeny,.@raceid;
+	mes .npc$;
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+".^000000";
+	mes "^FF0000ROTH^000000 means ^0000FFRace of the Hour^000000.";
+	mes "In other words, it means the ^FF0000Time Race^000000 you kill during the ^FF00006 hours^000000 period will grant you a ^FF0000Exp^000000 Bonus.";
+	next;
+	mes .npc$;
+	mes "Here you can vote and choose the Race you want within ^FF00006 hours^000000 the cost to vote will be in ^FF6600Zeny^000000.";
+	mes "The will change at the following times, ^FF000000:00^000000, ^FF000006:00^000000, ^FF000012:00^000000 and ^FF000018:00^000000.";
+	next;
+	mes .npc$;
+	mes "Time Race: ^0000FF"+.rotd$[.today_rotd]+"^000000 +^777777"+.rotd_exp_bonus+"% ^000000.";
+	mes "^979797----------------------------------^000000";
+	if(.@proxzeny <= .min_zeny_rotd ){
+		mes "By the time the next race will be: ^FF0000Random^000000 did not meet the requirement of ^FF6600"+callfunc( "int_format", .min_zeny_rotd )+"^000000z.";
+	} else {
+		mes "By the time the next race will be: ^FF0000"+.@proxrace$+"^000000 with ^FF6600"+callfunc( "int_format", .@proxzeny )+"^000000z.";
+	}
+	if(getgroupid() >= 99)
+		set .@ROTD$,"^3CB371[-]^000000 Vote:^3CB371[-]^000000 Collections:^ff0000[- Logs]^000000 Collections";
+	else
+		set .@ROTD$,"^3CB371[-]^000000 Vote:^3CB371[-]^000000 Collections";
+	switch (select(.@ROTD$)) {
+		case 1:
+			next;
+			mes .npc$;
+			mes "Time Race: ^0000FF"+.rotd$[.today_rotd]+"^000000 +^777777"+.rotd_exp_bonus+"%^000000.";
+			mes "^979797----------------------------------^000000";
+			if(.@proxzeny <= .min_zeny_rotd ){
+				mes "By the time the next race will be: ^FF0000Random^000000 did not meet the requirement of ^FF6600"+callfunc( "int_format", .min_zeny_rotd )+"^000000z.";
+			} else {
+				mes "By the time the next race will be: ^FF0000"+.@proxrace$+"^000000 with ^FF6600"+callfunc( "int_format", .@proxzeny )+"^000000z.";
+				mes "^979797----------------------------------^000000";
+			}
+			mes "Select a race:";
+			set .@roth_vote$,"^3CB371[-]^000000 Invest in Formless :^3CB371[-]^000000 Invest in Undead:^3CB371[-]^000000 Invest in Brute:^3CB371[-]^000000 Invest in Plant:^3CB371[-]^000000 Invest in Insect:^3CB371[-]^000000 Invest in Fish:^3CB371[-]^000000 Invest in Demon:^3CB371[-]^000000 Invest in DemiHuman:^3CB371[-]^000000 Invest in Angel:^3CB371[-]^000000 Invest in Dragon";
+			switch (select(.@roth_vote$)) {
+				next;
+				mes .npc$;
+				mes "Time Race: ^0000FF"+.rotd$[.today_rotd]+"^000000";
+				mes "^979797----------------------------------^000000";
+				case 1:
+					mes "You have selected:^FF0000 Formless^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 Formless^000000.";
+					set #ROTD,#ROTD = 0;
+					next;
+					goto OnVoteROTD;
+					end;
+				case 2:
+					mes "You have selected:^FF0000 Undead^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 Undead^000000.";
+					set #ROTD,#ROTD = 1;
+					next;
+					goto OnVoteROTD;
+					end;
+				case 3:
+					mes "You have selected:^FF0000 Brute^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 Brute^000000.";
+					set #ROTD,#ROTD = 2;
+					next;
+					goto OnVoteROTD;
+					end;
+				case 4:
+					mes "You have selected:^FF0000 Plant^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 Plant^000000.";
+					set #ROTD,#ROTD = 3;
+					next;
+					goto OnVoteROTD;
+					end;
+				case 5:
+					mes "You have selected:^FF0000 Insect^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 Insect^000000.";
+					set #ROTD,#ROTD = 4;
+					next;
+					goto OnVoteROTD;
+					end;
+				case 6:
+					mes "You have selected:^FF0000 Fish^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 Fish^000000.";
+					set #ROTD,#ROTD = 5;
+					next;
+					goto OnVoteROTD;
+					end;
+				case 7:
+					mes "You have selected:^FF0000 Demon^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 Demon^000000.";
+					set #ROTD,#ROTD = 6;
+					next;
+					goto OnVoteROTD;
+					end;
+				case 8:
+					mes "You have selected:^FF0000 DemiHuman^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 DemiHuman^000000.";
+					set #ROTD,#ROTD = 7;
+					next;
+					goto OnVoteROTD;
+					end;
+				case 9:
+					mes "You have selected:^FF0000 Angel^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 Angel^000000.";
+					set #ROTD,#ROTD = 8;
+					next;
+					goto OnVoteROTD;
+					end;
+				case 10:
+					mes "You have selected:^FF0000 Dragon^000000";
+					mes "Enter the amount of ^FF6600Zeny^000000 you want to contribute to the race ^FF0000 Dragon^000000.";
+					set #ROTD,#ROTD = 9;
+					next;
+					goto OnVoteROTD;
+					end;
+			}
+		end;
+		case 2:
+			next;
+			mes .npc$;
+			mes "=======================";
+			if(gettime(DT_HOUR) >= 22 ){
+				mes "Investments for 6am:";
+			}else if(gettime(DT_HOUR) >= 6){
+				mes "Investments for 14pm:";
+			}else if(gettime(DT_HOUR) >= 14){
+				mes "Investments for 22pm:";
+			}
+			mes "=======================";
+			if(.@Formless <= 0 && .@Undead <= 0 && .@Brute <= 0 && .@Plant <=  0 && .@Insect <=  0 && .@Fish <= 0 && .@Demon <= 0 && .@DemiHuman <= 0 && .@Angel <= 0 && .@Dragon <= 0) mes "there is no history of collections at the moment";																																																									   
+			mes "- Formless: ^FF6600"+callfunc( "int_format", .@Formless )+"^000000z";
+			mes "- Undead: ^FF6600"+callfunc( "int_format", .@Undead )+"^000000z";
+			mes "- Brute: ^FF6600"+callfunc( "int_format", .@Brute )+"^000000z";
+			mes "- Plant: ^FF6600"+callfunc( "int_format", .@Plant )+"^000000z";
+			mes "- Insect: ^FF6600"+callfunc( "int_format", .@Insect )+"^000000z";
+			mes "- Fish: ^FF6600"+callfunc( "int_format", .@Fish )+"^000000z";
+			mes "- Demon: ^FF6600"+callfunc( "int_format", .@Demon )+"^000000z";
+			mes "- DemiHuman: ^FF6600"+callfunc( "int_format", .@DemiHuman )+"^000000z";
+			mes "- Angel: ^FF6600"+callfunc( "int_format", .@Angel )+"^000000z";
+			mes "- Dragon: ^FF6600"+callfunc( "int_format", .@Dragon )+"^000000z";
+			mes "=======================";					 
+		end;
+		case 3:
+			next;
+			mes .npc$;
+			mes "Logs sent to your Chat.";
+			dispbottom "= COLLECTION LOGS ================ ",0xFF9B00;
+			set .@size, query_sql( "select nome, zeny,elemento, data from roth_logs order by data desc limit "+ .top, .@name$, .@zenyy,.@elemento$, .@data$ );
+			for (set .@c, 0; .@c < .@size; set .@c, .@c + 1)
+			dispbottom "- ^FF0000" +(.@c + 1) +"# " + .@name$[.@c] +" com "+callfunc( "int_format", .@zenyy[.@c] )+" - "+.@elemento$[.@c]+" - ["+.@data$[.@c]+"]",0xFF9B00; //
+		end;
+	}
+end;
+
+OnVoteROTD:
+	input .voterotd;
+	if (Zeny < .voterotd) {
+		mes .npc$;
+		mes "you don't own ^FF6600"+callfunc( "int_format", .voterotd )+"^000000z";
+		end;
+	}
+	if(.voterotd < .min_zeny_rotd){
+		mes .npc$;
+		mes "Sorry, but the minimum donation amount is ^FF6600"+.min_zeny_rotd+"^000000z";
+		end;
+	}else if(.voterotd >= .max_zeny_rotd){
+		mes .npc$;
+		mes "Sorry, but the maximum amount for donation is ^FF6600"+.max_zeny_rotd+"^000000z";
+		end;
+	}
+	if(#ROTD == 0)
+		.elemento$ = "Formless";
+	else if(#ROTD == 1)
+		.elemento$ = "Undead";
+	else if(#ROTD == 2)
+		.elemento$ = "Brute";
+	else if(#ROTD == 3)
+		.elemento$ = "Plant";
+	else if(#ROTD == 4)
+		.elemento$ = "Insect";
+	else if(#ROTD == 5)
+		.elemento$ = "Fish";
+	else if(#ROTD == 6)
+		.elemento$ = "Demon";
+	else if(#ROTD == 7)
+		.elemento$ = "DemiHuman";
+	else if(#ROTD == 8)
+		.elemento$ = "Angel";
+	else if(#ROTD == 9)
+		.elemento$ = "Dragon";
+	mes .npc$;
+	mes "You sent ^FF6600"+callfunc( "int_format", .voterotd )+"^000000z for your race.";
+	query_sql "UPDATE `rotd_system` SET `zeny` = `zeny` +"+.voterotd+" WHERE `race_id`='"+#ROTD+"'";
+	query_sql "UPDATE `rotd_control` SET `total_zeny` = `total_zeny` +"+.voterotd+" WHERE `ID`='1'";
+	query_sql("INSERT INTO `roth_logs` (`nome`,`zeny`,`elemento`,`data`) VALUES ('"+strcharinfo(0)+"', '"+.voterotd+"','"+.elemento$+"', '"+gettimestr("%H:%M:%S",21)+"')");
+	Zeny -=.voterotd;
+end;
+
+OnClock1400:
+OnClock0600:
+OnClock2200:
+OnRotateROTD:
+	query_sql "SELECT `race_id`, `zeny` FROM `rotd_system` ORDER BY `zeny` DESC LIMIT 1",.@win,.@zenywin;
+	if(.@zenywin < .min_zeny_rotd )
+	{
+		set .today_rotd2,.today_rotd;
+		set .today_rotd,rand( .rotd_size );
+		set .rotd_exp_bonus,rand( 10,20 );
+	}
+	else
+	{
+		set .today_rotd2,.today_rotd;
+		set .today_rotd,.@win;
+	}
+	set $timeicon,0;
+	set $timeicon,gettimetick(2)+8*3600; //retorna 8h en Segundos
+	if(.@zenywin > .min_zeny_rotd ){
+		/**
+		10% a 20% - de 0 a 9.999.999 zenys
+		21% a 30% - de 10.000.000 a 19.000.000 zenys
+		31% a 40% - de 20.000.000 a 29.000.000 zenys
+		41% a 50% - de 30.000.000 a 39.000.000 zenys
+		51% a 60% - de 40.000.000 a 49.000.000 zenys
+		61% a 70% - de 50.000.000 a 59.000.000 zenys
+		71% a 80% - de 60.000.000 a 69.000.000 zenys
+		81% a 90% - de 70.000.000 a 79.000.000 zenys
+		91% a 100% - de 80.000.000 ou mais zenys
+		**/
+		if(.@zenywin > 0 && .@zenywin <= 9999999){
+			set .rotd_exp_bonus,rand( 10,20 );
+		}else if (.@zenywin >= 10000000 && .@zenywin <= 19000000){
+			set .rotd_exp_bonus,rand( 21,30 );
+		}else if (.@zenywin >= 20000000 && .@zenywin <= 29000000){
+			set .rotd_exp_bonus,rand( 31,40 );
+		}else if (.@zenywin >= 30000000 && .@zenywin <= 39000000){
+			set .rotd_exp_bonus,rand( 41,50 );
+		}else if (.@zenywin >= 40000000 && .@zenywin <= 49000000){
+			set .rotd_exp_bonus,rand( 51,60 );
+		}else if (.@zenywin >= 50000000 && .@zenywin <= 59000000){
+			set .rotd_exp_bonus,rand( 61,70 );
+		}else if (.@zenywin >= 60000000 && .@zenywin <= 69000000){
+			set .rotd_exp_bonus,rand( 71,80 );
+		}else if (.@zenywin >= 70000000 && .@zenywin <= 79000000){
+			set .rotd_exp_bonus,rand( 81,90 );
+		}else if (.@zenywin >= 80000000){
+			set .rotd_exp_bonus,rand( 91,100);
+		}
+	}
+	delwaitingroom;
+	waitingroom "[ROTD]: "+.rotd$[.today_rotd]+" ("+.rotd_exp_bonus+"% + EXP)",0;
+	announce "[ROTD] The race is now "+.rotd$[.today_rotd]+" +"+.rotd_exp_bonus+"% de EXP.",bc_all,0xFF6060;
+	query_sql "UPDATE `rotd_system` SET `zeny` = 0 WHERE `race_id` < 10";
+	query_sql "UPDATE `rotd_control` SET `RID` = '"+.today_rotd+"', `bonus` = '"+.rotd_exp_bonus+"' WHERE `ID`='1'";
+
+			set .@time2,$timeicon - gettimetick(2);
+
+	//desativa o icone
+	if(.today_rotd2 == 0){ // AMORFO
+		fake_icon_all(1505,0,0);
+	}else if(.today_rotd2 == 1){ // Morto-Vivo
+		fake_icon_all(1508,0,0);
+	}else if(.today_rotd2 == 2){ // Bruto
+		fake_icon_all(1501,0,0);
+	}else if(.today_rotd2 == 3){ // Planta
+		fake_icon_all(1507,0,0);
+	}else if(.today_rotd2 == 4){ // Inseto
+		fake_icon_all(1506,0,0);
+	}else if(.today_rotd2 == 5){ // Peixe 
+		fake_icon_all(1504,0,0);
+	}else if(.today_rotd2 == 6){ // Dêmonio
+		fake_icon_all(1503,0,0);
+	}else if(.today_rotd2 == 7){ // Humanóide
+		fake_icon_all(1502,0,0);
+	}else if(.today_rotd2 == 8){ //Anjo
+		fake_icon_all(1510,0,0);
+	}else if(.today_rotd2 == 9){ // Dragão
+		fake_icon_all(1509,0,0);
+	}
+
+				  
+	if(.today_rotd == 0){ // AMORFO
+		fake_icon_all(1505,.@time2*1000,1);
+	}else if(.today_rotd == 1){ // Morto-Vivo
+		fake_icon_all(1508,.@time2*1000,1);
+	}else if(.today_rotd == 2){ // Bruto
+		fake_icon_all(1501,.@time2*1000,1);
+	}else if(.today_rotd == 3){ // Planta
+		fake_icon_all(1507,.@time2*1000,1);
+	}else if(.today_rotd == 4){ // Inseto
+		fake_icon_all(1506,.@time2*1000,1);
+	}else if(.today_rotd == 5){ // Peixe 
+		fake_icon_all(1504,.@time2*1000,1);
+	}else if(.today_rotd == 6){ // Dêmonio
+		fake_icon_all(1503,.@time2*1000,1);
+	}else if(.today_rotd == 7){ // Humanóide
+		fake_icon_all(1502,.@time2*1000,1);
+	}else if(.today_rotd == 8){ //Anjo
+		fake_icon_all(1510,.@time2*1000,1);
+	}else if(.today_rotd == 9){ // Dragão
+		fake_icon_all(1509,.@time2*1000,1);
+
+	}
+
+end;
+
+//------------------
+// - CONFIGURA--ES
+//------------------
+OnInit:
+	set .top, 10;
+	set .party_level_range,15;
+	.npc$ = "^00B2EE[ ROTD ]^000000";
+	query_sql "SELECT `RID`, `bonus`  FROM `rotd_control` WHERE `ID`= '1'",.@RID,.@bonus;
+	set .gm_level,80;
+	.min_zeny_rotd = 100000;
+	.max_zeny_rotd = 10000001;
+	bindatcmd "rotd","ROTD::OnCommand";
+	bindatcmd "rotdrot","ROTD::OnRotateROTD",99;
+
+	// - N-O MEXE SE N-O SOUBER O QUE EST- FAZENDO!!
+	setarray .rotd$[0],
+		"Formless",
+		"Undead",
+		"Brute",
+		"Plant",
+		"Insect",
+		"Fish",
+		"Demon",
+		"DemiHuman",
+		"Angel",
+		"Dragon";
+	set .rotd_size,getarraysize( .rotd$ );
+	for( set .@i,0; .@i < .rotd_size; set .@i,.@i + 1 )
+		set .rotd_menu$,.rotd_menu$ + .rotd$[.@i] +":";
+	set .rotd_menu$,.rotd_menu$ + "^0055FFRa-a Aleat-ria^000000";
+
+	set .today_rotd,.@RID;
+	set .rotd_exp_bonus,.@bonus;
+	delwaitingroom;
+	waitingroom "[ROTD]: "+.rotd$[.today_rotd]+" ("+.rotd_exp_bonus+"% + EXP)",0;
+	while(1) {
+	.@npc_id = getnpcid(0);
+		hateffect_npc 0, false, .@npc_id;
+		hateffect_npc 0, true, .@npc_id;
+	sleep 1000;
+	}
+
+end;
+
+OnCommand:
+	dispbottom "================================";
+	dispbottom "- Race: "+.rotd$[.today_rotd]+"";
+	dispbottom "- Exp bonus: "+.rotd_exp_bonus+"%";
+	dispbottom "- Time left: "+ callfunc("Time2Str",$timeicon)+"";
+	dispbottom "================================";
+end;
+
+OnNPCKillEvent:
+	if ( getmonsterinfo( killedrid,MOB_RACE ) == .today_rotd ) {
+		set .@partyid,getcharid(1);
+		set .@mob_base_exp,(( getmonsterinfo( killedrid,MOB_BASEEXP ) / 100 ) * .rotd_exp_bonus );
+		set .@mob_job_exp,(( getmonsterinfo( killedrid,MOB_JOBEXP ) / 100 ) * .rotd_exp_bonus );
+		if ( .@partyid ) {
+			set .@aid,getcharid(3);
+			set .@baselevel,BaseLevel;
+			set .@map$,strcharinfo(3);
+			getpartymember .@partyid,1;
+			getpartymember .@partyid,2;
+			while( .@i < $@partymembercount ) {
+				if ( isloggedin( $@partymemberaid[.@i],$@partymembercid[.@i] ) )
+					if ( attachrid( $@partymemberaid[.@i] ) )
+						if ( strcharinfo(3) == .@map$ && ( BaseLevel - .@baselevel ) <= .party_level_range && ( BaseLevel - .@baselevel ) >= ~.party_level_range && Hp >= 1 ) {	
+							set BaseExp,( BaseExp + .@mob_base_exp / $@partymembercount );
+							set JobExp,( JobExp + .@mob_job_exp / $@partymembercount );
+							dispbottom "[ROTD] : "+.@mob_base_exp+" exp points and "+.@mob_job_exp+" job points, split for the group!";
+						}
+				set .@i,.@i + 1;
+			}
+			attachrid( .@aid );
+		}else{
+			set BaseExp,( BaseExp + .@mob_base_exp );
+			set JobExp,( JobExp + .@mob_job_exp );
+			dispbottom "[ROTD]: +"+.@mob_base_exp+" EXP!";
+		}
+		if ( rand( 100 ) < .rotd_item_rate && .rotd_zeny ) 
+			set Zeny,Zeny + rand( .rotd_zeny );
+		if ( rand( 100 ) < .rotd_item_rate && .rotd_item_amount ) 
+			getitem .rotd_item_id,rand( .rotd_item_amount );
+	
+	}
+end;
+
+OnPCLoginEvent:
+	//controla os horarios
+	if($timeicon){
+		set .@time,$timeicon - gettimetick(2);
+	}else{
+		query_sql "select `time`from `rotd_time` where `id`='1' ",$timeicon;
+		set .@time,$timeicon - gettimetick(2);
+	}
+	query_sql "UPDATE `rotd_time` set `time`= "+$timeicon+" where `id`='1' ";
+	//ativa o icone
+	if(.today_rotd == 0){ // Formless
+		fstatus(getcharid(0),1505,.@time*1000,1);
+	}else if(.today_rotd == 1){ // Undead
+		fstatus(getcharid(0),1508,.@time*1000,1);
+	}else if(.today_rotd == 2){ // Brute
+		fstatus(getcharid(0),1501,.@time*1000,1);
+	}else if(.today_rotd == 3){ // Plant
+		fstatus(getcharid(0),1507,.@time*1000,1);
+	}else if(.today_rotd == 4){ // Insect
+		fstatus(getcharid(0),1506,.@time*1000,1);
+	}else if(.today_rotd == 5){ // Fish 
+		fstatus(getcharid(0),1504,.@time*1000,1);
+	}else if(.today_rotd == 6){ // Demon
+		fstatus(getcharid(0),1503,.@time*1000,1);
+	}else if(.today_rotd == 7){ // DemiHuman
+		fstatus(getcharid(0),1502,.@time*1000,1);
+	}else if(.today_rotd == 8){ //Angel
+		fstatus(getcharid(0),1510,.@time*1000,1);
+	}else if(.today_rotd == 9){ // Dragon
+		fstatus(getcharid(0),1509,.@time*1000,1);
+	}
+end;
+}
+
+function	script	int_format	{
+
+	set .@int,  getarg(0);
+	set .@sep$, getarg(1,"^000000,^FF6600");
+	set .@str$, "";
+	if ( .@int < 0 ) {
+		set .@int, -.@int;
+		set .@neg, 1;
+	}
+	set .@len, getstrlen(.@int+"") - .@neg;
+	for ( set .@i,0; .@i<.@len; set .@i,.@i+1 )
+	set .@str$, ( .@i % 3 == 2 && .@i < .@len-1 ? .@sep$ : "" ) + ( .@int / pow(10,.@i) ) % 10 + .@str$;
+	return ( .@neg ? "-" : "" ) + .@str$;
+}
+
+//prontera,190,164,3	duplicate(ROTD)	ROTD#prt	2_BULLETIN_BOARD

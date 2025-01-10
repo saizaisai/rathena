@@ -1,0 +1,518 @@
+//===== rAthena Script =======================================
+//= Hourly Points System
+//===== By: ==================================================
+//= Release By: Denz
+//===== Current Version: =====================================
+//= 1.0
+//===== Compatible With: =====================================
+//= rAthena / Hercules
+//===== Description: =========================================
+//= Hourly Points Script.
+//===== Additional Comments: =================================
+//= 1.0 Initial script.
+//============================================================
+
+-	script	hourly_point_main	-1,{
+   
+    OnInit:	
+		.max_minute = 1440;
+        .npc_name$ = strnpcinfo(3);
+			
+        bindatcmd "hourlystatus",.npc_name$+"::OnAtcommand";
+	end;
+       
+    OnAtcommand:
+		dispbottom "Accumulated time: "+#minute_count+" / "+.max_minute+" minute(s) - "+ ( ( #minute_count < .max_minute )?" In Progress":"Completed" );
+		dispbottom "Total Play Time: "+#PLAYERPLAYTIME+""; 
+		dispbottom "Total Hourly Points: "+#HOURLYPOINTS+" Points";
+		end;		
+	end;
+
+	OnClock0001:
+		query_sql("UPDATE `acc_reg_num` SET `value` = 0 WHERE `key` = '#minute_count' AND `account_id` IN ( SELECT `account_id` FROM `char` GROUP BY `account_id` ) " );
+		sleep 200;
+		
+		announce "It is 12:00AM Server time. Daily Reward and other cooldowns has been reset, Please relog to avoid errors.",bc_all,"0x00FF00",FW_NORMAL,20,0,40;
+		sleep 200;
+		addrid(0);
+		#minute_count = 0;
+	end;
+	   
+    OnUpdate:
+		if(checkvending() >= 2 && checkvending() <= 3 || checkvending() >= 6) {
+			dispbottom "The hourly points event stopped because you were vending. Please relog if you wish to start again.";
+			stopnpctimer;
+			end;
+		}
+				
+        #minute_count++;
+        deltimer .npc_name$+"::OnUpdate";
+        switch ( #minute_count ) {
+            default:
+                break;
+				
+            case 60: // 60 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1;
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+                break;
+            case 120: // 120 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1;
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 180: // 180 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 240: // 240 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 300: // 300 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 360: // 360 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 420: // 420 minutes
+                 #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 480: // 480 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 540: // 540 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 600: // 600 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 660: // 660 minutes
+                 #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 720: // 720 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 780: // 780 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 840: // 840 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 900: // 300 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 960: // 960 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 1020: // 1020 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1;
+					message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token Play Time...";
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 1080: // 1080 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 1140: // 1140 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 1200: // 1200 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 1260: // 1260 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 1320: // 1320 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 1380: // 1380 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 1 hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;
+            case 1440: // 1440 minutes
+                #HOURLYPOINTS += 1;
+				#PLAYERPLAYTIME += 1;
+				// getitem 33003, 1; //Hourly Coin UNCOMMENT IF YOU WANT TO USE ADDITIONAL ITEM REWARD
+				
+				if(#STREAM_MEMBER > gettimetick(2)){
+					#STREAM_SUPPLY += 1;
+					#STREAMER_PLAY_TIME += 1;
+					#STREAMER_PLAY_TIME_REWARD += 1;
+					#STREAMER_PLAY_TIME_CAP += 1; 
+				}			
+				
+				//#HourlyRewards += 1; //REMOVE THIS ON OFFICIAL OPENING
+				//#OBTREWARDPOINTS += 1; //REMOVE THIS ON OFFICIAL OPENING
+				
+				message strcharinfo(0),"[ Revo-Classic ]: You earn 1 Hourly Token by staying ingame for 51hour...";
+				dispbottom "You received 1 Hourly Token by staying ingame for 1 hour";
+				dispbottom "To Check your Hourly Status use @hourlystatus.";
+				break;			
+    }
+		
+    OnPCLoginEvent:	
+		if ( #minute_count < .max_minute ) {
+			addtimer ( 60 * 1000 ), .npc_name$ + "::OnUpdate";
+		}
+	end;
+}

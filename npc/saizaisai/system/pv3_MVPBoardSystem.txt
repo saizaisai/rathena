@@ -1,0 +1,92 @@
+-	script	MVPBoard	-1,{
+OnInit:
+	bindatcmd "mvpboard",strnpcinfo(0)+"::OnMVPBoard";
+	.@always_reset = 0; // resetboard
+	if(.@always_reset == 1)
+	{
+		.@mvpboardsize = getarraysize($mvpboard);
+		for(.@i = 0; .@i < .@mvpboardsize; .@i++)
+		{
+			$mvpboard[.@i] = 0;
+			$mvpboardtimer[.@i] = 0;
+		}
+	}
+    end;
+
+OnMVPBoard:
+	.@boardisforvip = 0; //set 1 only vip 0 all players
+	.@respawning_cutin_time = 30; //segundos
+	.@tick = gettimetick(2);
+	.@mvpboardsize = getarraysize($mvpboard);
+	mes "^00B2EE[ MvP Board ]^000000";
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "Select the Mvp you want to check its status!";
+	if(.@boardisforvip == 1) { 
+		if(getgroupid(getcharid(0)) < 5) {
+			next;
+			mes "^00B2EE[ MvP Board ]^000000";
+			mes "Sorry, this system is exclusive to VIPs";
+			end;
+		} 
+	}
+	if(.@mvpboardsize == 0) {
+		mes "^00B2EE[ MvP Board ]^000000";
+		mes "Still haven't killed MVPs on this server after implementing this system";
+		end;
+	}
+	.@list$ = "";
+	.@j = 0;
+	for(.@i = 1; .@i < .@mvpboardsize; .@i++)
+	{
+		if($mvpboard[.@i] > 0){
+		.@list$ += getmonsterinfo($mvpboard[.@i],MOB_NAME);
+		.@list$ += ":";	
+		.@fakeboardindex[.@j] = .@i;
+		.@j++;
+		}
+	}
+	.@list$ += "Sair:";
+	.@mobi = select(.@list$)- 1;
+	if(.@mobi >= .@j)
+	{
+		cutin "",255;
+		end;
+	}
+	.@cutcmd$ = "custom\\"+$mvpboard[.@fakeboardindex[.@mobi]]+(.@tick <= $mvpboardtimer[.@fakeboardindex[.@mobi]]-.@respawning_cutin_time ? "_D":(.@tick <= $mvpboardtimer[.@fakeboardindex[.@mobi]] ? "_R":"_A")); 
+	cutin .@cutcmd$,3; 
+	clear;
+	goto OnMVPBoard;
+end;
+
+
+
+function	F_ADDINFOBOARD	{
+	.@exist = 0; .@bossid = getarg(0); .@tick = getarg(1);
+	.@mvpcount = getarraysize($mvpboard);
+	for( .@i = 0; .@i < .@mvpcount;.@i++)
+	{
+		if($mvpboard[.@i] == .@bossid)
+		{
+			.@exist = 1;
+			.@mvpi = .@i;
+			break;
+		}
+	}
+	if(.@exist == 0)
+	{
+		$mvpboard[.@mvpcount+1] = .@bossid;
+		$mvpboardtimer[.@mvpcount+1] = .@tick; 
+	}
+	else
+	{
+		$mvpboardtimer[.@mvpi] = .@tick;
+	}
+	return;
+}
+
+OnKillAddTimerToBoard:
+	.@tick = gettimetick(2);
+	F_ADDINFOBOARD(@bossid,(.@tick+(@respawtimer/1000)));
+end;
+
+}

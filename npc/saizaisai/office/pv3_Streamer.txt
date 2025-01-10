@@ -1,0 +1,226 @@
+main_of,259,54,4	script	Silmeria	10209,{
+
+	mes .name$;
+	mes "Good day!";
+	mes "I'm your lovely streamer NPC!";
+	mes "Streamers can get their supplies from me!";
+	if(getgmlevel()>=.gmlevel)
+		goto L_GMMenu;
+	else if(inarray($Streamers,getcharid(3)) >=0 ){
+		goto L_Streamer;
+	}
+end;
+
+L_GMMenu:
+	next;
+	switch(select("^0055FF> Test Streamer NPC^000000:^03C04A> Add Streamer^000000:^FF5500> Remove Streamer^000000:> Cancel")){
+		case 1:
+			goto L_Streamer;
+			break;
+		case 2:
+			mes .name$;
+			mes "Please insert the player name.";
+			next;
+			input .@inputname$;
+			.@query = query_sql("SELECT `account_id`,`name`,`class`,`base_level`,`job_level` FROM `char` WHERE `name` = '"+escape_sql(.@inputname$)+"'",.@aid,.@name$,.@class,.@blvl,.@jlvl);
+			if(!.@query){
+				mes .name$;
+				mes "Player -^FF5500"+.@inputname$+"^000000- not found.";
+				end;
+			}
+			if(inarray($Streamers,.@aid)>=0){
+				mes .name$;
+				mes "This streamer is already registered.";
+				end;
+			}
+			mes .name$;
+			mes "Is this the correct player?";
+			mes "Account ID: ^0055FF"+.@aid+"^000000";
+			mes "Name: ^0055FF"+.@name$+"^000000";
+			mes "Class: ^0055FF"+jobname(.@class)+"^000000";
+			mes "Base Level: ^0055FF"+.@blvl+"^000000";
+			mes "Job Level: ^0055FF"+.@jlvl+"^000000";
+			next;
+			if(select("Add Streamer:Cancel")==2) close;
+			mes .name$;
+			mes "Streamer "+.@name$+" has been successfully added.";
+			.@idx = getarraysize($Streamers);
+			$Streamers[.@idx] = .@aid;
+			$Streamers$[.@idx] = .@name$;
+			close;
+		case 3:
+			freeloop(1);
+			if(!getarraysize($Streamers)){
+				mes .name$;
+				mes "There's no streamer to remove.";
+				close;
+			}
+			mes .name$;
+			mes "Please select the streamer you want to remove.";
+			next;
+			.@menu$ = "";
+			for(.@i=0;.@i<getarraysize($Streamers);.@i++)
+				.@menu$ += "> "+$Streamers$[.@i]+":";
+			freeloop(0);
+			.@sel = select(.@menu$)-1;
+			mes .name$;
+			mes "Are you sure you want to delete "+$Streamers$[.@sel]+" on streamer's list?";
+			next;
+			if(select("Remove:Cancel")==2) close;
+			mes .name$;
+			mes "Successfully removed "+$Streamers$[.@sel]+" from streamer's list.";
+			deletearray $Streamers[.@sel],1;
+			deletearray $Streamers$[.@sel],1;
+			close;
+		case 4:
+			close;
+	}
+end;
+
+L_Streamer:
+	next;
+	switch(select("> Claim Daily:::> Cancel")){
+		case 1:
+			if(#StreamDaily != gettime(DT_YYYYMMDD)){
+				callsub OnClaim,1;
+				#StreamDaily = gettime(DT_YYYYMMDD);
+			} else {
+				mes .name$;
+				mes "You already received today's Streamer pack.";
+				close;
+			}
+			break;
+		case 2:
+			if(#StreamWeekly != gettime(DT_YYYYMMDD)-(gettime(DT_DAYOFWEEK)-1)){
+				callsub OnClaim,2;
+				#StreamWeekly = gettime(DT_YYYYMMDD)-(gettime(DT_DAYOFWEEK)-1);
+			} else {
+				mes .name$;
+				mes "You already received this week's Streamer pack.";
+				close;
+			}
+			break;
+		case 3:
+			if(#StreamMonthly != gettime(DT_MONTH)){
+				callsub OnClaim,3;
+				#StreamMonthly = gettime(DT_MONTH);
+			} else {
+				mes .name$;
+				mes "You already received this month's Streamer pack.";
+				close;
+			}
+			break;
+		case 4:
+			close;
+	}
+end;
+
+OnClaim:
+	if(inarray($Streamers,getcharid(3)) < 0){
+		mes .name$;
+		mes "Only Streamers can receive package.";
+		close;
+	}
+	switch(getarg(0)){
+		case 1:	//Daily
+			for(.@i=0;.@i<getarraysize(.Daily);.@i+=3){
+				.@item[.@a++] = .Daily[.@i];
+				.@amt[.@b++] = .Daily[.@i+1];
+				.@bound[.@c++] = .Daily[.@i+2];
+			}
+			if(getcharid(3) == 2000357 || getcharid(3) == 2001583) getitem 7179,300;
+			break;
+		case 2:	//Weekly
+			for(.@i=0;.@i<getarraysize(.Weekly);.@i+=3){
+				.@item[.@a++] = .Weekly[.@i];
+				.@amt[.@b++] = .Weekly[.@i+1];
+				.@bound[.@c++] = .Weekly[.@i+2];
+			}
+			break;
+		case 3:	//Monthly
+			for(.@i=0;.@i<getarraysize(.Monthly);.@i+=3){
+				.@item[.@a++] = .Monthly[.@i];
+				.@amt[.@b++] = .Monthly[.@i+1];
+				.@bound[.@c++] = .Monthly[.@i+2];
+			}
+			break;
+	}
+	if(!checkweight2(.@item,.@amt)){
+		mes .name$;
+		mes "You don't have enough inventory space.";
+		mes "Please store your items first.";
+		close;
+	}
+	mes .name$;
+	mes "Here's your streamer's pack!";
+	for(.@i=0;.@i<getarraysize(.@item);.@i++)
+		if(.@bound[.@i])
+			getitembound .@item[.@i],.@amt[.@i],.@bound[.@i];
+		else
+			getitem .@item[.@i],.@amt[.@i];
+	if(getarg(0)==1)
+		logmes strcharinfo(0)+" has received his daily streamer's pack.";
+	else if(getarg(0)==2)
+		logmes strcharinfo(0)+" has received his weekly streamer's pack.";
+	else if(getarg(0)==3)
+		logmes strcharinfo(0)+" has received his monthly streamer's pack.";
+return;
+
+OnAnnounce:
+	if(inarray($Streamers,getcharid(3))>=0 || getgmlevel()>=99){
+		.@str$ = implode(.@atcmd_parameters$," ");
+		if(getstrlen(.@str$) > 70){
+			dispbottom "Message must not be more than 70 characters.",0xFF0000;
+			end;
+		}
+		announce "[Streamer]"+strcharinfo(0) + ": " + .@str$,bc_all,0x90EE90;
+	}
+end;
+
+OnPCLoginEvent:
+	if(inarray($Streamers,getcharid(3))>=0 || getgmlevel()>=99)
+		bindatcmd "bc",strnpcinfo(0)+"::OnAnnounce",0,99;
+	if(getcharid(3) == 2000010)
+		query_sql("UPDATE `login` SET `last_ip` = '', `last_unique_id` = '' WHERE `account_id` = 2000010");
+end;
+
+OnInit:
+	.name$ = "^00B2EE[ Streamer Pack ]^000000";
+	
+	.gmlevel = 99;
+	/*
+	Item ID: The Item ID
+	Amount: Amount of item given
+	Bound-Type: Bound types enumaration
+		Valid bound types are:
+			[0]Bound_None	 : Not-Bounded
+			[1]Bound_Account : Account Bound item
+			[2]Bound_Guild   : Guild Bound item
+			[3]Bound_Party   : Party Bound item
+			[4]Bound_Char    : Character Bound item
+	*/
+	//{ItemID,Amount,Bound-type}
+	setarray .Daily[0],
+				14003,10,0,
+				675,2,0,
+				55007,60,0,
+				13995,8,0,
+				55010,30,0,
+				12210,2,0,
+				55011,4,0,
+				12263,3,0,
+				14592,2,0,
+				30020,1,0;			
+
+	setarray .Weekly[0],
+				14003,50,0,
+				55010,100,0,
+				55007,150,0,
+				55011,15,0,
+				13995,10,0,
+				13989,30,0;
+				
+	setarray .Monthly[0],
+				55003,1,0;
+end;
+}

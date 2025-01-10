@@ -1,0 +1,357 @@
+prontera,147,153,5	script	Boss Time Attack	94,{
+
+	mes .name$;
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "Are you strong enough to slay me?. The ^0055FF"+strmobinfo(1,$BTABOSS)+"^000000?";
+	mes "Let us see how fast you can kill me or rather, can you?!";
+	next;
+	switch(select("> Enter Boss Time Attack:> Time Attack Rankings:> Information:"+(getgmlevel() < 99 ? "":"> ^FF5500[GM] Administration^000000")+":> Cancel")){
+		case 1:
+			if(BTAENTER > gettimetick(2)){
+				mes .name$;
+				mes "You recently entered the ^0055FFBoss Time Attack^000000.\n";
+				mes "Time Before Entry: "+callfunc("Time2Str",BTAENTER);
+				end;
+			}
+			callsub OnEnterInstance;
+		case 2:
+			.@count = query_sql("SELECT DISTINCT `base62id`,`timetick` FROM `boss_time_attack` ORDER BY `timetick` ASC",.@base62id$,.@timetick);
+			if(.@count > .Max_Top) .@count = .Max_Top;
+			for(.@i=0;.@i<.@count;.@i++){
+				.@num = query_sql("SELECT `party_name`,`char_name` FROM `boss_time_attack` WHERE `base62id` = '"+.@base62id$[.@i]+"' ORDER BY `timetick` ASC",.@pname$,.@char_name$);
+				mes .name$;
+				mes "[ ^0055FFRank "+(.@i+1)+"^000000 ]";
+				mes "^0055FFDuration^000000: "+callfunc("TimeAttack",.@timetick[.@i]);
+				mes "^0055FFParty Name^000000: ^03C04A"+.@pname$+"^000000";
+				mes "^0055FFParty Members^000000: ";
+				for(.@j=0;.@j<.@num;.@j++){
+					mes (.@j+1)+". ^03C04A"+.@char_name$[.@j]+"^000000";
+				}
+				next;
+			}
+			break;
+		case 3:
+			mes .name$;
+			mes "Boss Time Attack is a type of race wherein you beat others record and be the fastest one to defeat me,";
+			next;
+			mes .name$;
+			mes "There's also rewards which are: ";
+			for(.@i=0;.@i<getarraysize(.reward_id);.@i++)
+				mes "- "+.reward_amt[.@i]+" "+getitemname(.reward_id[.@i]);
+			if(.reward_zeny)
+				mes "- "+(callfunc("F_InsertComma",.reward_zeny))+"z";
+			break;
+		case 4:
+			mes .name$;
+			mes "Good day to you GM~";
+			mes "What would you like to do?";
+			next;
+			switch(select("> Set Boss:> Reset Rankings:> Cancel")){
+				case 1:
+					while(1){
+						mes .name$;
+						mes "Please enter the monster id";
+						next;
+						input .bid,1002,2000;
+						if(!strmobinfo(3,.bid)){
+							mes .name$;
+							mes "There's no such monster.";
+							next;
+							continue;
+						}
+						break;
+					}
+					mes .name$;
+					mes "Would you like to set ^0055FF"+strmobinfo(1,.bid)+"^000000 as the Boss of Time Attack?";
+					next;
+					if(select("> Confirm:> Cancel")==2) end;
+					mes .name$;
+					mes "^0055FF"+strmobinfo(1,.bid)+"^000000 has been set as the new Boss of Time Attack";
+					$BTABOSS = .bid;
+					setnpcdisplay(strnpcinfo(0),$BTABOSS);
+					break;
+				case 2:
+					switch(select("> Reset with rewards:> Reset without rewards:> Cancel")){
+						case 1:
+							close2;
+							callsub OnResetRankings,1;
+							break;
+						case 2:
+							close2;
+							callsub OnResetRankings,0;
+							break;
+						case 3:
+							break;
+					}
+					break;
+				case 3:
+					break;
+			}
+			break;
+		case 5:
+			break;
+	}
+end;
+
+OnEnterInstance:
+	switch(instance_enter(.instance_name$)){	
+		case IE_NOMEMBER:
+		case IE_NOINSTANCE:
+			if(!getcharid(1) || !is_party_leader(getcharid(1))){
+				mes .name$;
+				mes "The Party leader must initiate an entry before you can enter.";
+				end;
+			}
+			.@count = getpartymember(getcharid(1),0,.@name$);
+			.@char_id = getpartymember(getcharid(1),1,.@cid);
+			.@acc_id = getpartymember(getcharid(1),2,.@aid);
+			if(.@count < .Min_Size || .@count > .Max_Size) {
+				mes .name$;
+				mes "The party must have atleast "+.Min_Size+" members and not greater than "+.Max_Size+" then try again.";
+				close;
+			}
+			mes .name$;
+			mes "All party members must be ^03C04Aonline^000000 and ^03C04Awithin my sight^000000 to enter.\n";
+			mes "Start Boss Time Attack?.";
+			next;
+			if(select("Enter now:Cancel")==2) end;
+			for(.@i=0;.@i<.@count;.@i++){
+				.@a = getmapxy(.@map$,.@x,.@y,BL_PC,.@name$[.@i]);
+				if( .@a < 0 || .@map$ != strnpcinfo(4) || ((.@x < .npc_x-14 || .@x > .npc_x+14 ) || (.@y < .npc_y-14 || .@y > .npc_y+14 ))){
+					.@error$[.@b++] = "^FF5500"+.@name$[.@i]+"^000000 is not found within my sight.";;
+					continue;
+				}
+				if( getvar(BTAENTER,.@cid[.@i]) > gettimetick(2) ){
+					.@error$[.@b++] = "^FF5500"+.@name$[.@i]+"^000000 recently entered. "+callfunc("Time2Str",getvar(BTAENTER,.@cid[.@i]))+" left to enter again.";
+					continue;
+				}
+			}
+			if(getarraysize(.@error$)){
+				mes .name$;
+				mes "The following error occured:";
+				for(.@i=0;.@i<getarraysize(.@error$);.@i++){
+					mes (.@i+1)+". "+.@error$[.@i];
+				}
+				end;
+			}
+			if(instance_create(.instance_name$,IM_PARTY) < 0){
+				mes .name$;
+				mes "Party Name: "+ getpartyname(getcharid(1));
+				mes "Party Leader: "+strcharinfo(0);
+				if(.@count > 1){
+					mes "Party Members:";
+					for(.@i=1;.@i<.@count;.@i++)
+						mes (.@i+1)+". "+.@name$[.@i];
+				}
+				mes "^0000ff"+.instance_name$+" ^000000- Entry Failed!";
+				end;
+			}
+			detachrid;
+			for(.@i=0;.@i<.@count;.@i++){
+				attachrid .@aid[.@i];
+				if(instance_enter(.instance_name$) == IE_OK)
+					BTAENTER = gettimetick(2)+.TimeEntry;
+				detachrid;
+			}
+			break;
+		case IE_OTHER:
+			mes .name$;
+			mes "An Error has been occured. Please try creating your party again.";
+			break;
+	}
+end;
+	
+OnMonday0000:
+	callsub OnResetRankings,1;
+end;
+
+OnResetRankings:
+	detachrid;
+	if(getarg(0)){
+		.@count = query_sql("SELECT DISTINCT `base62id`,`timetick` FROM `boss_time_attack` ORDER BY `timetick` ASC",.@base62id$,.@timetick);
+		if(.@count){
+			.@num = query_sql("SELECT `char_id` FROM `boss_time_attack` WHERE `base62id` = '"+.@base62id$[.@i]+"'",.@cid);
+			.@str$ = callfunc("TimeAttack",.@timetick);
+			for(.@i=0;.@i<.@num;.@i++){
+				.@charid = .@cid[.@i];
+				.@sender$ = "no-reply";
+				.@title$ = "** Rank Reward: Boss Time Attack **";
+				.@body$ = "Warrior,\r\n \r\n Congratulations!\r\n You successfully reached Top "+(.@i+1)+"\r\n in Boss Time Attack rankings!\r\n Time Attack Duration: "+.@str$+".\r\n \r\n \r\n \r\n \r\n [ Your reward is attached. ]";
+				if (.reward_id)
+					mail .@charid, .@sender$, .@title$, .@body$, .reward_zeny, .reward_id, .reward_amt;
+				else
+					mail .@charid, .@sender$, .@title$, .@body$, .reward_zeny;
+			
+				if (!getd(".@str_"+.@charid) && isloggedin(convertpcinfo(.@charid,CPC_ACCOUNT),.@charid)) {
+					setd ".@str_"+.@charid,1;
+					message rid2name(convertpcinfo(.@charid,CPC_ACCOUNT)),"You've got mail!";
+				}
+			}
+		}
+	}
+	query_sql("TRUNCATE `boss_time_attack`");
+	/*announce "Boss Time Attack: The Boss time attack rankings has been reset~",bc_all;
+	if(getarg(0)){
+		sleep 5000;
+		announce "Boss Time Attack: The rewards for the fastest party has been sent via mail~",bc_all;
+	}*/
+end;
+	
+OnTimer5000:
+	if(rand(1,100)>75)
+		showscript .dialog$[rand(getarraysize(.dialog$))];
+end;
+	
+OnInit:
+	query_sql("CREATE TABLE IF NOT EXISTS boss_time_attack ( id int(11) NOT NULL AUTO_INCREMENT, base62id varchar(11) NOT NULL, party_id int(11) NOT NULL, party_name varchar(23) NOT NULL, char_id int(11) NOT NULL, char_name varchar(23) NOT NULL, timetick int(11) NOT NULL, PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+	.name$ = "^00B2EE[ Boss Time Attack ]^000000";
+	.Map$ = "guild_vs2-2";
+	.Min_Size = 1;
+	.Max_Size = 5;
+	.Max_Top = 10;
+	.reward_zeny = 100000000;
+	setarray .reward_id[0],12103;
+	setarray .reward_amt[0],10;
+	setarray .dialog$[0],	"Are you brave?",
+				"Fight me weaklings",
+				"Too many cowards",
+				"Want some smack and slap?";
+	.instance_name$ = "Boss Attack";
+	.TimeEntry = 3600;	//Seconds In Entry
+	getmapxy(.npc_map$,.npc_x,.npc_y,BL_NPC);
+	if(!$BTABOSS) $BTABOSS = 1751;
+	if($BTABOSS)
+		setnpcdisplay(strnpcinfo(0),$BTABOSS);
+	initnpctimer;
+end;
+
+}
+
+guild_vs2-2,50,50,3	script	::BTA_BOSS	94,{
+end;
+OnInstanceInit:
+	setmapflag instance_mapname("guild_vs2-2"),mf_partylock;
+	setmapflag instance_mapname("guild_vs2-2"),mf_noloot;
+	removemapflag instance_mapname("guild_vs2-2"),mf_gvg;
+	removemapflag instance_mapname("guild_vs2-2"),mf_nocostume;
+	removemapflag instance_mapname("guild_vs2-2"),mf_loadevent;
+	setnpcdisplay(instance_npcname("BTA_BOSS"),strmobinfo(1,$BTABOSS),$BTABOSS);
+	sleep 5000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": Welcome to my domain~",bc_blue;
+	sleep 5000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": The rules are very simple and easy~",bc_blue;
+	sleep 5000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": First, You must not Resurrect to Last Save Point!~",bc_blue;
+	sleep 5000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": Second, You are given exactly 1 hour time limit to kill me~",bc_blue;
+	sleep 5000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": Lastly, The goal is to kill me as fast as you can~",bc_blue;
+	sleep 5000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": And so, with the rules explained! you are given 30 seconds to prepare!",bc_blue;
+	sleep 20000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": Last 10 seconds!",bc_blue;
+	sleep 5000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": I will start attacking in 5..",bc_blue;
+	sleep 1250;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": 4..",bc_blue;
+	sleep 1250;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": 3..",bc_blue;
+	sleep 1250;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": 2..",bc_blue;
+	sleep 1250;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": 1..",bc_blue;
+	sleep 1000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": Fight with all your might!",bc_blue;
+	hideonnpc instance_npcname("BTA_BOSS");
+	monster instance_mapname("guild_vs2-2"),50,50,strmobinfo(1,$BTABOSS),$BTABOSS,1,instance_npcname("BTA_BOSS")+"::OnBossKilled";
+	initnpctimer instance_npcname("BTA_BOSS");
+	addrid(5,0,instance_mapname("guild_vs2-2"));
+	showdigit 0,1;
+end;
+
+OnTimer5000:
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": A little reminder, do not return to savepoint~",bc_blue;
+	sleep 2500;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": If you return to save point, there's no comingback and you won't have a record~",bc_blue;
+end;
+
+OnBossKilled:
+	detachrid;
+	$@btatick = getnpctimer(0,instance_npcname("BTA_BOSS"));
+	stopnpctimer instance_npcname("BTA_BOSS");
+	donpcevent instance_npcname("BTA_BOSS")+"::OnSetRecord";
+	.@tick = $@btatick;
+	.@time = .@tick / 1000;
+	sleep 1250;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": Congratulations!",bc_blue;
+	sleep 2500;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": What a great fight indeed",bc_blue;
+	hideoffnpc instance_npcname("BTA_BOSS");
+	sleep 5000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": Your Time Attack duration is "+callfunc("TimeAttack",.@tick),bc_blue;
+	sleep 5000;
+	instance_announce 0,strmobinfo(1,$BTABOSS)+": Let's fight again another time!",bc_blue;
+	sleep 5000;
+	instance_destroy();
+end;
+
+OnSetRecord:
+	addrid(5,0,instance_mapname("guild_vs2-2"));
+	showdigit .@time,0;
+	query_sql("INSERT INTO `boss_time_attack` VALUES ( NULL,'"+callfunc("base62_encode",gettimetick(2))+"',"+getcharid(1)+",'"+getpartyname(getcharid(1))+"',"+getcharid(0)+",'"+strcharinfo(0)+"',"+$@btatick+")");
+end;
+
+}
+function	script	base62_encode	{
+	.@num = getarg(0);
+	setarray .@base62$,"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z";
+	while ( .@num ) {
+		.@base62_value$ = .@base62$[ .@num % 62 ] + .@base62_value$;
+		.@num /= 62;
+	}
+	.@default_zeroes = getarg(1, 2);
+	while ( getstrlen(.@base62_value$) < .@default_zeroes )
+		.@base62_value$ = insertchar( .@base62_value$, "0", 0 );
+	return .@base62_value$;
+}
+
+function	script	TimeAttack	{
+	set .@Time_Left, getarg(0);
+	
+	set .@Days, .@Time_Left / 86400000;
+	set .@Time_Left, .@Time_Left - (.@Days * 86400000);
+	set .@Hours, .@Time_Left / 3600000;
+	set .@Time_Left, .@Time_Left - (.@Hours * 3600000);
+	set .@Minutes, .@Time_Left / 60000;
+	set .@Time_Left, .@Time_Left - (.@Minutes * 60000);
+	set .@Seconds, .@Time_Left / 1000;
+	set .@Time_Left, .@Time_Left - (.@Seconds * 1000);
+	
+	set .@Time$, "";
+	if( .@Days > 1 )
+		set .@Time$, .@Time$ + .@Days + " days, ";
+	else if( .@Days > 0 )
+		set .@Time$, .@Time$ + .@Days + " day, ";
+
+	if( .@Hours > 1 )
+		set .@Time$, .@Time$ + .@Hours + " hours, ";
+	else if( .@Hours > 0 )
+		set .@Time$, .@Time$ + .@Hours + " hour, ";
+
+	if( .@Minutes > 1 )
+		set .@Time$, .@Time$ + .@Minutes + " minutes, ";
+	else if( .@Minutes > 0 )
+		set .@Time$, .@Time$ + .@Minutes + " minute, ";
+
+	if( .@Seconds > 1 )
+		set .@Time$, .@Time$ + .@Seconds + " seconds, ";
+	else if( .@Seconds > 0 )
+		set .@Time$, .@Time$ + .@Seconds + " second, ";
+		
+	if( .@Time_Left > 1 || .@Time_Left == 0 )
+		set .@Time$, .@Time$ + .@Time_Left + "ms";
+	else if( .@Time_Left == 1 )
+		set .@Time$, .@Time$ + .@Time_Left + "ms";
+	
+	return .@Time$;
+}

@@ -1,0 +1,266 @@
+-	script	Mob_Campeao	-1,{
+end;
+OnInit:
+	query_sql("truncate table `monstro_campeao`");
+end;
+OnNPCKillEvent:
+	setarray .@listaMvps[0],1038,1039,1046,1059,1086,1087,1112,1115,1147,1150,1157,1159,1190,1251,1252,1272,1312,1373,1389,1399,1418,1492,1511,1583,1623,1630,1646,1647,1648,1649,1650,1651,1658,1685,1688,1708,1719,1734,1751,1768,1779,1785,1832,1871,1874,1885,1917,1956,2022,2052,2068;
+	setarray .@listaMiniBoss[0],1088,1089,1096,1219,1283,1295,1388,1307,1302,1582,1091,1093,1205,1681,1120,1259,1626,1720,1090,1289,1262,1203,1204,1618,1092,1200,1705,1707,1706,1704,1765;
+	setarray .@effect_list[1],340, 341, 342, 343;
+	.@mob_dead = killedrid;
+	//Bloqueio MvP
+	for(.@mvp=0; .@mvp <= getarraysize(.@listaMvps); .@mvp++)
+		if(killedrid == .@listaMvps[.@mvp])
+			end;
+	//Bloqueio Mini-Boss
+	for(.@minbs=0; .@minbs <= getarraysize(.@listaMiniBoss); .@minbs++)
+		if(killedrid == .@listaMiniBoss[.@minbs])
+			end;
+
+	.@chance_rand = rand(375);
+	if(.@chance_rand == 1)
+	{
+		
+		// 1 = Furioso
+		// 2 = Batedor
+		// 3 = Experiente
+		// 4 = Precioso
+		.@rand_mob_champ_type = rand(1,4);
+		
+		if(.@rand_mob_champ_type == 1)
+		{
+			query_sql("SELECT raca, tipo FROM `monstro_campeao` WHERE mapa = '"+strcharinfo(3)+"'", .@raca_encontrada, .@tipo_encontrado);
+			getfreecell(strcharinfo(3),.@coord_x,.@coord_y);
+			$@mobid = monster(strcharinfo(3), .@coord_x, .@coord_y, getmonsterinfo(.@mob_dead,MOB_NAME), .@mob_dead, 1 ,"",0,0,1);
+			getunitdata $@mobid,.@mob_champ_arr1;
+			for(.@i=0; .@i <= getarraysize(.@raca_encontrada);.@i++)
+			{
+				if(.@raca_encontrada[.@i] == .@mob_champ_arr1[UMOB_RACE] && .@tipo_encontrado[.@i] == .@rand_mob_champ_type)
+				{
+					unitkill $@mobid;
+					set $monster_champion_1,0;
+					end;
+				}
+			}
+			setunitdata $@mobid,UMOB_MAXHP,.@mob_champ_arr1[UMOB_MAXHP] * 10;
+			setunitdata $@mobid,UMOB_STR,.@mob_champ_arr1[UMOB_STR] * 10;
+			set $monster_champion_1,$@mobid;
+			query_sql("INSERT INTO `monstro_campeao` (mob_gid, raca, tipo, mapa, timer) VALUES ('"+$@mobid+"', '"+.@mob_champ_arr1[UMOB_RACE]+"', '"+.@rand_mob_champ_type+"', '"+strcharinfo(3)+"', '10')");
+			mapannounce strcharinfo(3), "One was born "+getmonsterinfo(.@mob_dead,MOB_NAME)+" - Furious at the coordinates "+.@coord_x+" / "+.@coord_y,bc_map,"0xDC143C",FW_NORMAL,20;
+			.@mob_dead = 0;
+			.@chance_rand = 0;
+			.@rand_mob_champ_type = 0;
+			end;
+		}
+		if(.@rand_mob_champ_type == 2)
+		{
+			query_sql("SELECT raca, tipo FROM `monstro_campeao` WHERE mapa = '"+strcharinfo(3)+"'", .@raca_encontrada, .@tipo_encontrado);
+			getfreecell(strcharinfo(3),.@coord_x,.@coord_y);
+			$@mobid = monster(strcharinfo(3), .@coord_x, .@coord_y, getmonsterinfo(.@mob_dead,MOB_NAME), .@mob_dead, 1,"",0,0,2);
+			getunitdata $@mobid,.@mob_champ_arr2;
+			for(.@i=0; .@i <= getarraysize(.@raca_encontrada);.@i++)
+			{
+				if(.@raca_encontrada[.@i] == .@mob_champ_arr2[UMOB_RACE] && .@tipo_encontrado[.@i] == .@rand_mob_champ_type)
+				{
+					unitkill $@mobid;
+					set $monster_champion_2,0;
+					end;
+				}
+			}
+			set $monster_champion_2,$@mobid;
+			query_sql("INSERT INTO `monstro_campeao` (mob_gid, raca, tipo, mapa, timer) VALUES ('"+$@mobid+"', '"+.@mob_champ_arr2[UMOB_RACE]+"', '"+.@rand_mob_champ_type+"', '"+strcharinfo(3)+"', '10')");
+			mapannounce strcharinfo(3), "One was born "+getmonsterinfo(.@mob_dead,MOB_NAME)+" - Scout at coordinates "+.@coord_x+" / "+.@coord_y,bc_map,"0x00AA00",FW_NORMAL,20;
+			.@mob_dead = 0;
+			.@chance_rand = 0;
+			.@rand_mob_champ_type = 0;
+			end;
+		}
+		if(.@rand_mob_champ_type == 3)
+		{
+			query_sql("SELECT raca, tipo FROM `monstro_campeao` WHERE mapa = '"+strcharinfo(3)+"'", .@raca_encontrada, .@tipo_encontrado);
+			getfreecell(strcharinfo(3),.@coord_x,.@coord_y);
+			$@mobid = monster(strcharinfo(3), .@coord_x, .@coord_y, getmonsterinfo(.@mob_dead,MOB_NAME), .@mob_dead, 1,"",0,0, 3);
+			getunitdata $@mobid,.@mob_champ_arr3;
+			for(.@i=0; .@i <= getarraysize(.@raca_encontrada);.@i++)
+			{
+				if(.@raca_encontrada[.@i] == .@mob_champ_arr3[UMOB_RACE] && .@tipo_encontrado[.@i] == .@rand_mob_champ_type)
+				{					
+					unitkill $@mobid;
+					set $monster_champion_3,0;
+					end;
+				}
+			}
+			set $monster_champion_3,$@mobid;
+			query_sql("INSERT INTO `monstro_campeao` (mob_gid, raca, tipo, mapa, timer) VALUES ('"+$@mobid+"', '"+.@mob_champ_arr3[UMOB_RACE]+"', '"+.@rand_mob_champ_type+"', '"+strcharinfo(3)+"', '10')");
+			mapannounce strcharinfo(3), "One was born "+getmonsterinfo(.@mob_dead,MOB_NAME)+" - Experienced in coordinates "+.@coord_x+" / "+.@coord_y,bc_map,"0x1E90FF",FW_NORMAL,20;
+			.@mob_dead = 0;
+			.@chance_rand = 0;
+			.@rand_mob_champ_type = 0;
+			end;
+		}
+		if(.@rand_mob_champ_type == 4)
+		{
+			query_sql("SELECT raca, tipo FROM `monstro_campeao` WHERE mapa = '"+strcharinfo(3)+"'", .@raca_encontrada, .@tipo_encontrado);
+			getfreecell(strcharinfo(3),.@coord_x,.@coord_y);
+			$@mobid = monster(strcharinfo(3), .@coord_x, .@coord_y, getmonsterinfo(.@mob_dead,MOB_NAME), .@mob_dead, 1,"",0,0, 4);
+			getunitdata $@mobid,.@mob_champ_arr4;
+			for(.@i=0; .@i <= getarraysize(.@raca_encontrada);.@i++)
+			{
+				if(.@raca_encontrada[.@i] == .@mob_champ_arr4[UMOB_RACE] && .@tipo_encontrado[.@i] == .@rand_mob_champ_type)
+				{
+					unitkill $@mobid;
+					set $monster_champion_4,0;
+					end;
+				}
+			}
+			set $monster_champion_4,$@mobid;
+			query_sql("INSERT INTO `monstro_campeao` (mob_gid, raca, tipo, mapa, timer) VALUES ('"+$@mobid+"', '"+.@mob_champ_arr4[UMOB_RACE]+"', '"+.@rand_mob_champ_type+"', '"+strcharinfo(3)+"', '10')");
+			mapannounce strcharinfo(3), "One was born "+getmonsterinfo(.@mob_dead,MOB_NAME)+" - Precious in the coordinates "+.@coord_x+" / "+.@coord_y,bc_map,"0xFFD700",FW_NORMAL,20;
+			.@mob_dead = 0;
+			.@chance_rand = 0;
+			.@rand_mob_champ_type = 0;
+			end;
+		}
+	}
+	.@mob_dead = 0;
+	.@chance_rand = 0;
+	.@rand_mob_champ_type = 0;
+end;
+}
+
+-	script	Mob_Campeao_Control	-1,{
+end;
+OnNPCKillEvent:
+	.@mob_dead_id = killedrid;
+	.@mob_dead_gid = killedgid;
+	.@nome_killer$ = strcharinfo(0);
+	.@pid_killer = getcharid(1);
+	.@aid_killer = getcharid(3);
+	.@cid_killer = getcharid(0);
+	attachrid(.@aid_killer);
+
+	query_sql("SELECT mob_gid, tipo FROM `monstro_campeao`", .@gid_confirm_list, .@tipo_confirm_list);
+	for(.@g=0;.@g <= getarraysize(.@gid_confirm_list);.@g++)
+	{
+		//Furioso
+		if(.@mob_dead_gid == .@gid_confirm_list[.@g] && .@tipo_confirm_list[.@g] == 1)
+		{
+			query_sql("DELETE FROM `monstro_campeao` WHERE mob_gid = '"+.@mob_dead_gid+"'");			
+		}
+		//=======================================================================================================================
+		//Batedor
+		if(.@mob_dead_gid == .@gid_confirm_list[.@g] && .@tipo_confirm_list[.@g] == 2)
+		{
+			getmapxy(.@mapname$, .@coord_x, .@coord_y, BL_PC, .@nome_killer$);
+			for(.@i=0; .@i < 8;.@i++)
+			{
+				sleep 1100;
+				$@mobid = monster(.@mapname$, .@coord_x + 1, .@coord_y + 1, getmonsterinfo(.@mob_dead_id,MOB_NAME), .@mob_dead_id, 1);
+				specialeffect3 EF_LOUD,AREA,$@mobid;
+				setunitdata $@mobid,UMOB_MODE,0x3695;
+			}
+			query_sql("DELETE FROM `monstro_campeao` WHERE mob_gid = '"+.@mob_dead_gid+"'");
+			detachrid;
+		}
+		//=======================================================================================================================
+		//Experiente
+		if(.@mob_dead_gid == .@gid_confirm_list[.@g] && .@tipo_confirm_list[.@g] == 3)
+		{
+			query_sql("DELETE FROM `monstro_campeao` WHERE mob_gid = '"+.@mob_dead_gid+"'");
+		}
+		//=======================================================================================================================
+		//Precioso
+		if(.@mob_dead_gid == .@gid_confirm_list[.@g] && .@tipo_confirm_list[.@g] == 4)
+		{
+			if(getmobdrops(.@mob_dead_id))
+			{
+				.@quant_itens = $@MobDrop_count;
+				copyarray .@item[0],$@MobDrop_item[0],.@quant_itens;
+				copyarray .@rate[0],$@MobDrop_rate[0],.@quant_itens;
+				getmapxy(.@map$,.@x,.@y,BL_PC);
+				for(.@q=0; .@q < 10; .@q++)
+				{
+					specialeffect2 268,AREA,.@nome_killer$;
+					champion_drop .@map$,.@x,.@y,.@mob_dead_id,.@cid_killer;
+					sleep 1000;
+				}
+			}
+			query_sql("DELETE FROM `monstro_campeao` WHERE mob_gid = '"+.@mob_dead_gid+"'");
+		}
+	}
+	.@gid_confirm_list = 0;
+	.@tipo_confirm_list = 0;
+	.@mob_dead_id = 0;
+	.@mob_dead_gid = 0;
+	.@nome_killer$ = "";
+	.@pid_killer = 0;
+	.@aid_killer = 0;
+	.@cid_killer = 0;
+	detachrid;
+end;
+}
+
+-	script	Mob_Campeao_Thread_Sub	-1,{
+end;
+OnInit:
+statusmes "[Monster Champion] - Timer system started!";
+OnThreadMobChSub:
+	freeloop(1);
+	sleep 60000;
+	query_sql("SELECT mob_gid FROM `monstro_campeao` WHERE timer > 0", .@gid_mob_list);
+	if(.@gid_mob_list)
+	{
+		for(.@i=0; .@i <= getarraysize(.@gid_mob_list);.@i++)
+		{
+			if(.@gid_mob_list[.@i])
+			{
+				query_sql("UPDATE `monstro_campeao` SET timer = timer - 1 WHERE timer > 0");
+				.@gid_mob_list = 0;
+				goto OnThreadMobChSub;
+			}
+			else
+			{
+				.@gid_mob_list = 0;
+				goto OnThreadMobChSub;
+			}
+		}
+	} else {
+		.@gid_mob_list = 0;
+		goto OnThreadMobChSub;
+	}
+}
+
+-	script	Mob_Campeao_Thread_Del	-1,{
+end;
+OnInit:
+statusmes "[Monster Champion] - Removal System started!";
+OnThreadMobChDel:
+	freeloop(1);
+	sleep 60000;
+	query_sql("SELECT mob_gid,tipo FROM `monstro_campeao` WHERE timer < 1", .@gid_mob_list,.@tipo);
+	if(.@gid_mob_list)
+	{
+		for(.@i=0; .@i < getarraysize(.@gid_mob_list);.@i++)
+		{
+			if(unitexists(.@gid_mob_list[.@i]) == 1)
+			{			
+				infomes "[Monster Champion] - Removal carried out: "+.@gid_mob_list[.@i];
+				unitkill .@gid_mob_list[.@i];
+				if(.@tipo == 1)
+					set $monster_champion_1,0;
+				if(.@tipo == 12)
+					set $monster_champion_2,0;
+				if(.@tipo == 3)
+					set $monster_champion_3,0;
+				if(.@tipo == 4)
+					set $monster_champion_4,0;
+				.@gid_mob_list = 0;
+			}
+		}
+		query_sql("DELETE FROM `monstro_campeao` WHERE timer < 1");
+		goto OnThreadMobChDel;
+	} else {
+		.@gid_mob_list = 0;
+		goto OnThreadMobChDel;
+	}
+}

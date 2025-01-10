@@ -1,0 +1,189 @@
+-	script	BattleZone	-1,{
+	end;
+
+OnInit:
+	//setcell "dragon_cas",57,31,77,41,cell_respawn,1;
+	//setcell "dragon_cas",131,151,150,162,cell_respawn,1;
+	end;
+
+OnBuildTeams:
+	$@BG_Team1 = bg_team_create("dragon_cas", 69, 36, 0, "BattleZone::OnTeam1Quit", "");
+	$@BG_Team2 = bg_team_create("dragon_cas",142, 156, 1, "BattleZone::OnTeam2Quit", "");
+	end;
+
+OnReady:
+	if(getvariableofnpc(.BG_Arenas$[$BG_Index],"QBG") != "BattleZone" || $@BG_Status)
+		end;
+		
+	$@BG_Status = 1;
+		
+	.BG_Name$ = getvariableofnpc(.BG_Names$[$BG_Index],"QBG");
+	.BG_Color$ = getvariableofnpc(.BG_Color$[$BG_Index],"QBG");
+	.round = 1;
+	.Team1_Points = 0;
+	.Team2_Points = 0;
+	
+	setcell "dragon_cas",34,93,57,106,CELL_FULLINVINCIBLE, $@BG_Team1;
+	setcell "dragon_cas",142,93,165,106,CELL_FULLINVINCIBLE, $@BG_Team2;
+
+	sleep 2000;
+	bg_warp $@BG_Team1,"dragon_cas",69, 36;
+	bg_warp $@BG_Team2,"dragon_cas",142, 156;
+	
+	bg_team_reveal $@BG_Team1,true;
+	bg_team_reveal $@BG_Team2,true;
+	
+	initnpctimer;
+	end;
+
+OnTimer5000:
+	mapannounce "dragon_cas","["+.BG_Name$+"] The first to dominate the Battle Zone for 80 seconds wins the round!",1,.BG_Color$;
+	end;
+	
+OnTimer10000:
+	mapannounce "dragon_cas","["+.BG_Name$+"] The "+.round+". round will start in 3 seconds!", 1, .BG_Color$;
+	end;
+
+OnTimer11000:
+	mapannounce "dragon_cas","["+.BG_Name$+"] The "+.round+". round will start in 2 seconds!", 1, .BG_Color$;
+	end;
+	
+OnTimer12000:
+	mapannounce "dragon_cas","["+.BG_Name$+"] The "+.round+". round will start in 1 second!", 1, .BG_Color$;
+	end;
+	
+OnTimer13000:
+	.Team1_Score = 0;
+	.Team2_Score = 0;
+	initnpctimer "BZ_Respawn";
+	donpcevent "BZ_Respawn::OnRespawn";
+	while($@BG_Status && $@BG_Status < 4 && getvariableofnpc(.BG_Arenas$[$BG_Index],"QBG") == "BattleZone" && .Team1_Score < 80 && .Team2_Score < 80 && !.stop) {
+		.@users_team1 = bg_getareausers($@BG_Team1, "dragon_cas", 100, 100, 200, 200);
+		.@users_team2 = bg_getareausers($@BG_Team2, "dragon_cas", 100, 100, 200, 200);
+		
+		if(.@users_team1 > .@users_team2) {
+			.Team1_Score++;
+			if(.@conqueror != 1)
+				mapannounce "dragon_cas","["+.BG_Name$+"] The "+bg_get_data($@BG_Team1, 2)+" is dominating "+.@users_team1+" vs "+.@users_team2+" the Battle Zone!", 1, bg_get_data($@BG_Team1, 4);
+			.@conqueror = 1;
+		} else if(.@users_team1 < .@users_team2) {
+			.Team2_Score++;
+			if(.@conqueror != 2) 
+				mapannounce "dragon_cas","["+.BG_Name$+"] The "+bg_get_data($@BG_Team2, 2)+" is dominating "+.@users_team2+" vs "+.@users_team1+" the Battle Zone!", 1, bg_get_data($@BG_Team2, 4);
+			.@conqueror = 2;
+		}
+		
+		bg_updatescore "dragon_cas", .Team1_Score, .Team2_Score;
+		
+		if($@BG_Status == 2 && (.Team1_Score > 40 || .Team2_Score > 40))
+			$@BG_Status = 3;
+		
+		sleep 1000;
+	}
+	
+	if($@BG_Status < 2)
+		$@BG_Status = 2;
+
+	stopnpctimer;
+	stopnpctimer "BZ_Respawn";
+	
+	if( .Team1_Score > .Team2_Score ){
+		.Team1_Points++;
+		mapannounce "dragon_cas","["+.BG_Name$+"] The "+bg_get_data($@BG_Team1, 2)+" dominated the Battle Zone! "+bg_get_data($@BG_Team1, 2)+" ["+.Team1_Points+" - "+.Team2_Points+"] "+bg_get_data($@BG_Team2, 2), 1, .BG_Color$;
+	} else if( .Team1_Score < .Team2_Score ){ 
+		.Team2_Points++;
+		mapannounce "dragon_cas","["+.BG_Name$+"] The "+bg_get_data($@BG_Team2, 2)+" dominated the Battle Zone! "+bg_get_data($@BG_Team1, 2)+" ["+.Team1_Points+" - "+.Team2_Points+"] "+bg_get_data($@BG_Team2, 2), 1, .BG_Color$;
+	} else {
+		.Team1_Points++;
+		.Team2_Points++;
+		mapannounce "dragon_cas","["+.BG_Name$+"] The teams have dominated the Battle Zone the same time! "+bg_get_data($@BG_Team1, 2)+" ["+.Team1_Points+" - "+.Team2_Points+"] "+bg_get_data($@BG_Team2, 2),1,.BG_Color$;
+	}
+	
+	sleep 2000;
+
+	if(.Team1_Points < 2 && .Team2_Points < 2) {
+		.round++;
+		.stop = 0;
+
+		bg_warp $@BG_Team1,"dragon_cas",69, 36;
+		bg_warp $@BG_Team2,"dragon_cas",142, 156;
+
+		initnpctimer;
+	} else
+		donpcevent "BattleZone::OnMatchEnd";
+	end;
+
+OnTimer300000:
+	mapannounce "dragon_cas","["+.BG_Name$+"] The "+.round+". round will end in 1 minute!",1,.BG_Color$;
+	end;
+	
+OnTimer360000:
+	.stop = 1;
+	end;
+
+OnTeam1Quit:
+OnTeam2Quit:
+	#bg_deserter = gettimetick(2) + 180;
+	
+	if($@BG_Status && $@BG_Status < 4 && getvariableofnpc(.BG_Arenas$[$BG_Index],"QBG") == "BattleZone")
+		donpcevent "QBG::OnJoinEvent";
+	end;
+
+OnMatchEnd:
+	if($@BG_Status < 4 && getvariableofnpc(.BG_Arenas$[$BG_Index],"QBG") == "BattleZone")
+		$@BG_Status = 4;
+	else
+		end;
+	
+	stopnpctimer;
+	stopnpctimer "BZ_Respawn";
+	
+	if( .Team1_Points > .Team2_Points ){
+		mapannounce "dragon_cas","["+.BG_Name$+"] The "+bg_get_data($@BG_Team1, 2)+" has dominated the Battle Zone the most times!", 1, .BG_Color$;
+		sleep 2000;
+		callfunc ("bg_reward", $@BG_Team1, 2, 2, .Team1_Points);
+		callfunc ("bg_reward", $@BG_Team2, 1, 2, .Team2_Points);
+	}
+	else if( .Team1_Points < .Team2_Points ){ 
+		mapannounce "dragon_cas","["+.BG_Name$+"] The "+bg_get_data($@BG_Team2, 2)+" has dominated the Battle Zone the most times!", 1, .BG_Color$;
+		sleep 2000;
+		callfunc ("bg_reward", $@BG_Team1, 1, 2, .Team1_Points);
+		callfunc ("bg_reward", $@BG_Team2, 2, 2, .Team2_Points);
+	} else {
+		mapannounce "dragon_cas","["+.BG_Name$+"] The Batleground is over. The Battle Zone has been left without owner!",1,.BG_Color$;
+		sleep 2000;
+		callfunc ("bg_reward", $@BG_Team1, 0, 2, .Team1_Points);
+		callfunc ("bg_reward", $@BG_Team2, 0, 2, .Team2_Points);
+	}
+	
+	sleep 3000;
+	donpcevent "QBG::OnRotate";
+
+	bg_updatescore "dragon_cas", 0, 0;
+	end;
+}
+
+-	script	BZ_Respawn	-1,{
+	end;
+
+OnRespawn:
+OnTimer25000:
+	areapercentheal "dragon_cas",57,31,77,41,100,100;
+	areapercentheal "dragon_cas",131,151,150,162,100,100;
+	areawarp "dragon_cas",57,31,77,41,"dragon_cas",42,100;
+	areawarp "dragon_cas",131,151,150,162,"dragon_cas",156,100;
+	initnpctimer;
+	end;
+}
+
+dragon_cas	mapflag	restricted	8
+dragon_cas	mapflag	battleground	2
+dragon_cas	mapflag	nomemo
+dragon_cas	mapflag	nosave	SavePoint
+dragon_cas	mapflag	noteleport
+dragon_cas	mapflag	nowarp
+dragon_cas	mapflag	nowarpto
+dragon_cas	mapflag	noreturn
+dragon_cas	mapflag	nopenalty
+dragon_cas	mapflag	nodrop
+dragon_cas	mapflag	nobodyrelocation

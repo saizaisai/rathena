@@ -1,0 +1,240 @@
+//===== rAthena Script =======================================
+//= Extended Vending & Auto Vend
+//============================================================
+-	script	Vending System#bank	-1,{
+OnInit:
+	setarray $@VendTypes[0], VENDING_BANK_SELL, VENDING_BANK_BUYINGSOTORE, VENDING_BANK_STALL_SELL, VENDING_BANK_STALL_BUYINGSTORE_OK, VENDING_BANK_STALL_BUYINGSTORE_FAIL;
+	setarray $@VendNames$[0], "In-person Sales", "Seller Search", "Street Store", "Street Search", "Street Search Refund";
+	
+	bindatcmd "@cashinfo", "Vending System#bank::OnCmd", 99, 99;
+	end;
+	
+OnCmd:
+	dispbottom "You own " + #CASHPOINTS + " cash points.";
+	end;
+
+OnPayment:
+OnPCLoginEvent:
+	.@CID = getcharid(0);
+	setarray $@VendTypes[0], VENDING_BANK_SELL, VENDING_BANK_BUYINGSOTORE, VENDING_BANK_STALL_SELL, VENDING_BANK_STALL_BUYINGSTORE_OK, VENDING_BANK_STALL_BUYINGSTORE_FAIL;
+	setarray $@VendNames$[0], "In-Person Sales", "Seller Search", "Street Store", "Street Search", "Street Search Reimbursement";
+
+	for( .@t=0; .@t < getarraysize($@VendTypes); .@t++ ) {
+		deletearray .@nameid;
+		deletearray .@value;
+		query_sql "SELECT `nameid`, `value` FROM `vending_bank` WHERE `char_id`='" + .@CID + "' AND `type`='" + $@VendTypes[.@t] + "'", .@nameid, .@value;
+		
+		.@size = getarraysize(.@nameid);
+		if( !.@size )
+			continue;
+			
+		for( .@i=0; .@i < .@size; .@i++ ) {
+			if( .@value[.@i] <= 0 )
+				continue;
+					
+			if( getbattleflag("item_zeny") && getbattleflag("item_zeny") == .@nameid[.@i] ) {
+				if( (Zeny + .@value[.@i]) > MAX_ZENY )
+					.@rescue = MAX_ZENY - Zeny;
+				else
+					.@rescue = .@value[.@i];
+					
+				if( .@rescue <= 0 ) {
+					dispbottom "You have " + callfunc("F_InsertComma", .@value[.@i]) + " zenys of " + $@VendNames$[.@t] + " to redeem, but you have reached the maximum limit.", 0xFF0000;
+					continue;
+				}
+				
+				Zeny += .@rescue;
+				.@rest = .@value[.@i] - .@rescue;
+				if( .@rescue )
+					dispbottom "You received " + callfunc("F_InsertComma", .@rescue) + " zenys of " + $@VendNames$[.@t] + ".", 0x03D8E0;
+				if( .@rest <= 0 )
+					query_sql "DELETE FROM `vending_bank` WHERE `nameid`='" + .@nameid[.@i] + "' AND `char_id`='" + .@CID + "'";
+				else {
+					query_sql "UPDATE `vending_bank` SET `value`='" + .@rest + "' WHERE `nameid`='" + .@nameid[.@i] + "' AND `char_id`='" + .@CID + "'";
+					dispbottom "You have " + callfunc("F_InsertComma", .@rest) + " zenys of " + $@VendNames$[.@t] + " to withdraw, but you have reached the maximum limit.", 0xFF0000;
+				}
+			}
+			else if( getbattleflag("item_cash") && getbattleflag("item_cash") == .@nameid[.@i] ) {
+				if( (#CASHPOINTS + .@value[.@i]) > MAX_CASHPOINT )
+					.@rescue = MAX_CASHPOINT - #CASHPOINTS;
+				else
+					.@rescue = .@value[.@i];
+				
+				if( .@rescue <= 0 ) {
+					dispbottom "You have " + callfunc("F_InsertComma", .@value[.@i]) + "Cash Points" + $@VendNames$[.@t] + " to withdraw, but you have reached the maximum limit.", 0xFF0000;
+					continue;
+				}
+				
+				#CASHPOINTS += .@rescue;
+				.@rest = .@value[.@i] - .@rescue;
+				if( .@rescue )
+					dispbottom "You received " + callfunc("F_InsertComma", .@rescue) + "Cash Points" + $@VendNames$[.@t] + ".", 0x03D8E0;
+				if( .@rest <= 0 ) {
+					query_sql "DELETE FROM `vending_bank` WHERE `nameid`='" + .@nameid[.@i] + "' AND `char_id`='" + .@CID + "' AND `type`='" + $@VendTypes[.@t] + "'";
+				}
+				else {
+					query_sql "UPDATE `vending_bank` SET `value`='" + .@rest + "' WHERE `nameid`='" + .@nameid[.@i] + "' AND `char_id`='" + .@CID + "' AND `type`='" + $@VendTypes[.@t] + "'";
+					dispbottom "You have " + callfunc("F_InsertComma", .@rest) + "Cash Points" + $@VendNames$[.@t] + " to withdraw, but you have reached the maximum limit.", 0xFF0000;
+				}
+			}
+			else {
+				if( !checkweight(.@nameid[.@i],.@value[.@i]) ) {
+					dispbottom "You have " + callfunc("F_InsertComma", .@value[.@i]) + " " + getitemname(.@nameid[.@i]) + "of" + $@VendNames$[.@t] + " to withdraw, but you have reached the maximum limit.", 0xFF0000;
+					continue;
+				}
+				
+				getitem .@nameid[.@i], .@value[.@i];
+				dispbottom "You received " + callfunc("F_InsertComma", .@value[.@i]) + " " + getitemname(.@nameid[.@i]) + "of" + $@VendNames$[.@t] + ".", 0x03D8E0;
+				query_sql "DELETE FROM `vending_bank` WHERE `nameid`='" + .@nameid[.@i] + "' AND `char_id`='" + .@CID + "' AND `type`='" + $@VendTypes[.@t] + "'";
+			}
+		}
+	}
+	end;
+}
+
+prontera,169,157,3	script	Sales System#main	73,{
+	.@loop_1 = 1;
+	.@CID = getcharid(0);
+	.@zenyItem = getbattleflag("item_zeny");
+	.@cashItem = getbattleflag("item_cash");
+	while(.@loop_1) {
+		mes "^00B2EE[ Sales System ] ^000000";
+		mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+		
+		deletearray .@nameid;
+		query_sql "SELECT `nameid`, `value`, `type` FROM `vending_bank` WHERE `char_id`='" + .@CID + "'", .@nameid, .@value, .@type;
+		
+		.@size = getarraysize(.@nameid);
+		if( !.@size ) {
+			mes "There is currently no balance to withdraw from your sales.";
+			close;
+		}
+		
+		mes "There are balances to withdraw from your sale.";
+		mes "How can I help you?";
+		next;
+		.@buildmenu$ = "";
+		for( .@i=0; .@i < .@size; .@i++ )
+			.@buildmenu$ += "- Cash out" + getitemname(.@nameid[.@i]) + ".:";
+		.@buildmenu$ += "^FF0000- Cancel.^000000";
+		.@i = select(.@buildmenu$)-1;
+		
+		if( .@i >= .@size )
+			break;
+			
+		.@loop_2 = 1;
+		while(.@loop_2) {
+			mes "^00B2EE[ Sales System ] ^000000";
+			mes "Do you have ^0000FF" + callfunc("F_InsertComma", .@value[.@i]) + "x " + getitemname(.@nameid[.@i]) + "^000000.";
+			if( .@zenyItem && .@zenyItem == .@nameid[.@i] ) {
+				if( (Zeny + 1) > MAX_ZENY ) {
+					mes "At the moment you can no longer withdraw any amount, as you have the maximum amount allowed.";
+					next;
+					break;
+				}
+			}
+			else if( .@cashItem && .@cashItem == .@nameid[.@i] ) {
+				if( (#CASHPOINTS + 1) > MAX_CASHPOINT ) {
+					mes "At the moment you can no longer withdraw any amount, as you have the maximum amount allowed.";
+					next;
+					break;
+				}
+			}
+			else {
+				if( !checkweight(.@nameid[.@i],1) ) {
+					mes "At the moment you can no longer withdraw any amount as you are at your weight limit.";
+					next;
+					continue;
+				}
+			}
+			mes "Enter the amount you wish to withdraw or ^FF00000 to cancel^000000.";
+			next;
+			input .@amount;
+			
+			if( .@amount <= 0 ) {
+				.@loop_2 = 0;
+				break;
+			}
+			
+			mes "^00B2EE[ Sales System ] ^000000";
+			if( .@amount > .@value[.@i] ) {
+				mes "You do not have enough balance, please enter another amount.";
+				next;
+				continue;
+			}
+			
+			if( .@zenyItem && .@zenyItem == .@nameid[.@i] ) {
+				if( (Zeny + .@amount) > MAX_ZENY ) {
+					mes "You cannot withdraw this amount.";
+					mes "At the moment you can withdraw a maximum ^0000FF" + callfunc("F_InsertComma", (MAX_ZENY - Zeny)) + " Zenys^000000, please enter another value.";
+					next;
+					continue;
+				}
+			}
+			else if( .@cashItem && .@cashItem == .@nameid[.@i] ) {
+				if( (#CASHPOINTS + .@amount) > MAX_CASHPOINT ) {
+					mes "You cannot withdraw this amount.";
+					mes "At the moment you can withdraw a maximum ^0000FF" + callfunc("F_InsertComma", (MAX_CASHPOINT - #CASHPOINTS)) + " Cash Points^000000, please enter another value.";
+					next;
+					continue;
+				}
+			}
+			else {
+				if( !checkweight(.@nameid[.@i],.@amount) ) {
+					mes "You cannot withdraw this amount as it exceeds the weight limit.";
+					mes "Please enter another value.";
+					next;
+					continue;
+				}
+			}
+			
+			mes "Are you sure you want to withdraw ^0000FF" + callfunc("F_InsertComma", .@amount) + "x " + getitemname(.@nameid[.@i]) + "^000000?";
+			next;
+			switch( select("^0000FF- Yes, please.^000000", "- No, choose another value.", "^FFA500- Choose another item to withdraw.^000000", "^FF0000- Cancel.^000000") ) {
+				case 1:
+					if( .@zenyItem && .@zenyItem == .@nameid[.@i] )
+						Zeny += .@amount;
+					else if( .@cashItem && .@cashItem == .@nameid[.@i] )
+						#CASHPOINTS += .@amount;
+					else
+						getitem .@nameid[.@i], .@amount;
+
+					.@rest = .@value[.@i] - .@amount;
+					
+					mes "^00B2EE[ Sales System ] ^000000";
+					mes "You got it ^0000FF" + .@amount + "x " + getitemname(.@nameid[.@i]) + "^000000.";
+					if( .@rest <= 0 )
+						query_sql "DELETE FROM `vending_bank` WHERE `nameid`='" + .@nameid[.@i] + "' AND `char_id`='" + .@CID + "' AND `type`='" + .@type[.@i] + "'";
+					else {
+						query_sql "UPDATE `vending_bank` SET `value`='" + .@rest + "' WHERE `nameid`='" + .@nameid[.@i] + "' AND `char_id`='" + .@CID + "' AND `type`='" + .@type[.@i] + "'";
+						mes "Do you still own ^FF0000" + callfunc("F_InsertComma", .@rest) + " " + getitemname(.@nameid[.@i]) + "^000000 to withdraw.";
+					}
+					next;
+					.@loop_2 = 0;
+					break;
+				case 2:
+					break;
+				case 3:
+					.@loop_2 = 0;
+					break;
+				case 4:
+					.@loop_1 = 0;
+					.@loop_2 = 0;
+					break;
+			}
+		}
+	}
+	
+	mes "^00B2EE[ Sales System ] ^000000";
+	mes "I'll be here if you need me.";
+	close;
+OnInit:
+	while(1) {
+	.@npc_id = getnpcid(0);
+		hateffect_npc 29, false, .@npc_id;
+		hateffect_npc 29, true, .@npc_id;
+	showscript "Sales System", getnpcid(0);
+	sleep 1000;
+	}
+	end;
+}

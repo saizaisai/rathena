@@ -1,0 +1,510 @@
+//===== rAthena Script =======================================
+//    Extended BattleGround
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  31-05-2023
+// By:
+//  JinYuichi
+//
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+
+// ==============================================================================
+// BattleGround System - Flavius Capture the Flag
+// ==============================================================================
+
+// Battleground Engine
+// *********************************************************************
+
+-	script	Flavius_CTF	FAKE_NPC,{
+	end;
+
+OnInit:
+	// Configuration
+	.reward_id = 7773;				// Item ID for reward (default War Badge)
+	.qty_win = 20;					// Reward amount for winners
+	.qty_los = 10;					// Reward amount for losers
+	.qty_tie = 10;					// Reward amount for draw
+	.condition = 2;					// How much score for win condition
+	// ===========
+	disablenpc "Team1_Flag";
+	disablenpc "Team2_Flag";
+	end;
+
+OnAlphaFlash:
+	if (getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0) && $@BG_Status == 1 && $@BG_Current$ == "Flavius_CTF") {
+		getmapxy .@m$, .@x, .@y, BL_PC;
+		viewpointmap "bat_b02",1, .@x, .@y, 1, 0x0000FF;
+		specialeffect 73;
+		emotion ET_HELP,getcharid(3);
+		addtimer 2100, "Flavius_CTF::OnAlphaFlash";
+		percentheal -5,-5;
+	}
+	end;
+
+OnOmegaFlash:
+	if (getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0) && $@BG_Status == 1 && $@BG_Current$ == "Flavius_CTF") {
+		getmapxy .@m$, .@x, .@y, BL_PC;
+		viewpointmap "bat_b02",1, .@x, .@y, 2, 0xFF0000;
+		specialeffect 73;
+		emotion ET_HELP,getcharid(3);
+		addtimer 2100, "Flavius_CTF::OnOmegaFlash";
+		percentheal -5,-5;
+	}
+	end;
+
+OnTeam1Active:
+	warp "bat_b02",228,39;
+	donpcevent "BG_Core::OnJoinActive";
+	end;
+OnTeam2Active:
+	warp "bat_b02",30,38;
+	donpcevent "BG_Core::OnJoinActive";
+	end;
+
+OnTeam1Quit:
+	bg_desert;
+OnTeam1Die:
+	// Drop Flag
+	if ($@BG_Status == 1 && $@BG_Current$ == "Flavius_CTF" && getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0)) {
+		set getvariableofnpc(.Flag_Carrier,"Team2_Flag"), 0;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+		getmapxy .@m$, .@x, .@y, BL_PC;
+		movenpc "Team2_Flag", .@x, .@y;
+		mapannounce "bat_b02","Omega Flag Droped by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+		bg_rankpoints(BGR_CTF_DROPPED,1,0);
+		if (killedrid != getcharid(3))
+			bg_rankpoints(BGR_FAME,0,1,killerrid);
+		set getvariableofnpc(.Flag_Status,"Team2_Flag"), 1; // OnFloor
+		initnpctimer "Team2_Flag";
+		enablenpc "Team2_Flag";
+	}
+	end;
+	
+OnTeam2Quit:
+	bg_desert;
+OnTeam2Die:
+	// Drop Flag
+	if ($@BG_Status == 1 && $@BG_Current$ == "Flavius_CTF" && getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0)) {
+		set getvariableofnpc(.Flag_Carrier,"Team1_Flag"), 0;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+		getmapxy .@m$, .@x, .@y, BL_PC;
+		movenpc "Team1_Flag", .@x, .@y;
+		mapannounce "bat_b02","Alpha Flag Droped by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+		bg_rankpoints(BGR_CTF_DROPPED,1,0);
+		if (killedrid != getcharid(3))
+			bg_rankpoints(BGR_FAME,0,1,killerrid);
+		set getvariableofnpc(.Flag_Status,"Team1_Flag"), 1; // OnFloor
+		initnpctimer "Team1_Flag";
+		enablenpc "Team1_Flag";
+	}
+	end;
+
+OnStart:
+	announce "Battleground -- " + $@BG_C_Name$ + " has started!.",bc_all,$@BG_Color$[$@BG_Index];
+	$@BG_Status = 1;
+	$@BG_Current$ = $@BG_Names$[($@BG_Index*2)];
+	initnpctimer;
+	// BG Variables
+	set .Team1_Score, 0;
+	set .Team2_Score, 0;
+	sleep 2100;
+	bg_warp($@BG_Team1,"bat_b02",311,224);
+	bg_warp($@BG_Team2,"bat_b02",87,75);
+	sleep 2100;
+	// Respawn NPC's
+	donpcevent "#guictf_respawn::OnBGStart";
+	donpcevent "#croctf_respawn::OnBGStart";
+	// Start Match!!
+	donpcevent "Flavius_CTF::OnMatchStart";
+	end;
+
+OnMatchStart:
+	// Reset Position Members
+	if (.Team1_Score || .Team2_Score) {
+		bg_warp $@BG_Team1,"bat_b02",311,224;
+		bg_warp $@BG_Team2,"bat_b02",87,75;
+
+		bg_percentheal($@BG_Team1,100,100);
+		bg_emotion(ET_GO,$@BG_Team1);
+
+		bg_percentheal($@BG_Team2,100,100);
+		bg_emotion(ET_GO,$@BG_Team2);
+
+		if (.Team1_Score || .Team2_Score) {
+			bg_clear_buffs($@BG_Team1,SCCB_BUFFS|SCCB_DEBUFFS);
+			bg_clear_buffs($@BG_Team2,SCCB_BUFFS|SCCB_DEBUFFS);
+		}
+	}
+
+	// Flags2Base
+	donpcevent "Team1_Flag::OnBase";
+	donpcevent "Team2_Flag::OnBase";
+	mapannounce "bat_b02","The Flags have been set to their Bases!!",bc_map;
+	end;
+
+OnTeam1Score:
+	bg_soundeffect("tming_success.wav",$@BG_Team1);
+	bg_specialeffect(389,$@BG_Team1);
+	bg_emotion(ET_GO,$@BG_Team1);
+	.Team1_Score++;
+	donpcevent "Flavius_CTF::OnMatchStop";
+	end;
+
+OnTeam2Score:
+	bg_soundeffect("tming_success.wav",$@BG_Team2);
+	bg_specialeffect(389,$@BG_Team2);
+	bg_emotion(ET_GO,$@BG_Team2);
+	.Team2_Score++;
+	donpcevent "Flavius_CTF::OnMatchStop";
+	end;
+
+OnMatchStop:
+	disablenpc "Team1_Flag";
+	disablenpc "Team2_Flag";
+	bg_updatescore "bat_b02",.Team1_Score,.Team2_Score;
+
+	viewpointmap "bat_b02",2, 0, 0, 1, 0x0000FF;
+	viewpointmap "bat_b02",2, 0, 0, 2, 0xFF0000;
+
+	// Team 1 Won
+	if (.Team1_Score >= .condition) {
+		mapannounce "bat_b02","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius CTF!",1,0x0000FF;
+		donpcevent "Flavius_CTF::OnMatchEnd";
+	}
+	// Team 2 Won
+	else if (.Team2_Score >= .condition) {
+		mapannounce "bat_b02","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius CTF!",1,0xFF0000;
+		donpcevent "Flavius_CTF::OnMatchEnd";
+	}
+	// Keep Playing
+	else {
+		sleep 8000;
+		donpcevent "Flavius_CTF::OnMatchStart";
+	}
+	end;
+
+OnTimer240000:
+	mapannounce "bat_b02","The Battle will ends in 4 minutes!!",1,0xA0522D;
+	end;
+
+OnTimer420000:
+	mapannounce "bat_b02","The Battle will ends in 1 minute!!",1,0xA0522D;
+	end;
+
+OnTimer480000:
+	announce "bat_b0248",bc_all;
+	disablenpc "Team1_Flag";
+	disablenpc "Team2_Flag";
+
+	viewpointmap "bat_b02",2, 0, 0, 1, 0x0000FF;
+	viewpointmap "bat_b02",2, 0, 0, 2, 0xFF0000;
+
+	if (.Team1_Score > .Team2_Score)
+		mapannounce "bat_b02","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius CTF!",1,0x0000FF;
+	else if (.Team1_Score < .Team2_Score)
+		mapannounce "bat_b02","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius CTF!",1,0xFF0000;
+	else
+		mapannounce "bat_b02","The battle is over. This is a Tie...!",1,0xA0522D;
+	donpcevent "Flavius_CTF::OnMatchEnd";
+	end;
+
+OnMatchEnd:
+	stopnpctimer;
+	disablenpc "Team1_Flag";
+	disablenpc "Team2_Flag";
+	donpcevent "#guictf_respawn::OnBGStop";
+	donpcevent "#croctf_respawn::OnBGStop";
+	set $@BG_Status, 2;
+	//bg_showdigit($@BG_Team1,0);
+	//bg_showdigit($@BG_Team2,0);
+	// =======================================================
+	// Team Rewards
+	// =======================================================
+
+	if (.Team1_Score > .Team2_Score) {
+		bg_reward($@BG_Team1,.reward_id,.qty_win,0,0,"bat_b02",1,3,0,$@ctf_win);
+		bg_reward($@BG_Team2,.reward_id,.qty_los,0,0,"bat_b02",1,3,2,$@ctf_los);
+	} else if (.Team2_Score > .Team1_Score) {
+		bg_reward($@BG_Team1,.reward_id,.qty_los,0,0,"bat_b02",1,3,2,$@ctf_los);
+		bg_reward($@BG_Team2,.reward_id,.qty_win,0,0,"bat_b02",1,3,0,$@ctf_win);
+	} else {
+		bg_reward($@BG_Team1,.reward_id,.qty_tie,0,0,"bat_b02",1,3,1,$@ctf_tie);
+		bg_reward($@BG_Team2,.reward_id,.qty_tie,0,0,"bat_b02",1,3,1,$@ctf_tie);
+	}
+	// =======================================================
+	set .Team1_Score, 0;
+	set .Team2_Score, 0;
+	sleep 5000;
+	donpcevent "Flavius_CTF::OnEnd";
+	donpcevent "BG_Core::OnEnd";
+	end;
+OnEnd:
+	sleep 1000;
+	mapwarp "bat_b02","bat_room",154,150;
+	bg_updatescore "bat_b02",0,0;
+	end;
+}
+
+// Battleground Flags
+// *********************************************************************
+
+bat_b02,328,150,0	script	Alpha Crystal::Team1_Flag	1914,1,1,{
+	unitwalkto(getcharid(3),getnpcid(0));
+	end;
+
+OnTouch:
+	if ($@BG_Status != 1 || $@BG_Current$ != "Flavius_CTF" || Hp < 1)
+		end;
+
+	// Flag Captured
+	if (getcharid(4) == $@BG_Team2 && .Flag_Status < 2) {
+		set .Flag_Status, 2; // Taken
+		set .Flag_Carrier, getcharid(0);
+
+		callfunc("F_EndSpeedBG");
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+
+		mapannounce "bat_b02","Alpha Crystal Taken by [ " + strcharinfo(0) + " ]",1,0x0000FF;
+		bg_rankpoints(BGR_CTF_TAKEN,1,1);
+		disablenpc "Team1_Flag";
+		addtimer 2100, "Flavius_CTF::OnAlphaFlash";
+		stopnpctimer;
+	} else if (getcharid(4) == $@BG_Team1) {
+		if (.Flag_Status == 0 && getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0)) {
+			set getvariableofnpc(.Flag_Carrier,"Team2_Flag"),0;
+			set .Flag_Carrier, 0;
+			mapannounce "bat_b02","Omega Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,0xFF0000;
+			bg_rankpoints(BGR_CTF_CAPTURED,1,1);
+			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+			stopnpctimer;
+			donpcevent "Flavius_CTF::OnTeam1Score";
+		} else if (.Flag_Status == 1) {
+			mapannounce "bat_b02","Alpha Crystal Returned by [ " + strcharinfo(0) + " ]!!",1,0x0000FF;
+			bg_rankpoints(BGR_FAME,0,1);
+			disablenpc "Team1_Flag";
+			sleep 2100;
+			movenpc "Team1_Flag",328,150; // Back to Base
+			set .Flag_Status, 0;
+			initnpctimer;
+			enablenpc "Team1_Flag";
+		}
+	}
+	end;
+
+OnTimer2000:
+	stopnpctimer;
+	if (.Flag_Status < 2) {
+		getmapxy .@m$, .@x, .@y, BL_NPC;
+		viewpointmap "bat_b02",1, .@x, .@y, 1, 0x0000FF;
+		specialeffect 223;
+		initnpctimer;
+	}
+	end;
+
+OnBase:
+	movenpc "Team1_Flag",328,150;
+	set .Flag_Status, 0;
+	set .Flag_Carrier, 0;
+	initnpctimer;
+	enablenpc "Team1_Flag";
+	end;
+}
+
+bat_b02,62,150,0	script	Omega Crystal::Team2_Flag	1915,1,1,{
+	unitwalkto(getcharid(3),getnpcid(0));
+	end;
+
+OnTouch:
+	if ($@BG_Status != 1 || $@BG_Current$ != "Flavius_CTF" || Hp < 1)
+		end;
+
+	// Flag Captured
+	if (getcharid(4) == $@BG_Team1 && .Flag_Status < 2) {
+		set .Flag_Status, 2; // Taken
+		set .Flag_Carrier, getcharid(0);
+
+		callfunc("F_EndSpeedBG");
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
+
+		mapannounce "bat_b02","Omega Crystal Taken by [ " + strcharinfo(0) + " ]",1,0xFF0000;
+		bg_rankpoints(BGR_CTF_TAKEN,1,1);
+		disablenpc "Team2_Flag";
+		addtimer 2100, "Flavius_CTF::OnOmegaFlash";
+		stopnpctimer;
+	} else if (getcharid(4) == $@BG_Team2) {
+		if (.Flag_Status == 0 && getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0)) {
+			set getvariableofnpc(.Flag_Carrier,"Team1_Flag"),0;
+			set .Flag_Carrier, 0;
+			mapannounce "bat_b02","Alpha Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,0x0000FF;
+			bg_rankpoints(BGR_CTF_CAPTURED,1,1);
+			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
+			stopnpctimer;
+			donpcevent "Flavius_CTF::OnTeam2Score";
+		} else if (.Flag_Status == 1) {
+			mapannounce "bat_b02","Omega Crystal Returned by [ " + strcharinfo(0) + " ]!!",1,0xFF0000;
+			bg_rankpoints(BGR_FAME,0,1);
+			disablenpc "Team2_Flag";
+			sleep 2100;
+			movenpc "Team2_Flag",62,150; // Back to Base
+			set .Flag_Status, 0;
+			initnpctimer;
+			enablenpc "Team2_Flag";
+		}
+	}
+	end;
+
+OnTimer2000:
+	stopnpctimer;
+	if (.Flag_Status < 2) {
+		getmapxy .@m$, .@x, .@y, BL_NPC;
+		viewpointmap "bat_b02",1, .@x, .@y, 2, 0xFF0000;
+		specialeffect 223;
+		initnpctimer;
+	}
+	end;
+
+OnBase:
+	movenpc "Team2_Flag",62,150;
+	set .Flag_Status, 0;
+	set .Flag_Carrier, 0;
+	initnpctimer;
+	enablenpc "Team2_Flag";
+	end;
+}
+
+// Battleground Therapist
+// *********************************************************************
+
+bat_b02,390,13,5	script	Therapist in battle#ctf1	4_F_SISTER,{
+	mes "[Therapist in battle]";
+	mes "Just close your eyes, and take a deep breathe.";
+	mes "You can be free from pain.";
+	specialeffect2 312;
+	percentheal 100,100;
+	repairall;
+	close2;
+	openstorage;
+	end;
+
+OnInit:
+	setunittitle(getnpcid(0), "[Blue Team]");
+	setunitdata(getnpcid(0), UNPC_GROUP_ID, 100);
+	end;
+}
+
+bat_b02,10,293,5	script	Therapist in battle#ctf2	4_F_SISTER,{
+	mes "[Therapist in battle]";
+	mes "Just close your eyes, and take a deep breathe.";
+	mes "You can be free from pain.";
+	specialeffect2 312;
+	percentheal 100,100;
+	repairall;
+	close2;
+	openstorage;
+	end;
+
+OnInit:
+	setunittitle(getnpcid(0), "[Red Team]");
+	setunitdata(getnpcid(0), UNPC_GROUP_ID, 101);
+	end;
+}
+
+// Battleground Respawn
+// *********************************************************************
+
+bat_b02,390,10,0	script	#guictf_respawn	HIDDEN_WARP_NPC,{
+	end;
+
+OnBGStart:
+	.tick = 0;
+	initnpctimer;
+	end;
+
+OnBGStop:
+	stopnpctimer;
+	end;
+
+OnTimer1000:
+	if ((.tick++) > 25) .tick = 0;
+	showscript("Respawn in : "+(25-.tick)+" seconds",getnpcid(0,"Therapist in battle#ctf1"));
+	if (.tick == 24)
+		specialeffect 83;
+	else if (.tick == 25) {
+		areapercentheal "bat_b02",382,2,397,17,100,100;
+		areawarp "bat_b02",382,2,397,17,"bat_b02",311,224;
+	}
+	initnpctimer;
+	end;
+}
+
+bat_b02,10,290,0	script	#croctf_respawn	HIDDEN_WARP_NPC,{
+	end;
+
+OnBGStart:
+	.tick = 0;
+	initnpctimer;
+	end;
+
+OnBGStop:
+	stopnpctimer;
+	end;
+
+OnTimer1000:
+	if ((.tick++) > 25) .tick = 0;
+	showscript("Respawn in : "+(25-.tick)+" seconds",getnpcid(0,"Therapist in battle#ctf2"));
+	if (.tick == 24)
+		specialeffect 83;
+	else if (.tick == 25) {
+		areapercentheal "bat_b02",2,282,17,297,100,100;
+		areawarp "bat_b02",2,282,17,297,"bat_b02",87,75;
+	}
+	initnpctimer;
+	end;
+}
+
+// Flags
+// *********************************************************************
+
+bat_b02,304,231,1	duplicate(Base Flag#bg)	Alpha Base#bat23	1_FLAG_LION
+bat_b02,319,231,1	duplicate(Base Flag#bg)	Alpha Base#bat24	1_FLAG_LION
+bat_b02,304,218,1	duplicate(Base Flag#bg)	Alpha Base#bat25	1_FLAG_LION
+bat_b02,319,218,1	duplicate(Base Flag#bg)	Alpha Base#bat26	1_FLAG_LION
+bat_b02,304,231,1	duplicate(Base Flag#bg)	Alpha Base#bat27	1_FLAG_LION
+bat_b02,304,231,1	duplicate(Base Flag#bg)	Alpha Base#bat28	1_FLAG_LION
+bat_b02,335,142,1	duplicate(Base Flag#bg)	Alpha Base#bat29	1_FLAG_LION
+bat_b02,335,157,1	duplicate(Base Flag#bg)	Alpha Base#bat30	1_FLAG_LION
+bat_b02,390,16,1	duplicate(Base Flag#bg)	Alpha Base#bat31	1_FLAG_LION
+bat_b02,292,163,1	duplicate(Base Flag#bg)	Alpha Base#bat32	1_FLAG_LION
+bat_b02,292,136,1	duplicate(Base Flag#bg)	Alpha Base#bat33	1_FLAG_LION
+bat_b02,241,185,1	duplicate(Base Flag#bg)	Alpha Base#bat34	1_FLAG_LION
+bat_b02,247,179,1	duplicate(Base Flag#bg)	Alpha Base#bat35	1_FLAG_LION
+
+bat_b02,96,81,1	duplicate(Base Flag#bg)	Omega Base#bat22	1_FLAG_EAGLE
+bat_b02,96,68,1	duplicate(Base Flag#bg)	Omega Base#bat23	1_FLAG_EAGLE
+bat_b02,79,81,1	duplicate(Base Flag#bg)	Omega Base#bat24	1_FLAG_EAGLE
+bat_b02,79,68,1	duplicate(Base Flag#bg)	Omega Base#bat25	1_FLAG_EAGLE
+bat_b02,96,81,1	duplicate(Base Flag#bg)	Omega Base#bat26	1_FLAG_EAGLE
+bat_b02,96,81,1	duplicate(Base Flag#bg)	Omega Base#bat27	1_FLAG_EAGLE
+bat_b02,59,164,1	duplicate(Base Flag#bg)	Omega Base#bat28	1_FLAG_EAGLE
+bat_b02,59,137,1	duplicate(Base Flag#bg)	Omega Base#bat29	1_FLAG_EAGLE
+bat_b02,10,296,1	duplicate(Base Flag#bg)	Omega Base#bat30	1_FLAG_EAGLE
+bat_b02,110,162,1	duplicate(Base Flag#bg)	Omega Base#bat31	1_FLAG_EAGLE
+bat_b02,110,137,1	duplicate(Base Flag#bg)	Omega Base#bat32	1_FLAG_EAGLE
+bat_b02,152,120,1	duplicate(Base Flag#bg)	Omega Base#bat33	1_FLAG_EAGLE
+bat_b02,158,114,1	duplicate(Base Flag#bg)	Omega Base#bat34	1_FLAG_EAGLE
+
+// MapFlags
+// *********************************************************************
+
+bat_b02	mapflag	battleground	2
+bat_b02	mapflag	nomemo
+bat_b02	mapflag	nosave	SavePoint
+bat_b02	mapflag	noteleport
+bat_b02	mapflag	nowarp
+bat_b02	mapflag	nowarpto
+bat_b02	mapflag	noreturn
+bat_b02	mapflag	nobranch
+bat_b02	mapflag	nopenalty
+bat_b02	mapflag	noecall
+bat_b02	mapflag	bg_consume
+bat_b02	mapflag	novending

@@ -1,0 +1,309 @@
+//===== rAthena Script =======================================
+//    Extended Battleground
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  25-01-2023
+// By:
+//  Easycore         (Zephyrus, original author)
+//
+// Contact:
+//    - Web:  https://www.easycore-services.com/index.php?/profile/1-easycore/
+//    - rAthena:  https://rathena.org/board/profile/16425-easycore/
+//    - Discord:  Easycore#9709
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// BattleGround System - Flavius TeamDeathMatch
+// ==============================================================================
+
+// Battleground Engine
+// *********************************************************************
+
+-	script	Flavius_TD	FAKE_NPC,{
+	end;
+
+OnInit:
+	// Configuration
+	.reward_id = 7773;				// Item ID for reward (default War Badge)
+	.qty_win = 20;					// Reward amount for winners
+	.qty_los = 10;					// Reward amount for losers
+	.qty_tie = 10;					// Reward amount for draw
+	.condition = 50;					// Lives for each team
+	// ===========
+	end;
+
+OnTeam1Quit:
+	bg_desert; // Deserter
+OnTeam1Die:
+	if ($@BG_Status == 1 && $@BG_Current$ == "Flavius_TD") {
+		if (killerrid != 0) {
+			set .Team1_Score, .Team1_Score - 1;
+			bg_rankpoints(BGR_TD_KILL,1,$@td_kill,killerrid);
+			bg_rankpoints(BGR_TD_DEATH,1,$@td_death);
+		}
+		donpcevent "Flavius_TD::OnValidateScore";
+	}
+	end;
+
+OnTeam2Quit:
+	bg_desert; // Deserter
+OnTeam2Die:
+	if ($@BG_Status == 1 && $@BG_Current$ == "Flavius_TD") {
+		if (killerrid != 0) {
+			set .Team2_Score, .Team2_Score - 1;
+			bg_rankpoints(BGR_TD_KILL,1,$@td_kill,killerrid);
+			bg_rankpoints(BGR_TD_DEATH,1,$@td_death);
+		}
+		donpcevent "Flavius_TD::OnValidateScore";
+	}
+	end;
+
+OnTeam1Active:
+	warp "bat_cc",88,139;
+	donpcevent "BG_Core::OnJoinActive";
+	end;
+OnTeam2Active:
+	warp "bat_cc",96,139;
+	donpcevent "BG_Core::OnJoinActive";
+	end;
+
+OnStart:
+	announce "Battleground -- " + $@BG_C_Name$ + " has started!.",bc_all,$@BG_Color$[$@BG_Index];
+	$@BG_Status = 1;
+	$@BG_Current$ = $@BG_Names$[($@BG_Index*2)];
+	initnpctimer;
+	.Team1_Score = .condition;
+	.Team2_Score = .condition;
+	bg_updatescore "bat_cc",.Team1_Score,.Team2_Score;
+	sleep 2100;
+	bg_warp $@BG_Team1,"bat_cc",53,128;
+	bg_warp $@BG_Team2,"bat_cc",146,55;
+	sleep 2100;
+	mapannounce "bat_cc","Defeat enemies until they have no lives left!",1,$@BG_Color$[$@BG_Index];
+	bg_team_reveal $@BG_Team1,true;
+	bg_team_reveal $@BG_Team2,true;
+	donpcevent "#guitd_respawn::OnBGStart";
+	donpcevent "#crotd_respawn::OnBGStart";
+	donpceventall "OnEmblemTD";
+	end;
+
+OnValidateScore:
+	if ($@BG_Status != 1 || $@BG_Current$ != "Flavius_TD")
+		end;
+
+	bg_updatescore "bat_cc",.Team1_Score,.Team2_Score;
+	set .@Team1Count, bg_get_data($@BG_Team1, 0);
+	set .@Team2Count, bg_get_data($@BG_Team2, 0);
+	// Team 1 Won
+	if (.Team2_Score <= 0) {
+		bg_reward($@BG_Team1,.reward_id,.qty_win,0,0,"BG_TDM",1,4,0,$@td_win);
+		bg_reward($@BG_Team2,.reward_id,.qty_los,0,0,"BG_TDM",1,4,2,$@td_los);
+		mapannounce "bat_cc","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team1,4);
+	}
+	// Team 2 Won
+	else if (.Team1_Score <= 0) {
+		bg_reward($@BG_Team1,.reward_id,.qty_los,0,0,"BG_TDM",1,4,2,$@td_los);
+		bg_reward($@BG_Team2,.reward_id,.qty_win,0,0,"BG_TDM",1,4,0,$@td_win);
+		mapannounce "bat_cc","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team2,4);
+	}
+	// All Team 2 Players quit
+	else if (.@Team2Count == 0) {
+		bg_reward($@BG_Team1,.reward_id,.qty_win,0,0,"BG_TDM",1,4,0,$@td_win);
+		mapannounce "bat_cc","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team1,4);
+	}
+	// All Team 1 Players quit
+	else if (.@Team1Count == 0) {
+		bg_reward($@BG_Team2,.reward_id,.qty_win,0,0,"BG_TDM",1,4,0,$@td_win);
+		mapannounce "bat_cc","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team2,4);
+	}
+	else end;
+	donpcevent "Flavius_TD::OnMatchEnd";
+	end;
+
+OnTimer600000:
+	mapannounce "bat_cc","The Battle will ends in 5 minutes!!",1,0x808000;
+	end;
+
+OnTimer840000:
+	mapannounce "bat_cc","The Battle will ends in 1 minute!!",1,0x808000;
+	end;
+
+OnTimer900000:
+	// Team 1 Won
+	if (.Team1_Score > .Team2_Score) {
+		bg_reward($@BG_Team1,.reward_id,.qty_win,0,0,"BG_TDM",1,4,0,$@td_win);
+		bg_reward($@BG_Team2,.reward_id,.qty_los,0,0,"BG_TDM",1,4,2,$@td_los);
+		mapannounce "bat_cc","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team1,4);
+	}
+	// Team 2 Won
+	else if (.Team1_Score < .Team2_Score) {
+		bg_reward($@BG_Team1,.reward_id,.qty_los,0,0,"BG_TDM",1,4,2,$@td_los);
+		bg_reward($@BG_Team2,.reward_id,.qty_win,0,0,"BG_TDM",1,4,0,$@td_win);
+		mapannounce "bat_cc","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team2,4);
+	}
+	else {
+		bg_reward($@BG_Team1,.reward_id,.qty_tie,0,0,"BG_TDM",1,4,1,$@td_tie);
+		bg_reward($@BG_Team2,.reward_id,.qty_tie,0,0,"BG_TDM",1,4,1,$@td_tie);
+		mapannounce "bat_cc","The battle is over. This is a Tie...!",1,0x808000;
+	}
+	donpcevent "Flavius_TD::OnMatchEnd";
+	end;
+
+OnMatchEnd:
+	stopnpctimer;
+	donpcevent "#guitd_respawn::OnBGStop";
+	donpcevent "#crotd_respawn::OnBGStop";
+	set $@BG_Status, 2;
+	set .Team1_Score, 50;
+	set .Team2_Score, 50;
+	sleep 5000;
+	donpcevent "Flavius_TD::OnEnd";
+	donpcevent "BG_Core::OnEnd";
+	addrid(5,0,"bat_cc");
+	bg_leave;
+	end;
+
+OnEnd:
+	sleep 1000;
+	mapwarp "bat_cc","bat_room",154,150;
+	bg_updatescore "bat_cc",0,0;
+	end;
+}
+
+// Battleground Therapist
+// *********************************************************************
+
+bat_cc,88,143,5	script	Therapist in battle#td1	4_F_SISTER,{
+	getmapxy(.@map$,.@x,.@y, BL_PC);
+	if (distance(.@x,.@y,88,143) > 6)
+		end;
+	mes "[Therapist in battle]";
+	mes "Just close your eyes, and take a deep breathe.";
+	mes "You can be free from pain.";
+	specialeffect 312;
+	percentheal 100,100;
+	repairall;
+	close2;
+	openstorage;
+	end;
+OnInit:
+	setunittitle(getnpcid(0), "[Blue Team]");
+	setunitdata(getnpcid(0), UNPC_GROUP_ID, 100);
+	end;
+}
+
+bat_cc,97,143,3	script	Therapist in battle#td2	4_F_SISTER,{
+	getmapxy(.@map$,.@x,.@y, BL_PC);
+	if (distance(.@x,.@y,97,143) > 6)
+		end;
+	mes "[Therapist in battle]";
+	mes "Just close your eyes, and take a deep breathe.";
+	mes "You can be free from pain.";
+	specialeffect 312;
+	percentheal 100,100;
+	repairall;
+	close2;
+	openstorage;
+	end;
+OnInit:
+	setunittitle(getnpcid(0), "[Red Team]");
+	setunitdata(getnpcid(0), UNPC_GROUP_ID, 101);
+	end;
+}
+
+// Battleground Respawn
+// *********************************************************************
+
+bat_cc,88,139,0	script	#guitd_respawn	HIDDEN_WARP_NPC,{
+	end;
+
+OnBGStart:
+	.tick = 0;
+	initnpctimer;
+	end;
+
+OnBGStop:
+	stopnpctimer;
+	end;
+
+OnTimer1000:
+	if ((.tick++) > 25) .tick = 0;
+	showscript("Respawn in : "+(25-.tick)+" seconds",getnpcid(0,"Therapist in battle#td1"));
+	if (.tick == 24)
+		specialeffect 83;
+	else if (.tick == 25) {
+		areapercentheal "bat_cc",85,134,92,146,100,100;
+		areawarp "bat_cc",85,134,92,146,"bat_cc",50,131,77,102;
+	}
+	initnpctimer;
+	end;
+}
+
+bat_cc,96,139,0	script	#crotd_respawn	HIDDEN_WARP_NPC,{
+	end;
+
+OnBGStart:
+	.tick = 0;
+	initnpctimer;
+	end;
+
+OnBGStop:
+	stopnpctimer;
+	end;
+
+OnTimer1000:
+	if ((.tick++) > 25) .tick = 0;
+	showscript("Respawn in : "+(25-.tick)+" seconds",getnpcid(0,"Therapist in battle#td2"));
+	if (.tick == 24)
+		specialeffect 83;
+	else if (.tick == 25) {
+		areapercentheal "bat_cc",93,134,100,146,100,100;
+		areawarp "bat_cc",93,134,100,146,"bat_cc",50,131,77,102;
+	}
+	initnpctimer;
+	end;
+}
+
+// Flags
+// *********************************************************************
+bat_cc,88,146,4	script	Flag#TD_Blue	GUILD_FLAG,{
+	end;
+OnEmblemTD:
+	bg_flagemblem($@BG_Team1);
+	end;
+}
+bat_cc,97,146,4	script	Flag#TD_Red	GUILD_FLAG,{
+	end;
+OnEmblemTD:
+	bg_flagemblem($@BG_Team2);
+	end;
+}
+
+bat_cc,40,105,1	duplicate(Base Flag#bg)	Alpha Base#td_1	973
+bat_cc,47,105,1	duplicate(Base Flag#bg)	Alpha Base#td_2	973
+
+bat_cc,96,49,1	duplicate(Base Flag#bg)	Omega Base#td_1	974
+bat_cc,103,49,1	duplicate(Base Flag#bg)	Omega Base#td_2	974
+
+bat_cc,76,102,1	duplicate(Base Flag#bg)	Alpha Base#td_3	973
+bat_cc,89,111,1	duplicate(Base Flag#bg)	Alpha Base#td_4	973
+bat_cc,61,130,1	duplicate(Base Flag#bg)	Alpha Base#td_5	973
+bat_cc,51,120,1	duplicate(Base Flag#bg)	Alpha Base#td_6	973
+
+bat_cc,100,72,1	duplicate(Base Flag#bg)	Omega Base#td_3	974
+bat_cc,123,81,1	duplicate(Base Flag#bg)	Omega Base#td_4	974
+bat_cc,138,53,1	duplicate(Base Flag#bg)	Omega Base#td_5	974
+bat_cc,148,63,1	duplicate(Base Flag#bg)	Omega Base#td_6	974
+
+// MapFlags
+// *********************************************************************
+
+bat_cc	mapflag	battleground	2
+bat_cc	mapflag	nomemo
+bat_cc	mapflag	nosave	SavePoint
+bat_cc	mapflag	noteleport
+bat_cc	mapflag	nowarp
+bat_cc	mapflag	nowarpto
+bat_cc	mapflag	noreturn
+bat_cc	mapflag	nobranch
+bat_cc	mapflag	nopenalty
+bat_cc	mapflag	bg_consume
+bat_cc	mapflag	novending

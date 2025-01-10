@@ -1,0 +1,343 @@
+//===== rAthena Script =======================================
+//= Euphy's Quest Shop
+//===== By: ==================================================
+//= Euphy
+//===== Current Version: =====================================
+//= 1.6c
+//===== Compatible With: =====================================
+//= rAthena Project
+//===== Description: =========================================
+//= A dynamic quest shop based on Lunar's, with easier config.
+//= Includes support for multiple shops & cashpoints.
+//= Item Preview script by ToastOfDoom.
+//===== Additional Comments: =================================
+//= 1.0 Initial script.
+//= 1.2 Added category support.
+//= 1.3 More options and fixes.
+//= 1.4 Added debug settings.
+//= 1.5 Replaced categories with shop IDs.
+//= 1.6 Added support for purchasing stackables.
+//= 1.6a Added support for previewing costumes and robes.
+//= 1.6b Added 'disable_items' command.
+//= 1.6c Replaced function 'A_An' with "F_InsertArticle".
+//============================================================
+
+main_of,59,148,5	script	VIP Manager	10099 ,{
+//cutin "BGmiles",2;
+	if(getgmlevel()){
+		mes .name$;
+		mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+		mes "GM cannot use this NPC";
+//		close2;
+//		cutin "",255;
+	end;
+	}
+
+	mes .name$;
+	mes "Hello! Good day.";
+	mes "Is there anything that i can help you?";
+	next;
+	switch(select("-> Purchase VIP:-> VIP Information:-> Cancel")){
+		case 1:
+			if(vip_status(VIP_STATUS_ACTIVE)){
+				mes .name$;
+				mes "Sorry, but your vip status is still active.";
+				mes "Please comeback again when it expires.";
+				end;
+//				close2;
+//				cutin "",255;
+			end;
+			}
+			mes .name$;
+			mes "Are you sure you want to buy VIP?";
+			mes "Cost of VIP:";
+			mes "1 Month ^0055FF1,500 "+getitemname(.PriceID)+"^000000";
+			mes "1 Year ^0055FF15,000 "+getitemname(.PriceID)+"^000000";
+			next;
+			switch(select("-> Buy 1 Month VIP:-> Buy 1 Year VIP:-> Cancel")){
+				case 1:
+					.@PriceAmt = 1200;
+					.@VIPTime = 43200;
+					break;
+				case 2:
+					.@PriceAmt = 15000;
+					.@VIPTime = 525600;
+					break;
+				case 3:
+					end;
+			}
+			if(countitem(.PriceID) < .@PriceAmt){
+				mes .name$;
+				mes "You don't have enough ^0055FF"+getitemname(.PriceID)+"^000000";
+				end;
+			}
+			mes .name$;
+			mes "Congratulation for signing up as a VIP!";
+			mes "Enjoy your benefits!";
+			logmes "Bought VIP Status";
+			delitem .PriceID,.@PriceAmt;
+			getitembound 56427,1,Account_Bound;
+//			getitembound 54935,1,Account_Bound;
+			vip_time .@VIPTime,strcharinfo(0);
+			achievementcomplete 250008;
+			message strcharinfo(0),"VIP Status Activated";
+			break;
+//		case 2:
+//			if(vip_status(VIP_STATUS_ACTIVE) || getgmlevel() >= 99)
+//				callfunc "vipshop",1;
+//			else {
+//				mes .name$;
+//				mes "Only Very Important Persons(VIP) can complete this quests.";
+//			}
+//			break;
+		case 2:
+			mes .name$;
+			mes "VIP have plenty of privelages:";
+			mes "Free Warper";
+			mes "Free Healer";
+			mes "Free Storage";
+			mes "Exclusive VIP Quest Costumes";
+			mes "Additional Healer Buffs and Duration";
+			mes "Equippable title with 10% Drop Rate and Exp";
+			break;
+
+		case 3:
+			break;
+	}
+//	close2;
+//	cutin "",255;
+	end;
+	
+OnPCLoginEvent:
+	if(vip_status(VIP_STATUS_ACTIVE))
+//		achievementcomplete 250008;
+end;
+
+OnInit:
+	.name$ = "^00B2EE[ VIP Manager ]^000000";
+
+	.PriceID = 	7179;
+	//while(1){ sleep 5000; showscript "Get your VIP now!"; }	
+	PUBTITLE:
+		showscript "Get your VIP now!";
+		sleep 3000;	
+	goto PUBTITLE;
+end;
+}
+//prontera,133,188,7	duplicate(VIP Manager)	VIP Manager#prt	10099 
+//ghouse1,153,54,3	duplicate(VIP Manager)	VIP Manager#ghouse1	10099 
+//ghouse2,153,54,3	duplicate(VIP Manager)	VIP Manager#ghouse2	10099 
+//ghouse3,153,54,3	duplicate(VIP Manager)	VIP Manager#ghouse3	10099 
+
+// Script Core - DO NOT DUPLICATE THIS NPC !!!!!!!!!!!!!
+//============================================================
+-	script	vip_shop	-1,{
+function Add; function Chk; function Slot;
+OnInit:
+	freeloop(1);
+
+// -----------------------------------------------------------
+//  Basic shop settings.
+// -----------------------------------------------------------
+
+	set .Announce,0;	// Announce quest completion? (1: yes / 0: no)
+	set .ShowSlot,1;	// Show item slots? (2: all equipment / 1: if slots > 0 / 0: never)
+	set .ShowID,1;  	// Show item IDs? (1: yes / 0: no)
+	set .ShowZeny,0;	// Show Zeny cost, if any? (1: yes / 0: no)
+	set .MaxStack,100;	// Max number of quest items purchased at one time.
+
+// -----------------------------------------------------------
+//  Points variable -- optional quest requirement.
+//	setarray .Points$[0],"<variable name>","<display name>";
+// -----------------------------------------------------------
+
+	setarray .Points$[0],
+		"#CASHPOINTS", "Cash Points";
+
+
+//=====================================================================================
+// ------------------- ADD YOUR SHOPS NAME AND ITEMS SHOPS STARTING HERE --------------
+//=====================================================================================
+
+// -----------------------------------------------------------
+//  Shop IDs -- to add shops, copy dummy data at bottom of file.
+//	setarray .Shops$[1],"<Shop 1>","<Shop 2>"{,...};
+// -----------------------------------------------------------
+
+	setarray .Shops$[1],
+		"VIP Quest";		// VIP Quests
+
+// -----------------------------------------------------------
+//  Quest items -- do NOT use a reward item more than once!
+//	Add(<shop ID>,<reward ID>,<reward amount>,
+//	    <Zeny cost>,<point cost>,
+//	    <required item ID>,<required item amount>{,...});
+// -----------------------------------------------------------
+
+// Shop 1
+	Add(1,54523,1,0,0,4340,1,7161,300,975,10,1531,2,5085,1,739,300,7510,2,5042,20,55042,15);	// Klee Aura
+	Add(1,54524,1,0,0,16001,1,2281,1,983,10,1020,300,925,100,7510,2,4387,1,660,20,732,5,55042,15);	// Klee Bag
+	Add(1,54525,1,0,0,7510,5,979,10,10006,1,7063,300,7435,200,7442,150,5017,1,7035,20,5053,1,55042,15);	// Klee Head
+
+	Add(1,54509,1,0,0,1056,600,1045,300,983,10,5014,1,7162,200,7209,400,5127,1,2434,1,7798,200,660,10,55042,15);	// Diona Aura
+	Add(1,54511,1,0,0,1037,500,1023,500,5008,1,638,20,4159,1,7441,300,7440,300,978,10,2327,1,55042,15);	// Diona Tail
+	Add(1,54510,1,0,0,2254,1,2255,1,7511,500,7189,250,7356,200,7292,5,7165,400,982,10,1001,400,5008,1,55042,15);	// Diona Head
+	
+	Add(1,54541,1,0,0,923,300,7172,250,10016,1,7447,500,4331,1,5128,5,981,10,720,250,7290,5,968,5,55042,15);	// Sayu Aura
+	Add(1,54543,1,0,0,1022,500,904,500,978,10,969,20,7441,300,7440,300,2327,1,5251,1,968,5,55042,15);	// Sayu Tail
+	Add(1,54542,1,0,0,5170,1,2254,1,7292,5,4230,1,7107,300,7200,400,979,10,7109,1,7446,500,5007,1,55042,15);	// Sayu Head
+	
+	Add(1,54534,1,0,0,7216,500,10019,10,2318,1,978,10,7295,5,4314,1,7448,500,2614,1,969,10,7036,3,55042,15);	// Qiqi Aura
+	Add(1,54535,1,0,0,5085,1,7297,5,521,600,1038,400,5072,1,969,10,1036,500,7443,5,978,10,7020,1,55042,15);	// Qiqi Cape
+	Add(1,54536,1,0,0,7265,500,969,10,983,10,2274,1,1059,500,5009,1,2614,1,7123,500,7297,5,7510,3,55042,15);	// Qiqi Head	
+
+// -----------------------------------------------------------
+
+//=====================================================================================
+// ------------------- YOUR SHOPS AND ITEMS SHOPS HAVE BEEN ADDED ---------------------
+//=====================================================================================
+
+	freeloop(0);
+	set .menu$,"";
+	for(set .@i,1; .@i<=getarraysize(.Shops$); set .@i,.@i+1) {
+		set .menu$, .menu$+.Shops$[.@i]+":";
+		npcshopdelitem "vipshop"+.@i,909;
+	}
+	end;
+
+OnMenu:
+	set .@size, getarraysize(@i);
+	if (!.@size) set @shop_index, select(.menu$);
+	else if (.@size == 1) set @shop_index, @i[0];
+	else {
+		for(set .@j,0; .@j<.@size; set .@j,.@j+1)
+			set .@menu$, .@menu$+.Shops$[@i[.@j]]+":";
+		set @shop_index, @i[select(.@menu$)-1];
+	}
+	deletearray @i[0],getarraysize(@i);
+	if (.Shops$[@shop_index] == "") {
+		message strcharinfo(0),"An error has occurred.";
+		end;
+	}
+	dispbottom "Select one item at a time.";
+	callshop "vipshop"+@shop_index,1;
+	npcshopattach "vipshop"+@shop_index;
+	end;
+
+OnBuyItem:
+	// .@q[] : RewardID, BoughtAmt, RewardAmt, BaseAmt, ReqZeny, ReqPts, { ReqItem, ReqAmt, ... }
+	setarray .@q[0],@bought_nameid[0],((@bought_quantity[0] > .MaxStack)?.MaxStack:@bought_quantity[0]);
+	copyarray .@q[3],getd(".q_"+@shop_index+"_"+.@q[0]+"[0]"),getarraysize(getd(".q_"+@shop_index+"_"+.@q[0]));
+	set .@q[2],.@q[1]*.@q[3];
+	if (!.@q[2] || .@q[2] > 30000) {
+		message strcharinfo(0),"You can't purchase that many "+getitemname(.@q[0])+".";
+		end;
+	}
+	mes "^00B2EE[ VIP Quest ]^000000";
+	mes "Reward: ^0055FF"+((.@q[2] > 1)?.@q[2]+"x ":"")+Slot(.@q[0])+"^000000";
+	mes "Requirements:";
+	disable_items;
+	if (.@q[4]) mes " > "+Chk(Zeny,.@q[4]*.@q[1])+(.@q[4]*.@q[1])+" Zeny^000000";
+	if (.@q[5]) mes " > "+Chk(getd(.Points$[0]),.@q[5]*.@q[1])+(.@q[5]*.@q[1])+" "+.Points$[1]+" ("+getd(.Points$[0])+"/"+(.@q[5]*.@q[1])+")^000000";
+	if (.@q[6]) for(set .@i,6; .@i<getarraysize(.@q); set .@i,.@i+2)
+		mes "^0000FF[»]^000000 "+Chk(countitem(.@q[.@i]),.@q[.@i+1]*.@q[1])+" <ITEM>"+Slot(.@q[.@i])+"<INFO>"+.@q[.@i]+"</INFO></ITEM> ("+countitem(.@q[.@i])+"/"+(.@q[.@i+1]*.@q[1])+")";
+	next;
+	setarray @qe[1], getiteminfo(.@q[0], ITEMINFO_LOCATIONS), getiteminfo(.@q[0], ITEMINFO_VIEW);
+	if (@qe[2] > 0 && ((@qe[1] & EQP_HEAD_LOW) || (@qe[1] & EQP_HEAD_TOP) || (@qe[1] & EQP_HEAD_MID) || (@qe[1] & EQP_COSTUME_HEAD_TOP) || (@qe[1] & EQP_COSTUME_HEAD_MID) || (@qe[1] & EQP_COSTUME_HEAD_LOW) || (@qe[1] & EQP_GARMENT) || (@qe[1] & EQP_COSTUME_GARMENT)))
+		set .@preview,1;
+	addtimer 1000, strnpcinfo(0)+"::OnEnd";
+	while(1) {
+		switch(select(" ~ Purchase ^0055FF"+getitemname(.@q[0])+"^000000:"+((.@preview && !@qe[7])?" ~ Preview...":"")+": ~ ^777777Cancel^000000")) {
+		case 1:
+			if (@qe[0]) {
+				mes "^00B2EE[ VIP Quest ]^000000";
+				mes "You're missing one or more quest requirements.";
+				close;
+			}
+			if (!checkweight(.@q[0],.@q[2])) {
+				mes "^00B2EE[ VIP Quest ]^000000";
+				mes "^FF0000You need "+(((.@q[2]*getiteminfo(.@q[0], ITEMINFO_WEIGHT))+Weight-MaxWeight)/10)+" additional weight capacity to complete this trade.^000000";
+				close;
+			}
+			if (.@q[4]) set Zeny, Zeny-(.@q[4]*.@q[1]);
+			if (.@q[5]) setd .Points$[0], getd(.Points$[0])-(.@q[5]*.@q[1]);
+			if (.@q[6]) for(set .@i,6; .@i<getarraysize(.@q); set .@i,.@i+2)
+				delitem .@q[.@i],.@q[.@i+1]*.@q[1];
+			getitem .@q[0],.@q[2];
+			if (.Announce) announce strcharinfo(0)+" has created "+((.@q[2] > 1)?.@q[2]+"x "+getitemname(.@q[0]):callfunc("F_InsertArticle",getitemname(.@q[0])))+"!",0;
+			specialeffect2 EF_FLOWERLEAF;
+			close;
+		case 2:
+			setarray @qe[3], getlook(LOOK_HEAD_BOTTOM), getlook(LOOK_HEAD_TOP), getlook(LOOK_HEAD_MID), getlook(LOOK_ROBE), 1;
+			if ((@qe[1] & 1) || (@qe[1] & 4096)) changelook LOOK_HEAD_BOTTOM, @qe[2];
+			else if ((@qe[1] & 256) || (@qe[1] & 1024)) changelook LOOK_HEAD_TOP, @qe[2];
+			else if ((@qe[1] & 512) || (@qe[1] & 2048)) changelook LOOK_HEAD_MID, @qe[2];
+			else if ((@qe[1] & 4) || (@qe[1] & 8192)) changelook LOOK_ROBE, @qe[2];
+			break;
+		case 3:
+			close;
+		}
+	}
+
+OnEnd:
+	if (@qe[7]) {
+		changelook LOOK_HEAD_BOTTOM, @qe[3];
+		changelook LOOK_HEAD_TOP, @qe[4];
+		changelook LOOK_HEAD_MID, @qe[5];
+		changelook LOOK_ROBE, @qe[6];
+	}
+	deletearray @qe[0],8;
+	end;
+
+function Add {
+	if (getitemname(getarg(1)) == "null") {
+		debugmes "Quest reward #"+getarg(1)+" invalid (skipped).";
+		return;
+	}
+	setarray .@j[0],getarg(2),getarg(3),getarg(4);
+	for(set .@i,5; .@i<getargcount(); set .@i,.@i+2) {
+		if (getitemname(getarg(.@i)) == "null") {
+			debugmes "Quest requirement #"+getarg(.@i)+" invalid (skipped).";
+			return;
+		} else
+			setarray .@j[.@i-2],getarg(.@i),getarg(.@i+1);
+	}
+	copyarray getd(".q_"+getarg(0)+"_"+getarg(1)+"[0]"),.@j[0],getarraysize(.@j);
+	npcshopadditem "vipshop"+getarg(0),getarg(1),((.ShowZeny)?getarg(3):0);
+	return;
+}
+
+function Chk {
+	if (getarg(0) < getarg(1)) {
+		set @qe[0],1;
+		return "^FF0000";
+	} else
+		return "^00FF00";
+}
+
+function Slot {
+	set .@s$,getitemname(getarg(0));
+	switch(.ShowSlot) {
+		case 1: if (!getitemslots(getarg(0))) return .@s$;
+		case 2: if (getiteminfo(getarg(0), ITEMINFO_TYPE) == 4 || getiteminfo(getarg(0), ITEMINFO_TYPE) == 5) return .@s$+" ["+getitemslots(getarg(0))+"]";
+		default: return .@s$;
+	}
+}
+}
+
+function	script	vipshop	{
+	deletearray @i[0],getarraysize(@i);
+	for(set .@i,0; .@i<getargcount(); set .@i,.@i+1)
+		set @i[.@i],getarg(.@i);
+	doevent "vip_shop::OnMenu";
+	end;
+}
+
+
+// Dummy shop data -- copy as needed.
+//============================================================
+-	shop	vipshop1	-1,909:-1
+-	shop	vipshop2	-1,909:-1
+-	shop	vipshop3	-1,909:-1
+-	shop	vipshop4	-1,909:-1
+-	shop	vipshop5	-1,909:-1

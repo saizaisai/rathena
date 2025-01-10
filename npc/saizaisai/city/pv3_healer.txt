@@ -1,0 +1,232 @@
+//===== rAthena Script =======================================
+//= Healer
+//===== By: ==================================================
+//= Denz Healer
+//===== Current Version: =====================================
+//= 1.4
+//===== Compatible With: =====================================
+//= rAthena Project
+//===== Description: =========================================
+//= Basic healer script.
+//===== Additional Comments: =================================
+//= 1.0 Initial script.
+//= 1.1 Aligned coordinates with @go.
+//= 1.2 Adding VIP Status (Skyzone)
+//= 1.3 Adding AutoHealer Status (Skyzone)
+//= 1.4 Adding DeBuffs (Skyzone)
+//= 1.5 Adding Require Level (Skyzone)
+//============================================================
+
+
+// --------------------------------------------------------------------------
+// Use duplicates to put your npc on different cities
+// --------------------------------------------------------------------------
+//prontera,155,180,3	duplicate(AutoHealer)	AutoHealer#1	-1,4,4
+//prontera,150,150,3	duplicate(AutoHealer)	AutoHealer#2	-1,4,4
+
+-	script	Healer	-1,{
+	set .@Price,3000;	// kung need zeny or not set (yes = 1 || no = 0) 
+	
+	set .@RequireLevel,50;	// Set Your Required Level for Free of Use.
+	set .@DeBuffs,1;  // Set to Active DeBuffer 1 for yes 0 for no
+	set .@Buffs,1;	// Set to Active Buffer 1 for yes 0 for no
+	set .@Repaire,1;  // Set to Active Repair Items 1 for yes 0 for no
+	set .@IdentifyAll,1;  // Set to Active IdentifyAll 1 for yes 0 for no
+	set .@Delay,5;	// Delay Ng Heal
+	
+	callfunc "F_ClearGarbage",0;		
+	if (@HD > gettimetick(2)) end;	
+	
+	cutin "malaya_nursea01",2;
+
+	if(BaseLevel > .@RequireLevel){
+		.ZenyHeal = .@Price;
+	}else{
+		.ZenyHeal = "0";
+	}
+	 
+	if (.@Price) {		
+		
+		if (Zeny < .@Price && BaseLevel > .@RequireLevel && !vip_status(1)){ 
+			mes .npc$;
+			mes "Hi ^0000FF"+strcharinfo(0)+"^000000 Healing costs ^FF0000"+ F_InsertComma(.ZenyHeal) +"^000000 Zeny."; 
+			
+			cutin "malaya_nursea02",2;
+			close2; 
+				cutin "",255;
+			end;	
+		} 			
+				
+		menu "^0055FFHeal ("+F_InsertComma(.ZenyHeal)+"z)^000000",HEALME,"Cancel",CANCEL;
+		
+		CANCEL:
+			mes .npc$;
+			mes "Ok see you later.";
+			cutin "malaya_nursea03",2;
+			close2; 
+			cutin "",255;
+		end;
+		
+		HEALME: 
+			if(!vip_status(1) && BaseLevel > .@RequireLevel){
+				set Zeny, Zeny-.@Price;	
+			}
+			
+			skilleffect 28, maxhp;
+			skilleffect 9, maxsp;	
+			specialeffect2 313;
+			specialeffect2 EF_INCAGILITY; sc_start SC_INCREASEAGI,300000,10;
+			specialeffect2 EF_BLESSING; sc_start SC_BLESSING,300000,10;
+			percentheal 100,100;
+			
+			//BUFFS
+			if (.@Buffs && vip_status(1)) { 
+				specialeffect2 EF_INCAGILITY; sc_start SC_INCREASEAGI,300000,5;
+				specialeffect2 EF_BLESSING; sc_start SC_BLESSING,300000,5;
+				sc_start SC_STRFOOD,900000,7;
+				sc_start SC_AGIFOOD,900000,7;
+				sc_start SC_VITFOOD,900000,7;
+				sc_start SC_INTFOOD,900000,7;
+				sc_start SC_DEXFOOD,900000,7;
+				sc_start SC_LUKFOOD,900000,7;
+			}
+			
+			//DE BUFFS
+			if (.@DeBuffs && vip_status(1)) {
+				// Remove negative status effects
+				sc_end SC_LEXAETERNA;
+				sc_end SC_DEC_AGI;
+				sc_end SC_POISON;
+				sc_end SC_CURSE;
+				sc_end SC_SILENCE;
+				sc_end SC_BLIND;
+				sc_end SC_VENOMBLEED;
+				sc_end SC_DPOISON;
+				sc_end SC_BURNING;
+				sc_end SC_STRIPARMOR;
+				sc_end SC_STRIPWEAPON;
+				sc_end SC_STRIPHELM;
+				sc_end SC_STRIPSHIELD;		
+			}
+			
+			//REPAIR
+			if(.@Repaire && vip_status(1)){		
+				repair(1);	
+			}
+			
+			//Identify All
+			if(.@IdentifyAll && vip_status(1)){
+				getinventorylist;
+				for( set .@i,0; .@i < @inventorylist_count; set .@i, .@i +1 ) {
+					if ( @inventorylist_identify[.@i] == 1 ) continue;
+					delitem2 @inventorylist_id[.@i],1,0,0,0,0,0,0,0;
+					getitem @inventorylist_id[.@i],1;
+					set .@count, .@count +1;
+				}
+				if (.@count) dispbottom .@count +" items identified.";	
+			}
+			
+			mes .npc$;
+			mes "You are now fully healed.";
+			cutin "malaya_nursea05",2;
+			
+			//DELAY HEAL
+			if (.@Delay) set @HD, gettimetick(2)+.@Delay;
+				
+			close2; 
+				cutin "",255;
+			end;
+		
+	}
+			
+	OnPCLoadMapEvent:
+		if( strcharinfo(3) == strnpcinfo(4) )
+		showevent 7,0;
+	end;	
+	
+	OnInit: 
+		.npc$ = "^00B2EE[ Healer ]^000000";
+		
+		set .@RequireLevel,50;	// Set Your Required Level for Free of Use.
+		
+		WAITINGPUB:
+			showscript "Healer";
+			.@npc_id = getnpcid(0);
+			hateffect_npc 25, false, .@npc_id;
+			hateffect_npc 25, true, .@npc_id;
+			sleep 5000;
+			showscript "Free Heal for Lvl "+.@RequireLevel+" Below";
+			sleep 5000;
+		goto WAITINGPUB;
+	end;
+}
+ 
+// Duplicates
+//============================================================
+//main_office,216,100,3	duplicate(Healer)	Healer#MainOffice	569
+//alberta,25,240,6	duplicate(Healer)	Healer#alb	569
+//aldebaran,143,124,3	duplicate(Healer)	Healer#alde	569
+//amatsu,200,79,4	duplicate(Healer)	Healer#ama	569
+//ayothaya,146,170,6	duplicate(Healer)	Healer#ayo	569
+//comodo,199,149,6	duplicate(Healer)	Healer#com	569
+//einbech,74,95,6	duplicate(Healer)	Healer#einbe	569
+//einbroch,57,202,6	duplicate(Healer)	Healer#einbr	569
+//geffen,123,111,4	duplicate(Healer)	Healer#gef	569
+//gonryun,156,122,6	duplicate(Healer)	Healer#gon	569
+//hugel,89,150,6	duplicate(Healer)	Healer#hug	569
+//izlude,121,150,6	duplicate(Healer)	Healer#izl	569	//Pre-RE: (125,118)
+//jawaii,250,139,4	duplicate(Healer)	Healer#jaw	569
+//lighthalzen,154,86,6	duplicate(Healer)	Healer#lhz	569
+//louyang,226,103,4	duplicate(Healer)	Healer#lou	569
+//manuk,272,144,6	duplicate(Healer)	Healer#man	569
+//mid_camp,203,289,6	duplicate(Healer)	Healer#mid	569
+//moc_ruins,72,164,4	duplicate(Healer)	Healer#moc	569
+//morocc,153,97,6	duplicate(Healer)	Healer#mor	569
+//moscovia,220,191,4	duplicate(Healer)	Healer#mos	569
+//niflheim,212,182,5	duplicate(Healer)	Healer#nif	569
+//payon,104,117,4	duplicate(Healer)	Healer#pay	569
+//payon,75,159,4	duplicate(Healer)	Healer#pay01	569
+//payon,104,160,5	duplicate(Healer)	Healer#pay02	569
+//prontera,158,193,4	duplicate(Healer)	Healer#prt	569
+//rachel,125,116,6	duplicate(Healer)	Healer#rac	569
+//splendide,201,153,4	duplicate(Healer)	Healer#spl	569
+//thor_camp,249,74,4	duplicate(Healer)	Healer#thor	569
+//umbala,105,148,3	duplicate(Healer)	Healer#umb	569
+//veins,217,121,4	duplicate(Healer)	Healer#ve	569
+//xmas,143,136,4	duplicate(Healer)	Healer#xmas	569
+//yuno,147,178,5	duplicate(Healer)	Healer#yuno	569
+//prontera,39,211,4	duplicate(Healer)	Healer#prt_left	569
+//prontera,148,35,4	duplicate(Healer)	Healer#prt_bot	569
+//prontera,276,211,4	duplicate(Healer)	Healer#prt_right	569
+//prontera,149,325,5	duplicate(Healer)	Healer#prt_top	569
+prontera,155,180,5	duplicate(Healer)	Healer#prt_midright	569
+//prontera,63,46,5	duplicate(Healer)	Healer#prt_botleft	569
+
+// Duplicates (Renewal)
+//============================================================
+//brasilis,194,221,6	duplicate(Healer)	Healer#bra	569
+//dewata,195,187,4	duplicate(Healer)	Healer#dew	569
+//dicastes01,201,194,4	duplicate(Healer)	Healer#dic	569
+//ecl_in01,45,60,4	duplicate(Healer)	Healer#ecl	569
+//malangdo,132,114,6	duplicate(Healer)	Healer#mal	569
+//malaya,227,204,6	duplicate(Healer)	Healer#ma	569
+//mora,55,152,4	duplicate(Healer)	Healer#mora	569
+//serene_city,193,212,5	duplicate(Healer)	Healer#serene	569
+//arlandria,148,186,5	duplicate(Healer)	Healer#arlandria	569
+//egypt_town,163,179,5	duplicate(Healer)	Healer#egypt_town	569
+//mellina,80,60,5	duplicate(Healer)	Healer#mellina	569
+
+//moc_para01,24,22,5	duplicate(Healer)	Healer#Eden	569
+//prontera,267,67,2	duplicate(Healer)	Healer#Dummys	569
+
+//verus04,131,253,2	duplicate(Healer)	Healer#verus04	569
+//harboro1,279,193,6	duplicate(Healer)	Healer#harboro1	569
+//nameless_i,227,232,6	duplicate(Healer)	Healer#nameless_i	569
+//prt_monk,181,200,6	duplicate(Healer)	Healer#prt_monk	569
+//lasagna,175,156,6	duplicate(Healer)	Healer#lasagna	569
+//jawaii,212,237,6	duplicate(Healer)	Healer#jawaii	569
+
+//1@ghvy,43,86,0	duplicate(Healer)	Healer#1@ghvy	569
+
+//louyang,91,260,2	duplicate(Healer)	Healer#1@Lou01	569
+

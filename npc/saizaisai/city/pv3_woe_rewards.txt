@@ -1,0 +1,140 @@
+//===== rAthena Script =======================================
+//= Time-based WoE participation reward.
+//===== By: ==================================================
+//= Secret
+//===== Description: =========================================
+//= A WoE participation timer counter.
+//===== Additional Comments: =================================
+//= Don't make WoE sessions overlap or the script will go nuts!
+//============================================================
+
+prontera,173,188,5	script	WoE Reward	4_M_HEINRICH,{
+	mes .n$;
+	mes "You can claim the WoE participation prizes if you participated in the last WoE longer than " + .min_time + " minutes.";
+	if(.point)
+		mes "- " + .points$[1] + ": " + .point;
+	if(.zeny)
+		mes "- Zeny:" + callfunc("F_InsertComma",.zeny);
+	.@sz = getarraysize(.items);
+	if(.@sz) {
+		mes "- Items:";
+		for(.@i = 0; .@i < .@sz; .@i += 2) {
+			mes "   x" + .items[.@i+1] + " " + getitemname(.items[.@i]);
+		}
+	}
+	next;
+	mes .n$;
+	if (agitcheck() || agitcheck2() || agitcheck3()) {
+		mes "You can only claim the prizes when the WoE is not active.";
+		mes "Your WoE participation time is "+ WOE_Timer +" minute" + (WOE_Timer > 1 ? "s" : "") + ".";
+		close;
+	}
+	if(WOE_Timer_Claimed) {
+		mes "You already claimed your WoE participation prize.";
+		close;
+	}
+	if(WOE_Timer < .min_time) {
+		mes "Your WoE participation time is not enough.";
+		mes "Your WoE participation time is "+ WOE_Timer +" minute" + (WOE_Timer > 1 ? "s" : "") + ".";
+		mes "While you have to participate for " + .min_time +" minute" + (.min_time > 1 ? "s" : "") + ".";
+		close;
+	}
+	mes "Do you want to claim your prize?";
+	mes "You have participated in the last WoE for " + WOE_Timer + " minutes.";
+	mes "Remember, if you don't claim your prize now, It will be lost once the next WoE starts!";
+	next;
+	switch(select("Claim the prize", "Later")) {
+		case 1:
+			mes .n$;
+			mes "Thank you for participating in the War of Emperium!";
+			WOE_Timer_Claimed = true;
+			if(.point) {
+				set getd(.points$[0]), getd(.points$[0]) + .point;
+				dispbottom "Received " + .point + " " + .points$[1] + ". Total: " + getd(.points$[0]);
+			}
+			if(.zeny) {
+				Zeny += .zeny;
+				dispbottom "Received " + .zeny + " zeny.";
+			}
+			for(.@i = 0; .@i < .@sz; .@i += 2) {
+				getitem .items[.@i],.items[.@i+1];
+			}
+			break;
+		case 2:
+			break;
+	}
+	close;
+	
+OnCheck:
+	if(!getcharid(2) || (!agitcheck() && !agitcheck2() && !agitcheck3())) {
+		WOE_Start = 0;
+	} else {
+		if(WOE_Start != $@agit_time) {
+			callsub(S_OnReset);
+		}
+		WOE_Start = $@agit_time;
+		
+		getmapxy(.@map$,.@x,.@y,BL_PC);
+		
+		if(mf_gvg_te_castle != 0) {
+			if(!getmapflag(.@map$,mf_gvg_castle) && !getmapflag(.@map$,mf_gvg_te_castle))
+				return;
+		} else {
+			if(!getmapflag(.@map$,mf_gvg_castle)) {
+				return;
+			}
+		}
+		if(@woe_last_map$ == .@map$ && @woe_last_x == .@x && @woe_last_y == .@y) {
+			@woe_idle++;
+		} else {
+			@woe_idle = 0;
+		}
+		@woe_last_map$ = .@map$;
+		@woe_last_x = .@x;
+		@woe_last_y = .@y;
+		
+		if(@woe_idle < .idle_tolerance) {
+			.@sz = getarraysize(.map$);
+			for(.@i = 0; .@i < .@sz; .@i++) {
+				if(.map$[.@i] == strcharinfo(3)) {
+					WOE_Timer++;
+					dispbottom "[WOE Timer] WoE participation: " + WOE_Timer + " minutes.";
+					break;
+				}
+			}
+		}
+	}
+	return;
+	
+OnInitCheck:
+	callsub(OnCheck);
+	addtimer 60000,strnpcinfo(0) + "::OnInitCheck";
+	end;
+
+OnPCLoginEvent:
+	callsub(OnInitCheck);
+	end;
+	
+S_OnReset:
+	WOE_Timer = 0;
+	WOE_Start = 0;
+	WOE_Timer_Claimed = false;
+	return;
+
+OnAgitStart:
+OnAgitStart2:
+OnAgitStart3:
+	$@agit_time = atoi("" + gettime(DT_YEAR) + gettime(DT_MONTH) + gettime(DT_DAYOFMONTH) + gettime(DT_HOUR));
+	end;
+
+OnInit:
+	.n$ = "[WoE Reward]"; // NPC name
+	.min_time = 45; // Minimum time in minutes to claim the reward.
+	setarray .points$[0],"#ACTIVITYPOINTS","Activity Points"; // Point variable and human-friendly text
+	.point = 0; // Points that will be given
+	.zeny = 0; // Zeny that will be given
+	// Items that will be given
+	setarray .items,14003,50,12210,5,13698,5,13697,5,16260,1;
+	.idle_tolerance = 5; // Minutes of idling before the timer becomes be paused.
+	setarray .map$,"prtg_cas01","prtg_cas01","prtg_cas03","prtg_cas04","prtg_cas05","payg_cas01","schg_cas01"; // WoE Castles
+}

@@ -1,0 +1,108 @@
+prontera,167,173,4	script	PVP Warper#pvp1::PVP Warper	4_M_JOB_KNIGHT2,{
+	for (.@i = 0; .@i < .size; .@i++) 
+		.@menu$ += .name$[.@i] + "[ "+getmapusers(.map$[.@i])+" ]" + ":";
+	.@i = select(.@menu$) - 1;
+
+	if (.@i == 1 && getgroupid() < 5){
+		if(class != 4016){
+			mes "^00B2EE[ Pvp Arena ]^000000";
+			mes "You must be a champion to enter this room";
+			end;
+		}
+		if(BaseLevel != 99){
+			mes "^00B2EE[ Pvp Arena ]^000000";
+			mes "You must be level 99 to enter this room";
+			end;
+		}
+	}
+
+	warp .map$[.@i], .x[.@i], .y[.@i];
+	pvpannounce strcharinfo(0)+" entered "+.name$[.@i]+" Arena.",bc_blue;
+	end;
+	
+	OnInit:
+		setarray .name$, "Free-For-All", "Champion PVP";
+		setarray .map$, "pr3_pvp00", "pr3_champ";
+		setarray .x,0,0,0;
+		setarray .y,0,0,0;
+		.size = getarraysize(.map$);
+		initnpctimer;
+
+	OnTimer3000:
+		.index = (.index % .size);
+		showscript "["+getmapusers(.map$[.index])+"] " + .name$[.index];
+		.index++;
+		initnpctimer;
+		end;
+}
+
+pr3_pvp00	mapflag	pvp
+//pr3_pvp00	mapflag	pvp_noparty
+pr3_pvp00	mapflag	pvp_noguild
+pr3_pvp00	mapflag	loadevent
+pr3_pvp00	mapflag	nowarp
+pr3_pvp00	mapflag	noteleport
+pr3_pvp00	mapflag	nosave	Savepoint
+pr3_pvp00	mapflag	nobranch
+pr3_pvp00	mapflag	loadevent
+pr3_pvp00	mapflag	nomemo
+
+pr3_champ	mapflag	pvp
+pr3_champ	mapflag	pvp_noparty
+pr3_champ	mapflag	pvp_noguild
+pr3_champ	mapflag	loadevent
+pr3_champ	mapflag	nowarp
+pr3_champ	mapflag	noteleport
+pr3_champ	mapflag	nosave	Savepoint
+pr3_champ	mapflag	nobranch
+pr3_champ	mapflag	loadevent
+pr3_champ	mapflag	nomemo
+
+
+
+// CITY
+pay_arche,46,136,3	duplicate(PVP Warper)	PVP Warper #payarche	4_M_JOB_KNIGHT2
+ayothaya,203,169,3	duplicate(PVP Warper)	PVP Warper #3	4_M_JOB_KNIGHT2
+umbala,85,154,5	duplicate(PVP Warper)	PVP Warper #5	4_M_JOB_KNIGHT2
+aldebaran,147,118,3	duplicate(PVP Warper)	PVP Warper #8	4_M_JOB_KNIGHT2
+comodo,195,146,5	duplicate(PVP Warper)	PVP Warper #9	4_M_JOB_KNIGHT2
+xmas,142,132,5	duplicate(PVP Warper)	PVP Warper #10	4_M_JOB_KNIGHT2
+comodo,188,162,5	duplicate(PVP Warper)	PVP Warper #11	4_M_JOB_KNIGHT2
+amatsu,193,82,7	duplicate(PVP Warper)	PVP Warper #12	4_M_JOB_KNIGHT2
+gonryun,151,104,5	duplicate(PVP Warper)	PVP Warper #13	4_M_JOB_KNIGHT2
+yuno,148,82,5	duplicate(PVP Warper)	PVP Warper #14	4_M_JOB_KNIGHT2
+niflheim,187,185,5	duplicate(PVP Warper)	PVP Warper #15	4_M_JOB_KNIGHT2
+louyang,226,116,3	duplicate(PVP Warper)	PVP Warper #16	4_M_JOB_KNIGHT2
+lighthalzen,154,100,5	duplicate(PVP Warper)	PVP Warper #18	4_M_JOB_KNIGHT2
+einbech,191,123,5	duplicate(PVP Warper)	PVP Warper #19	4_M_JOB_KNIGHT2
+hugel,91,147,5	duplicate(PVP Warper)	PVP Warper #20	4_M_JOB_KNIGHT2
+rachel,122,112,5	duplicate(PVP Warper)	PVP Warper #21	4_M_JOB_KNIGHT2
+veins,211,130,5	duplicate(PVP Warper)	PVP Warper #22	4_M_JOB_KNIGHT2
+moscovia,228,191,4	duplicate(PVP Warper)	PVP Warper #23	4_M_JOB_KNIGHT2
+mid_camp,170,240,5	duplicate(PVP Warper)	PVP Warper #24	4_M_JOB_KNIGHT2
+manuk,276,145,5	duplicate(PVP Warper)	PVP Warper #25	4_M_JOB_KNIGHT2
+splendide,203,153,4	duplicate(PVP Warper)	PVP Warper #26	4_M_JOB_KNIGHT2
+brasilis,109,65,3	duplicate(PVP Warper)	PVP Warper #27	4_M_JOB_KNIGHT2
+dicastes01,190,191,5	duplicate(PVP Warper)	PVP Warper #28	4_M_JOB_KNIGHT2
+mora,58,149,4	duplicate(PVP Warper)	PVP Warper #29	4_M_JOB_KNIGHT2
+dewata,194,186,5	duplicate(PVP Warper)	PVP Warper #30	4_M_JOB_KNIGHT2
+malangdo,127,143,5	duplicate(PVP Warper)	PVP Warper #31	4_M_JOB_KNIGHT2
+jawaii,245,231,3	duplicate(PVP Warper)	PVP Warper #32	4_M_JOB_KNIGHT2
+einbroch,71,207,3	duplicate(PVP Warper)	PVP Warper #33	4_M_JOB_KNIGHT2
+malaya,226,204,5	duplicate(PVP Warper)	PVP Warper #35	4_M_JOB_KNIGHT2
+malaya,268,339,4	duplicate(PVP Warper)	PVP Warper #335	4_M_JOB_KNIGHT2
+ra_temsky,54,143,4	duplicate(PVP Warper)	PVP Warper #36	4_M_JOB_KNIGHT2
+lasagna,161,161,5	duplicate(PVP Warper)	PVP Warper #38	4_M_JOB_KNIGHT2
+izlude,123,115,5	duplicate(PVP Warper)	PVP Warper #39	4_M_JOB_KNIGHT2
+alberta,128,60,3	duplicate(PVP Warper)	PVP Warper #40	4_M_JOB_KNIGHT2
+jawaii,199,293,5	duplicate(PVP Warper)	PVP Warper #41	4_M_JOB_KNIGHT2
+alberta,206,216,3	duplicate(PVP Warper)	PVP Warper #42	4_M_JOB_KNIGHT2
+einbroch,173,191,7	duplicate(PVP Warper)	PVP Warper #43	4_M_JOB_KNIGHT2
+
+//clashcity,160,136,3	duplicate(PVP Warper)	PVP Warper #37	4_M_JOB_KNIGHT2
+morocc,166,97,3	duplicate(PVP Warper)	PVP Warper #1	4_M_JOB_KNIGHT2
+geffen,115,65,5	duplicate(PVP Warper)	PVP Warper #4	4_M_JOB_KNIGHT2
+payon,172,226,5	duplicate(PVP Warper)	PVP Warper #6	4_M_JOB_KNIGHT2
+alberta,37,240,3	duplicate(PVP Warper)	PVP Warper #7	4_M_JOB_KNIGHT2
+thor_camp,114,328,3	duplicate(PVP Warper)	PVP Warper #thorcamp1	4_M_JOB_KNIGHT2
+amatsu,125,104,3	duplicate(PVP Warper)	PVP Warper #amatsu2	4_M_JOB_KNIGHT2

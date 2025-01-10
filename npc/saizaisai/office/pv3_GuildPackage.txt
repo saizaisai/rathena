@@ -1,0 +1,500 @@
+main_of,267,32,4	script	Guild Pack Manager	10879,{
+goto L_Menu;
+OnInit:
+	query_sql("CREATE TABLE IF NOT EXISTS `guild_pack` ( `guild_id` int(11) NOT NULL, `guild_name` varchar(255) DEFAULT '', `reward` varchar(255) DEFAULT '', `active` int(11) DEFAULT '0', UNIQUE KEY `guild_id` (`guild_id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+	query_sql("CREATE TABLE IF NOT EXISTS `guild_pack_member` ( `guild_id` int(11) NOT NULL, `account_id` int(11) NOT NULL, `char_id` int(11) NOT NULL, `name` varchar(255) NOT NULL, PRIMARY KEY (`char_id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+	.name$ = "^00B2EE[ Guild Pack Manager ]^000000";
+	.DefaultGuildPack$ = "14545,5,12210,10,14592,5,55011,10,2424,1,2528,1,2404,1,2310,1,2504,1,61018,1,675,2,55010,300,7776,2";
+
+	setarray .UP5[0],2404,2310,2504;
+	PUBTITLE:
+		showscript "Guild Pack Manager";
+		sleep 3000;	
+	goto PUBTITLE;
+end;
+
+L_Menu:
+	mes .name$;
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "Does your guild plan to migrate here?";
+	mes "Then we have ^0055FFSpecial Gifts^000000 for you";
+	next;
+	switch(select("Claim Guild Pack:Information:"+(getgmlevel()>=99 ? "^FF5500[GM] Administration^000000":"")+":Cancel")){
+		case 1:
+			mes .name$;
+			if(!getcharid(2))
+				callsub OnErrorMes,"You are not part of any guild.";
+			.@search = query_sql("SELECT * FROM `guild_pack` WHERE `guild_id` = "+getcharid(2),.@gid,.@name$,.@reward$,.@active);
+			if(!.@search)
+				callsub OnErrorMes,"Your guild is not registered to claim guild package.";
+			if(!.@active)
+				callsub OnErrorMes,"Your guild package is not yet ready.";
+			.@check = query_sql("SELECT * FROM `guild_pack_member` WHERE `char_id` = "+getcharid(0)+" AND `guild_id` = "+getcharid(2),.@mem_gid,.@mem_aid,.@mem_cid,.@mem_name$);
+			if(!.@check)
+				callsub OnErrorMes,"You are not registered to claim your guild package.";
+			if(#GUILDPACK$ != "")
+				callsub OnErrorMes,"You already claimed a guild package from this account.";
+			mes "Guild Name: "+.@name$;
+			explode(.@ereward$,.@reward$,",");
+			if(.@reward$ != "" || .@reward$ != "NULL"){
+				mes "Guild Package Items:";
+				for(.@i=0;.@i<getarraysize(.@ereward$);.@i+=2)
+					mes "- "+.@ereward$[.@i+1]+"x "+getitemname(atoi(.@ereward$[.@i]));
+			} else
+				mes "No Guild Package items found.";
+			mes "\n\rClaim your guild pack now?";
+			next;
+			if(select("Claim now:Cancel")==2) end;
+			mes .name$;
+			query_sql("SELECT `value` FROM `acc_reg_str` WHERE `key` = '#GUILDPACK$'",.@val$);
+//			if(inarray(.@val$,get_unique_id())>=0)
+//				callsub OnErrorMes,"You already claimed a guild package from your other account.";
+			explode(.@ereward$,.@reward$,",");
+			for(.@i=0;.@i<getarraysize(.@ereward$);.@i+=2){
+				if(!checkweight(atoi(.@ereward$[.@i]),atoi(.@ereward$[.@i+1]))){
+					mes .name$;
+					mes "Your inventory is full or you are overweight.";
+					end;
+				}
+			}
+			for(.@i=0;.@i<getarraysize(.@ereward$);.@i+=2){
+				if(inarray(.UP5,atoi(.@ereward$[.@i]))>=0)
+					getitembound2 atoi(.@ereward$[.@i]),atoi(.@ereward$[.@i+1]),1,5,0,0,0,0,0,Bound_Account;
+				else
+					getitembound atoi(.@ereward$[.@i]),atoi(.@ereward$[.@i+1]),Bound_Account;
+			}
+//			#GUILDPACK$ = get_unique_id();
+			mes "Here's your guild package items!";
+			mes "Welcome and enjoy playing!~";
+			break;
+		case 2:
+			mes .name$;
+			mes "Guild Migration Package is a system wherein the server gives special gifts for any big migrating guilds.";
+			next;
+			mes .name$;
+			mes "The guild will need to fill up";
+			//mes "this <URL>form<INFO>https://bit.ly/33hy7fb)</INFO></URL> in order for us to";
+			mes "process your guild and to check any claim abuses.";
+			next;
+			mes .name$;
+			mes "In our package, each member would get:";
+//			mes "1 Costume (You can choose from the choices & 1 design only for each guild)";
+			explode(.@gpack$,.DefaultGuildPack$,",");
+			for(.@i=0;.@i<getarraysize(.@gpack$);.@i+=2)
+				mes .@gpack$[.@i+1]+" "+getitemname(atoi(.@gpack$[.@i]));
+			break;
+		case 3:
+			callsub OnGMPanel;
+			break;
+		case 4:
+			end;
+	}
+end;
+
+OnErrorMes:
+	mes ""+getarg(0);
+	next;
+goto L_Menu;
+
+OnGMPanel:
+	clear;
+	.@count = query_sql("SELECT * FROM `guild_pack`",.@reg_id,.@reg_name$,.@reg_reward$,.@reg_active);
+	mes .name$;
+	mes "What can i do for you master?";
+	next;
+	switch(select("List Approved Guilds:Add or Remove Guild:"+(.@count ? "Add or Remove Members:Modify Guild Pack Rewards:Activate or Deactivate Guild's Pack":"::")+":Get Guild Leader Package:Exit")){
+		case 1:
+			mes .name$;
+			if(!.@count){
+				mes "There are no registered guilds at the moment.";
+				next;
+				callsub OnGMPanel;
+			}
+			mes "This are the list of Approved Guilds.";
+			mes "Select the guild you want to view.";
+			for(.@i=0;.@i<.@count;.@i++){
+				.@menu$ = .@menu$ + .@reg_name$[.@i]+":";
+			}
+			.@opt = select(.@menu$+":Back")-1;
+			if(.@opt >= .@count) callsub OnGMPanel;
+			callsub OnCheckGuild,.@reg_id[.@opt];
+		case 2:
+			switch(select("Add Guild:"+(.@count ? "Remove Guild":"")+":Back")){
+				case 1:
+					mes .name$;
+					mes "Please Insert the guild name.";
+					input .@in_name$;
+					.@c = query_sql("SELECT `guild_id`,`name`,`char_id`,`master` FROM `guild` WHERE `name` = '"+escape_sql(.@in_name$)+"'",.@gid,.@name$,.@cid,.@master$);
+					clear;
+					mes .name$;
+					if(!.@c){
+						mes "The guild ^0055FF"+.@in_name$+"^000000 is not found.";
+						next;
+						callsub OnGMPanel;
+					}
+					if(inarray(.@reg_id,.@gid)>=0){
+						mes "The ^0055FF"+.@name$+"^000000 guild is already registered.";
+						next;
+						callsub OnGMPanel;
+					}
+					mes "Guild ID: "+.@gid;
+					mes "Guild Name: "+.@name$;
+					mes "Guild Leader: "+.@master$+"\n";
+					mes "Is this guild correct?";
+					if(select("Confirm:Back")==2) callsub OnGMPanel;
+					clear;
+					query_sql("INSERT INTO `guild_pack` VALUES ("+.@gid+",'"+.@name$+"','"+.DefaultGuildPack$+"',0)");
+					mes .name$;
+					mes "Successfully added "+.@name$+".";
+					next;
+					callsub OnGMPanel;
+				case 2:
+					mes .name$;
+					mes "Select a guild you want to remove.";
+					for(.@i=0;.@i<.@count;.@i++){
+						.@menu$ = .@menu$ + .@reg_name$[.@i]+":";
+					}
+					.@opt = select(.@menu$+":Back")-1;
+					if(.@opt >= .@count) callsub OnGMPanel;
+					clear;
+					mes .name$;
+					mes "Are you sure you want to remove ^0055FF"+.@reg_name$[.@opt]+"^000000?";
+					if(select("Remove:Cancel")==2) callsub OnGMPanel;
+					clear;
+					query_sql("DELETE FROM `guild_pack` WHERE `guild_id` = "+.@reg_id[.@opt]);
+					mes .name$;
+					mes "Successfully removed.";
+					next;
+					callsub OnGMPanel;
+				case 3:
+					callsub OnGMPanel;
+			}
+			break;
+		case 3:
+			mes .name$;
+			mes "Select the guild you want to add or remove member.";
+			for(.@i=0;.@i<.@count;.@i++){
+				.@menu$ = .@menu$ + .@reg_name$[.@i]+":";
+			}
+			.@opt = select(.@menu$+":Back")-1;
+			if(.@opt >= .@count) callsub OnGMPanel;
+			callsub OnAddRemoveMember,.@reg_id[.@opt];
+			break;
+		case 4:
+			mes .name$;
+			mes "Select the guild you want to modify.";
+			for(.@i=0;.@i<.@count;.@i++){
+				.@menu$ = .@menu$ + .@reg_name$[.@i]+":";
+			}
+			.@opt = select(.@menu$+":Back")-1;
+			if(.@opt >= .@count) callsub OnGMPanel;
+			callsub OnAddRemoveReward,.@reg_id[.@opt];
+			break;
+		case 5:
+			mes .name$;
+			mes "Select the guild you want to activate.";
+			for(.@i=0;.@i<.@count;.@i++){
+				.@menu$ = .@menu$ + .@reg_name$[.@i]+":";
+			}
+			.@opt = select(.@menu$+":Back")-1;
+			if(.@opt >= .@count) callsub OnGMPanel;
+			callsub OnActivateGuild,.@reg_id[.@opt];
+			break;
+		case 6:
+			mes .name$;
+			getitem 12263,20;
+			getitem 12210,20;
+			getitem 14003,100;
+			getitem 55010,20;
+			getitem 2202,1;
+			getitem 14592,20;
+			getitem 12412,10;
+			getitem 7773,300;
+			getitem 55011,20;
+			getitem 50011,1;
+			getitem 5264,1;
+			getitem 7179,1500;
+			getitem 675,5;
+			end;
+		case 7:
+			mes .name$;
+			mes "See you again soon~";
+			end;
+	}
+end;
+
+OnAddRemoveMember:
+	clear;
+	.@gid = getarg(0);
+	.@count = query_sql("SELECT * FROM `guild_pack_member` WHERE `guild_id` = "+.@gid+" ORDER BY `account_id` ASC",.@mem_gid,.@mem_aid$,.@mem_cid,.@mem_name$);
+	mes .name$;
+	if(getguildmaster(.@gid) == "null"){
+		mes "^FF5500This guild is disbanded^000000";
+		next;
+		callsub OnGMPanel;
+	}
+	mes "Guild Name: "+getguildname(.@gid);
+	mes "Guild Leader: "+getguildmaster(.@gid);
+	mes "Claim Active: "+(.@reg_active ? "^03C04AYes^000000":"^FF5500No^000000");
+	if(!.@count)
+		mes "No members to claim package.";
+	else {
+		mes "Members who can claim guild pack: ";
+		mes "^FF5500Claimed^000000 | ^663399Duplicate^000000 | ^03C04ACan Claim^000000";
+		query_sql("SELECT DISTINCT A.`account_id`, A.`value`, B.`last_unique_id` FROM `acc_reg_str` AS A LEFT JOIN `login`AS B ON A.`value`=B.`last_unique_id` WHERE A.`key` = '#GUILDPACK$' ORDER BY A.`account_id`",.@said,.@svalue$,.@slui$);
+		.@str$ = implode(.@mem_aid$,",");
+		query_sql("SELECT `last_unique_id` FROM `login` WHERE `account_id` IN ("+.@str$+") ORDER BY `account_id` ASC",.@loginuid$);
+		for(.@i=0;.@i<.@count;.@i++){
+			.@var$ = .@loginuid$[.@i];
+			if(inarray(.@said,atoi(.@mem_aid$[.@i])) >= 0)
+				mes (.@i+1)+". ^FF5500"+.@mem_name$[.@i]+"^000000";
+			else if(countinarray(.@loginuid$,.@var$) > 1)
+				mes (.@i+1)+". ^663399"+.@mem_name$[.@i]+"^000000";
+			else
+				mes (.@i+1)+". ^03C04A"+.@mem_name$[.@i]+"^000000";
+		}
+	}
+	next;
+	switch(select("Add Member:"+(.@count ? "Remove Member":"")+":Back")){
+		case 1:
+			mes .name$;
+			mes "Enter the name to you wish to add.";
+			input .@in_name$;
+			clear;
+			.@correct = query_sql("SELECT `account_id`,`char_id`,`name`,`guild_id` FROM `char` WHERE `name` = '"+escape_sql(.@in_name$)+"'",.@aid,.@cid,.@name$,.@sgid);
+			if(!.@correct){
+				mes .name$;
+				mes "There's no such player called ^0055FF"+.@in_name$+"^000000.";
+				next;
+				callsub OnAddRemoveMember,.@gid;				
+			}
+			if(.@sgid != .@gid){
+				mes .name$;
+				mes "^0055FF"+.@name$+"^000000 is not a member of the guild ^0055FF"+getguildname(.@gid)+"^000000.";
+				next;
+				callsub OnAddRemoveMember,.@gid;
+			}
+			if(inarray(.@mem_name$,.@name$) >= 0){
+				mes .name$;
+				mes "^0055FF"+.@name$+"^000000 is already in the list.";
+				next;
+				callsub OnAddRemoveMember,.@gid;
+			}
+			.@check = query_sql("SELECT * FROM `guild_pack_member` WHERE `account_id` = "+.@aid,.@cgid,.@caid,.@ccid,.@cname$);
+			if(.@check){
+				mes .name$;
+				if(.@name$ == .@cname$)
+					mes "^0055FF"+.@name$+"^000000 is already registered on "+(getguildname(.@cgid) == "null" ? "a disbanded guild":"^0055FF"+getguildname(.@cgid)+"^000000")+".";
+				else
+					mes "^0055FF"+.@name$+"^000000 other character named ^0055FF"+.@cname$+"^000000 is already registered on "+(getguildname(.@cgid) == "null" ? "a disbanded guild":"^0055FF"+getguildname(.@cgid)+"^000000")+".";
+				next;
+				callsub OnAddRemoveMember,.@gid;
+			}
+			mes .name$;
+			mes "Are you sure you want to add ^0055FF"+.@name$+"^000000?";
+			if(select("Confirm:Cancel")==2) callsub OnAddRemoveMember,.@gid;
+			clear;
+			query_sql("INSERT INTO `guild_pack_member` VALUES ("+.@gid+","+.@aid+","+.@cid+",'"+.@name$+"')");
+			mes .name$;
+			mes "Successfully Added.";
+			next;
+			callsub OnAddRemoveMember,.@gid;
+			break;
+		case 2:
+			mes .name$;
+			mes "Please choose a member you want to remove.";
+			for(.@i=0;.@i<.@count;.@i++)
+				.@menu$ = .@menu$ + .@mem_name$[.@i] +":";
+			.@opt = select(.@menu$+":Back")-1;
+			if(.@opt >= .@count) callsub OnAddRemoveMember,.@gid;
+			clear;
+			mes .name$;
+			mes "Are you sure you want to remove ^0055FF"+.@mem_name$[.@opt]+"^000000?";
+			if(select("Confirm:Cancel")==2) callsub OnAddRemoveMember,.@gid;
+			clear;
+			query_sql("DELETE FROM `guild_pack_member` WHERE `char_id` = "+.@mem_cid[.@opt]);
+			mes .name$;
+			mes "Successfully Removed.";
+			next;
+			callsub OnAddRemoveMember,.@gid;
+		case 3:
+			callsub OnGMPanel;
+	}
+return;
+
+OnAddRemoveReward:
+	clear;
+	.@gid = getarg(0);
+	query_sql("SELECT * FROM `guild_pack` WHERE `guild_id` = "+.@gid,.@reg_id,.@reg_name$,.@reg_reward$,.@reg_active);
+	mes .name$;
+	if(getguildmaster(.@gid) == "null"){
+		mes "^FF5500This guild is disbanded^000000";
+		next;
+		callsub OnGMPanel;
+	}
+	mes "Guild Name: "+getguildname(.@gid);
+	mes "Guild Leader: "+getguildmaster(.@gid);
+	mes "Claim Active: "+(.@reg_active ? "^03C04AYes^000000":"^FF5500No^000000");
+	explode(.@ereward$,.@reg_reward$,",");
+	if(.@reg_reward$ != "" || .@reg_reward$ != "NULL"){
+		mes "Guild Package Items:";
+		for(.@i=0;.@i<getarraysize(.@ereward$);.@i+=2)
+			mes "- "+.@ereward$[.@i+1]+"x "+getitemname(atoi(.@ereward$[.@i]));
+	} else
+		mes "No Guild Package items found.";
+	next;
+	switch(select("Add Reward:"+(getarraysize(.@ereward$) > 2 ? "Remove Reward":"")+":Back")){
+		case 1:
+			mes .name$;
+			mes "Insert the item ID.";
+			input .@iid,501,100000;
+			clear;
+			if(getiteminfo(.@iid,0) < 0){
+				mes .name$;
+				mes "There's no such Item ID.";
+				next;
+				callsub OnAddRemoveReward,.@gid;
+			}
+			mes .name$;
+			mes "How many "+getitemname(.@iid)+"?";
+			input .@amt,1,30000;
+			clear;
+			mes .name$;
+			mes "Add "+.@amt+" ^0055FF"+getitemname(.@iid)+"^000000?";
+			if(select("Confirm:Cancel") == 2) callsub OnAddRemoveReward,.@gid;
+			clear;
+			mes .name$;
+			mes "Successfully added "+.@amt+" "+getitemname(.@iid)+".";
+			.@size = getarraysize(.@ereward$);
+			.@ereward$[.@size] = .@iid;
+			.@ereward$[.@size+1] = .@amt;
+			.@strreward$ = implode(.@ereward$,",");
+			query_sql("UPDATE `guild_pack` SET `reward` ='"+.@strreward$+"' WHERE `guild_id` = "+.@gid);
+			next;
+			callsub OnAddRemoveReward,.@gid;
+		case 2:
+			mes .name$;
+			mes "Please select an the item you want to remove.";
+			for(.@i=0;.@i<getarraysize(.@ereward$);.@i+=2)
+				.@menu$ = .@menu$ + .@ereward$[.@i+1]+" "+getitemname(atoi(.@ereward$[.@i]))+":";
+			.@opt = select(.@menu$+":Back")-1;
+			if(.@opt > getarraysize(.@ereward$)/2) callsub OnAddRemoveReward,.@gid;
+			clear;
+			mes .name$;
+			mes "Are you sure you want to remove ^0055FF"+getitemname(atoi(.@ereward$[.@opt*2]))+"^000000?";
+			if(select("Confirm:Cancel")==2) callsub OnAddRemoveReward,.@gid;
+			clear;
+			mes .name$;
+			mes "Successfully Removed "+getitemname(atoi(.@ereward$[.@opt*2]))+".";
+			deletearray .@ereward$[.@opt*2],2;
+			.@strreward$ = implode(.@ereward$,",");
+			query_sql("UPDATE `guild_pack` SET `reward` ='"+.@strreward$+"' WHERE `guild_id` = "+.@gid);
+			next;
+			callsub OnAddRemoveReward,.@gid;
+		case 3:
+			callsub OnGMPanel;
+	}
+return;
+
+OnActivateGuild:
+	clear;
+	.@gid = getarg(0);
+	query_sql("SELECT * FROM `guild_pack` WHERE `guild_id` = "+.@gid,.@reg_id,.@reg_name$,.@reg_reward$,.@reg_active);
+	mes .name$;
+	if(getguildmaster(.@gid) == "null"){
+		mes "^FF5500This guild is disbanded^000000";
+		next;
+		callsub OnGMPanel;
+	}
+	mes "Guild Name: "+getguildname(.@gid);
+	mes "Guild Leader: "+getguildmaster(.@gid);
+	mes "Claim Active : "+(.@reg_active ? "^03C04AYes^000000":"^FF5500No^000000");
+	explode(.@ereward$,.@reg_reward$,",");
+	if(.@reg_reward$ != "" || .@reg_reward$ != "NULL"){
+		mes "Guild Package Items:";
+		for(.@i=0;.@i<getarraysize(.@ereward$);.@i+=2)
+			mes "- "+.@ereward$[.@i+1]+"x "+getitemname(atoi(.@ereward$[.@i]));
+	} else
+		mes "No Guild Package items found.";
+	.@count = query_sql("SELECT * FROM `guild_pack_member` WHERE `guild_id` = "+.@gid+" ORDER BY `account_id` ASC",.@sgid,.@aid$,.@cid,.@name$);
+	if(!.@count)
+		mes "No members to claim package.";
+	else {
+		mes "Members who can claim guild pack: ";
+		mes "^FF5500Claimed^000000 | ^663399Duplicate^000000 | ^03C04ACan Claim^000000";
+		query_sql("SELECT DISTINCT A.`account_id`, A.`value`, B.`last_unique_id` FROM `acc_reg_str` AS A LEFT JOIN `login`AS B ON A.`value`=B.`last_unique_id` WHERE A.`key` = '#GUILDPACK$' ORDER BY A.`account_id`",.@said,.@svalue$,.@slui$);
+		.@str$ = implode(.@aid$,",");
+		query_sql("SELECT `last_unique_id` FROM `login` WHERE `account_id` IN ("+.@str$+") ORDER BY `account_id` ASC",.@loginuid$);
+		for(.@i=0;.@i<.@count;.@i++){
+			.@var$ = .@loginuid$[.@i];
+			if(inarray(.@said,atoi(.@aid$[.@i])) >= 0)
+				mes (.@i+1)+". ^FF5500"+.@name$[.@i]+"^000000";
+			else if(countinarray(.@loginuid$,.@var$) > 1)
+				mes (.@i+1)+". ^663399"+.@name$[.@i]+"^000000";
+			else
+				mes (.@i+1)+". ^03C04A"+.@name$[.@i]+"^000000";
+		}
+		if(select((.@reg_active ? "^FF5500Deactivate^000000":"^03C04AActivate^000000")+":Back")==2) callsub OnGMPanel;
+		clear;
+		if(!.@reg_active) .@activate = 1;
+		query_sql("UPDATE `guild_pack` SET `active` = "+.@activate+" WHERE `guild_id` = "+.@gid);
+		mes .name$;
+		mes "The guild has been "+(.@activate ? "^03C04AActivated^000000":"^FF5500Deactivated^000000")+".";
+		if(.@activate){
+			mes "The ^03C04AGreen^000000 members can claim the guild package now.";
+			mes "While ^FF5500Red^000000 members are not allowed to claim anymore.";
+		} else
+			mes "Members are not allowed to claim guild package until activated again.";
+	}
+	next;
+	callsub OnGMPanel;
+return;
+
+OnCheckGuild:
+	clear;
+	.@gid = getarg(0);
+	query_sql("SELECT * FROM `guild_pack` WHERE `guild_id` = "+.@gid,.@reg_id,.@reg_name$,.@reg_reward$,.@reg_active);
+	mes .name$;
+	if(getguildmaster(.@gid) == "null"){
+		mes "^FF5500This guild is disbanded^000000";
+		next;
+		callsub OnGMPanel;
+	}
+	mes "Guild Name: "+getguildname(.@gid);
+	mes "Guild Leader: "+getguildmaster(.@gid);
+	mes "Claim Active : "+(.@reg_active ? "^03C04AYes^000000":"^FF5500No^000000");
+	explode(.@ereward$,.@reg_reward$,",");
+	if(.@reg_reward$ != "" || .@reg_reward$ != "NULL"){
+		mes "Guild Package Items:";
+		for(.@i=0;.@i<getarraysize(.@ereward$);.@i+=2)
+			mes "- "+.@ereward$[.@i+1]+"x "+getitemname(atoi(.@ereward$[.@i]));
+	} else
+		mes "No Guild Package items found.";
+	.@count = query_sql("SELECT * FROM `guild_pack_member` WHERE `guild_id` = "+.@gid+" ORDER BY `account_id` ASC",.@sgid,.@aid$,.@cid,.@name$);
+	if(!.@count)
+		mes "No members to claim package.";
+	else {
+		mes "Members who can claim guild pack: ";
+		mes "^FF5500Claimed^000000 | ^663399Duplicate^000000 | ^03C04ACan Claim^000000";
+		query_sql("SELECT DISTINCT A.`account_id`, A.`value`, B.`last_unique_id` FROM `acc_reg_str` AS A LEFT JOIN `login`AS B ON A.`value`=B.`last_unique_id` WHERE A.`key` = '#GUILDPACK$' ORDER BY A.`account_id`",.@said,.@svalue$,.@slui$);
+		.@str$ = implode(.@aid$,",");
+		query_sql("SELECT `last_unique_id` FROM `login` WHERE `account_id` IN ("+.@str$+") ORDER BY `account_id` ASC",.@loginuid$);
+		for(.@i=0;.@i<.@count;.@i++){
+			.@var$ = .@loginuid$[.@i];
+			if(inarray(.@said,atoi(.@aid$[.@i])) >= 0)
+				mes (.@i+1)+". ^FF5500"+.@name$[.@i]+"^000000";
+			else if(countinarray(.@loginuid$,.@var$) > 1)
+				mes (.@i+1)+". ^663399"+.@name$[.@i]+"^000000";
+			else
+				mes (.@i+1)+". ^03C04A"+.@name$[.@i]+"^000000";
+		}
+	}
+	next;
+	callsub OnGMPanel;
+return;
+
+}
+//prontera,134,241,5	duplicate(Guild Pack Manager)	Guild Pack Manager#prt	10879
+//ghouse1,138,124,5	duplicate(Guild Pack Manager)	Guild Pack Manager#ghouse1	10879
+//ghouse2,138,124,5	duplicate(Guild Pack Manager)	Guild Pack Manager#ghouse2	10879
+//ghouse3,138,124,5	duplicate(Guild Pack Manager)	Guild Pack Manager#ghouse3	10879

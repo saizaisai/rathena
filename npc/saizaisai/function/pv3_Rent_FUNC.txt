@@ -1,0 +1,40 @@
+function	script	spikerent	{
+
+	.@id = getarg(0);	// Item Used
+	.@time = getarg(1);	// Rent Time
+	explode(.@equip$,getarg(2),":");
+	if(getarg(3) != ""){
+		explode(.@card$,getarg(3),":");
+	}
+	mes "[SpikeRO]";
+	mes "Select an item";
+	for(.@i=0;.@i<getarraysize(.@equip$);.@i++)
+		.@equipmenu$ += getitemname(atoi(.@equip$[.@i]))+":";
+	.@itemid = atoi(.@equip$[select(.@equipmenu$)-1]);
+	
+	if(getitemslots(.@itemid)){
+		next;
+		mes "[SpikeRO]";
+		mes "Select the card";
+		for(.@i=0;.@i<getarraysize(.@card$);.@i++)
+			.@cardmenu$ += getitemname(atoi(.@card$[.@i]))+":";
+		for(.@a=0;.@a<getitemslots(.@itemid);.@a++){
+			.@cardid[.@a] = atoi(.@card$[select(.@cardmenu$)-1]);
+			mes "Card "+(.@a+1)+": "+getitemname(.@cardid[.@a]);
+		}
+	}
+	
+	next;
+	mes "[SpikeRO]";
+	mes "Is this correct?";
+	mes "Item: "+getitemname(.@itemid);
+	for(.@a=0;.@a<getitemslots(.@itemid);.@a++)
+		mes "Card "+(.@a+1)+": "+getitemname(.@cardid[.@a]);
+	if(select("Yes, Correct.:Cancel")==2) return;
+	if(countitem(.@id)){
+		rentitem2 .@itemid,.@time,1,.@refine,0,.@cardid[0],.@cardid[1],.@cardid[2],.@cardid[3];
+		delitem .@id,1;
+	}
+	close2;
+	return;
+}

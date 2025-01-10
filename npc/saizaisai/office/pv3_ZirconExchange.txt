@@ -1,0 +1,81 @@
+//maintown,124,79,3	script	Mystic Zircon Trader	818,{
+-	script	Mystic Zircon Trader	-1,{
+OnExchangeZircon:
+	mes .name$;
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+	mes "Would you like to refine some Zircons into Mystic Zircons?";
+	mes "^FF5500Attempt Cost^000000: ^0055FF"+callfunc("F_InsertComma",.Cost)+" Zeny each^000000";
+	mes "^FF5500Chance^000000: ^0055FF"+.Chance+"% Success Chance^000000";
+	next;
+	switch(select("Attempt ^0055FF1^000000 time.:Attempt ^0055FF10^000000 times.:Attempt ^0055FF100^000000 times.:^0055FFInformation^000000")){
+		case 1:
+			callsub OnExchange,1;
+			break;
+		case 2:
+			callsub OnExchange,10;
+			break;
+		case 3:
+			callsub OnExchange,100;
+			break;
+		case 4:
+			mes .name$;
+			mes "My name is Chisisi.";
+			mes "I'm from a family who refines stones to be used on creating stuffs.";
+			next;
+			mes .name$;
+			mes "though, I say the we refine stones.";
+			mes "I can only refine Zircons and the chance is low.";
+			mes "But don't worry, the zircons that will be refined will be on me.";
+			mes "There's also a very slim chance to receive an additional 1 you know?";
+			next;
+			mes .name$;
+			mes "To refine zircon. you will need ^0055FF"+callfunc("F_InsertComma",.Cost)+"^000000 zeny per attempt at ^FF5500"+.Chance+"% Chance^000000.";
+			mes "If it's successful, you will receive a ^0055FFMystic Zircon^000000 which you can use to create cool stuff.";
+			mes "Vice-versa, if it fails. then the zircon will be gone forever.";
+			break;
+	}
+end;
+
+OnExchange:
+	.@amt = getarg(0);
+	mes .name$;
+	mes "Are you sure you want to refine "+.@amt+" Mystic Zircons?";
+	if(select("Yes, Please.:Cancel")==2) end;
+	close2;
+	if(countitem(729) < .@amt){
+		mes .name$;
+		mes "You don't have enough ^0055FFZircon^000000 to refine";
+		end;
+	}
+	if(Zeny < .Cost*.@amt){
+		mes .name$;
+		mes "You don't have enough Zeny.";
+		mes "Please come back when you have enough.";
+		end;
+	}
+	if(!checkweight(55042,.@amt)){
+		mes .name$;
+		mes "You don't have enough inventory space.";
+		end;
+	}
+	delitem 729,.@amt;
+	Zeny -= .Cost*.@amt;
+	freeloop(1);
+	for(.@i=0;.@i<.@amt;.@i++)
+		if(rand(100) < .Chance){
+			.@a += 1+(rand(1,100)/90));
+		} else
+			.@fail++;
+	freeloop(0);
+	getitem 55042,.@a;
+	if(.@fail) dispbottom "[Zircon Trader]: "+.@fail+" failed attempt"+(.@fail > 1? "s":"")+".",0xFF0000;
+end;
+
+OnInit:
+	.name$ = "^00B2EE[ Zircon Trader ]^000000";
+	.Cost = 100000;
+	.Chance = 15;
+end;
+
+}
+main_of,243,25,5	duplicate(Mystic Zircon Trader)	Mystic Zircon Trader#prt	818

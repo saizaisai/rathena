@@ -1,0 +1,239 @@
+function	script	F_Ring_SuitSFX	{
+        
+    sleep2 100;
+    specialeffect2 800;
+    specialeffect2 794;
+    sleep2 200;
+    specialeffect2 805;
+    specialeffect2 668;
+    specialeffect2 782;
+    sleep2 300;
+    specialeffect2 625;
+    specialeffect2 786;
+    specialeffect2 587;
+    specialeffect2 589;
+    
+    return true;
+
+}
+
+function	script	F_Ring_SuitJob3	{
+        
+    callfunc "F_Ring_SuitSFX",1;
+
+    switch(Class){
+        case JOB_KNIGHT:
+        case JOB_KNIGHT2:
+        case JOB_LORD_KNIGHT:
+        case JOB_LORD_KNIGHT2:
+			setlook LOOK_BODY2, 4060;
+            break;
+        case JOB_PRIEST:
+        case JOB_HIGH_PRIEST:
+			setlook LOOK_BODY2, 4063;
+            break;
+        case JOB_WIZARD:
+        case JOB_HIGH_WIZARD:
+			setlook LOOK_BODY2, 4061;
+            break;
+        case JOB_BLACKSMITH:
+        case JOB_WHITESMITH:
+			setlook LOOK_BODY2, 4064;
+            break;
+        case JOB_HUNTER:
+        case JOB_SNIPER:
+			setlook LOOK_BODY2, 4062;
+            break;
+        case JOB_ASSASSIN:
+        case JOB_ASSASSIN_CROSS:
+            setlook LOOK_BODY2, 4065;
+            break;
+        case JOB_CRUSADER:
+        case JOB_CRUSADER2:
+        case JOB_PALADIN:
+			setlook LOOK_BODY2, 4073;
+            break;
+        case JOB_MONK:
+        case JOB_CHAMPION:
+			setlook LOOK_BODY2, 4077;
+            break;
+        case JOB_SAGE:
+        case JOB_PROFESSOR:
+			setlook LOOK_BODY2, 4074;
+            break;
+        case JOB_ROGUE:
+        case JOB_STALKER:
+			setlook LOOK_BODY2, 4079;
+            break;
+        case JOB_ALCHEMIST:
+        case JOB_CREATOR:
+			setlook LOOK_BODY2, 4078;
+            break;
+        case JOB_BARD:
+        case JOB_CLOWN:
+			setlook LOOK_BODY2, 4075;
+            break;
+        case JOB_DANCER:
+        case JOB_GYPSY:
+			setlook LOOK_BODY2, 4076;
+            break;
+    }
+
+    return true;
+
+}
+
+function	script	F_Ring_SuitJob3JRO	{
+        
+    callfunc "F_Ring_SuitSFX",1;
+
+    switch(Class){
+        case JOB_KNIGHT:
+        case JOB_KNIGHT2:
+        case JOB_LORD_KNIGHT:
+        case JOB_LORD_KNIGHT2:
+            setlook LOOK_BODY2, 4332;
+            break;
+        case JOB_PRIEST:
+        case JOB_HIGH_PRIEST:
+            setlook LOOK_BODY2, 4336;
+            break;
+        case JOB_WIZARD:
+        case JOB_HIGH_WIZARD:
+            setlook LOOK_BODY2, 4335;
+            break;
+        case JOB_BLACKSMITH:
+        case JOB_WHITESMITH:
+            setlook LOOK_BODY2, 4333;
+            break;
+        case JOB_HUNTER:
+        case JOB_SNIPER:
+            setlook LOOK_BODY2, 4337;
+            break;
+        case JOB_ASSASSIN:
+        case JOB_ASSASSIN_CROSS:
+            setlook LOOK_BODY2, 4334;
+            break;
+        case JOB_CRUSADER:
+        case JOB_CRUSADER2:
+        case JOB_PALADIN:
+            setlook LOOK_BODY2, 4338;
+            break;
+        case JOB_MONK:
+        case JOB_CHAMPION:
+            setlook LOOK_BODY2, 4342;
+            break;
+        case JOB_SAGE:
+        case JOB_PROFESSOR:
+            setlook LOOK_BODY2, 4341;
+            break;
+        case JOB_ROGUE:
+        case JOB_STALKER:
+            setlook LOOK_BODY2, 4340;
+            break;
+        case JOB_ALCHEMIST:
+        case JOB_CREATOR:
+            setlook LOOK_BODY2, 4339;
+            break;
+        case JOB_BARD:
+        case JOB_CLOWN:
+            setlook LOOK_BODY2, 4343;
+            break;
+        case JOB_DANCER:
+        case JOB_GYPSY:
+            setlook LOOK_BODY2, 4344;
+            break;
+    }
+
+    return true;
+
+}
+
+function	script	F_Ring_SuitJob4	{
+        
+    callfunc "F_Ring_SuitSFX",1;
+
+    switch(Class){
+        case JOB_KNIGHT:
+        case JOB_KNIGHT2:
+        case JOB_LORD_KNIGHT:
+        case JOB_LORD_KNIGHT2:
+            setlook LOOK_BODY2, 4252;
+            break;
+        case JOB_PRIEST:
+        case JOB_HIGH_PRIEST:
+            setlook LOOK_BODY2, 4256;
+            break;
+        case JOB_WIZARD:
+        case JOB_HIGH_WIZARD:
+            setlook LOOK_BODY2, 4255;
+            break;
+        case JOB_BLACKSMITH:
+        case JOB_WHITESMITH:
+            setlook LOOK_BODY2, 4253;
+            break;
+        case JOB_HUNTER:
+        case JOB_SNIPER:
+            setlook LOOK_BODY2, 4257;
+            break;
+        case JOB_ASSASSIN:
+        case JOB_ASSASSIN_CROSS:
+            setlook LOOK_BODY2, 4254;
+            break;
+        case JOB_CRUSADER:
+        case JOB_CRUSADER2:
+        case JOB_PALADIN:
+            setlook LOOK_BODY2, 4258;
+            break;
+        case JOB_MONK:
+        case JOB_CHAMPION:
+            setlook LOOK_BODY2, 4262;
+            break;
+        case JOB_SAGE:
+        case JOB_PROFESSOR:
+            setlook LOOK_BODY2, 4261;
+            break;
+        case JOB_ROGUE:
+        case JOB_STALKER:
+            setlook LOOK_BODY2, 4260;
+            break;
+        case JOB_ALCHEMIST:
+        case JOB_CREATOR:
+            setlook LOOK_BODY2, 4259;
+            break;
+        case JOB_BARD:
+        case JOB_CLOWN:
+            setlook LOOK_BODY2, 4263;
+            break;
+        case JOB_DANCER:
+        case JOB_GYPSY:
+            setlook LOOK_BODY2, 4264;
+            break;
+    }
+
+    return true;
+
+}
+/*
+function	script	F_GM_M	{
+	sleep2 300;
+	sc_start SC_OKTOBERFEST,-1,0;
+end;
+}
+function	script	F_RaidSuit3	{
+			sleep2 300;
+			specialeffect2 800;
+			specialeffect2 794;
+			sleep2 1200;
+			specialeffect2 805;
+			specialeffect2 668;
+			specialeffect2 782;
+			sleep2 700;
+			specialeffect2 625;
+			specialeffect2 786;
+			specialeffect2 587;
+			specialeffect2 589;
+			sc_start SC_Summer,-1,0;
+end;
+}
+*/

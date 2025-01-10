@@ -1,0 +1,315 @@
+//===== rAthena Scripts ==================================
+//= Light versus Darkness
+//===== By: ==================================================
+//= Zeref
+//===== Current Version: =====================================
+//= 1.0
+//===== Contact Info: =========================================
+//= Discord: https://discord.gg/xVBNngwKAk
+//===== Description: =========================================
+// - Checks if both teams have the minimum required number of players to start. If not, the script will not start.
+// - Creates two teams (Light and Darkness) with players from waiting rooms and assigns each team to a side on the "Battle zone map".
+// - Deletes the waiting rooms for both teams, when the event has been started.
+// - Warps both teams to their respective starting positions on the "Battle zone map".
+// - Sets the starting score for both teams and updates the score display.
+// - After the event duration (in seconds), determines the winning team based on the scores and announces the result.
+// - Rewards players with items based on their team's performance in the event. The winning team receives a larger reward than the losing team.
+// - Warps players back to ( designated location) and destroys the battleground instances.
+// - Decreases the team's score by one each time a team member dies and updates the score display.
+// - If a team's score reaches zero, it triggers the end of the event.
+// - Checks if the battleground is still active when a player quits. If the battleground has ended, it does nothing.
+// - If a player quits and the battleground is still active, it sets the team's score to zero, effectively triggering the end of the event due to a team having no remaining players.
+//=======================================================
+
+/*
+CREATE TABLE `bgladder` (
+	`char_id` INT PRIMARY KEY,
+	`name` VARCHAR(24) NOT NULL DEFAULT '',
+	`kills` INT DEFAULT 0,
+	KEY (`kills`)
+) ENGINE = InnoDB;
+*/
+
+
+-	script	lightvsdarkness#control	-1,{
+OnInit:
+	set .minplayer2start, 1	; // minimum player to start
+	setarray .rewarditem,
+		7227, 12, // reward to the winning team
+		7227, 6; // reward to the losing team
+	set .startingscore, 50; // score at start
+	set .eventlasting, 50; // event last 100 seconds
+	set .map$,"lvd_evt";
+	setarray .mapflag,mf_gvg_noparty,mf_pvp_noguild,mf_pvp_noparty,mf_nocommand,mf_loadevent;
+	.lightvdark_event = 0;
+	bindatcmd "active", strnpcinfo(3)+"::OnSet";
+	end;
+
+
+OnSun2100:
+OnMon2100:
+OnTue2100:
+OnWed2100:
+OnThu2100:
+OnFri2100:
+OnSat2100:
+OnSet:
+	announce "Attention Adventurers! 'In just 5 minutes, the ultimate showdown between the forces of light and the shadows of darkness will commence.", bc_all,"0x00C8630A",FW_NORMAL,12;
+	sleep 1000;
+	announce "The Light versus Darkness event is now open", bc_all,"0x00C8630A",FW_NORMAL,12;
+	.lightvdark_event = 1;
+	donpcevent "light side::OnPub";
+	donpcevent "dark side::OnPub";
+	end;
+
+OnPCLoadMapEvent:
+	if(strcharinfo(3) == "lvd_evt") {
+		sc_end SC_ALL;
+		sc_end SC_SCRESIST;
+		sc_end SC_INCMHPRATE;
+		sc_end SC_INCMSPRATE;
+		sc_end SC_INCALLSTATUS;
+		sc_end SC_INCDEFRATE;
+		sc_end SC_INCATKRATE;
+		sc_end SC_INCHIT;
+		sc_end SC_INCFLEE;
+	}
+	end;
+
+OnPCKillEvent:
+if(strcharinfo(3) != "lvd_evt") end;
+	.@killer = getcharid(0);
+	.@killeraid = getcharid(3);
+	attachrid killedrid;
+	.@victim = getcharid(0);
+	.@victimaid = getcharid(3);
+	announce "[ Ingrid ]: "+strcharinfo(0, .@killer)+" of ["+((inarray(.team1aid,.@killeraid) > -1) ? "Light":"Darkness")+" Team] has killed "+strcharinfo(0,.@victim)+" of ["+((inarray(.team1aid,.@victimaid) > -1) ? "Light":"Darkness")+" Team]", bc_all,0xDE4611;
+
+	attachrid killerrid;
+	.@nb = query_sql("SELECT `kills` FROM `bgladder` WHERE `char_id` = '"+getcharid(0)+"'",.@kills);
+
+	if(!.@nb) {
+		query_sql("INSERT INTO `bgladder` VALUES ('"+getcharid(0)+"', '"+strcharinfo(0)+"', '1')");
+	} else {
+		query_sql("UPDATE `bgladder` SET `kills` = (kills + 1) WHERE `char_id` = '"+getcharid(0)+"'");
+	}
+end;
+
+OnStart:
+	announce "[LightvsDarkness]: "+((.minplayer2start+.minplayer2start) - (getwaitingroomstate( 0, "light side" )+getwaitingroomstate( 0, "dark side" )))+" more players to start "+(getwaitingroomstate( 0, "light side" )+getwaitingroomstate( 0, "dark side" ))+" / "+(.minplayer2start+.minplayer2start)+"",bc_all;
+	for(.@k = 0; .@k < getarraysize(.mapflag); .@k++) {
+		setmapflag .map$,.mapflag[.@k];
+		setmapflag .map$,mf_battleground,2;
+	}
+	if ( getwaitingroomstate( 0, "light side" ) < .minplayer2start || getwaitingroomstate( 0, "dark side" ) < .minplayer2start ) end;
+//======== Light side
+	set .light, waitingroom2bg( "lvd_evt", 23,107, strnpcinfo(0)+"::OnredQuit", strnpcinfo(0)+"::OnredDead", "light side" );
+	copyarray .team1aid[.@i], $@arenamembers[.@i], $@arenamembersnum;
+//======== Dark side
+	set .dark, waitingroom2bg( "lvd_evt", 183,102, strnpcinfo(0)+"::OnblueQuit", strnpcinfo(0)+"::OnblueDead", "dark side" );
+	copyarray .team2aid[.@i], $@arenamembers[.@i], $@arenamembersnum;
+	delwaitingroom "light side";
+	delwaitingroom "dark side";
+		announce "[ Ingrid ] : The players are all accounted and they will be warped inside the Battle zone in 30 seconds.",bc_blue;
+		sleep 5000;
+		mapannounce "prontera", "Reminder: You have 10 minutes to prove your strength!", 0;
+		sleep 5000;
+		mapannounce "prontera", "Each team starts with 50 points. For every enemy you kill, the opposing team's points will decrease until it reaches zero", 0;
+		sleep 5000;
+		mapannounce "prontera", "If the 10 minutes expire and the team with the highest score remains, they will be declared the winners !", 0;
+		sleep 5000;
+		mapannounce "prontera", "Get ready both team, the event will start in 10 seconds !", 0;
+		sleep 5000;
+		mapannounce "prontera", "Event starts in 5 seconds !", 0;
+		sleep 1000;
+		mapannounce "prontera", "Event starts in 4 seconds !", 0;
+		sleep 1000;
+		mapannounce "prontera", "Event starts in 3 seconds !", 0;
+		sleep 1000;
+		mapannounce "prontera", "Event starts in 2 seconds !", 0;
+		sleep 1000;
+		mapannounce "prontera", "Event starts in 1 seconds !", 0;
+		announce "[ Ingrid ] : Light vs Darkness has Started, and all participants have been brought to the battle zone.",bc_blue;
+	bg_warp .light, "lvd_evt", 23,107;
+	bg_warp .dark, "lvd_evt", 183,102;
+	disablenpc "Event Buff#1"; disablenpc "Event Buff#2";
+	set .score[1], .startingscore;
+	set .score[2], .startingscore;
+	bg_updatescore "lvd_evt", .score[1], .score[2];
+	sleep .eventlasting * 1000;
+
+	for(.@i = 0; .@i < getarraysize(.mapflag); .@i++) {
+		removemapflag .map$,.mapflag[.@i];
+		removemapflag .map$,mf_battleground;
+	}
+	if ( .score[1] == .score[2] ) {
+		mapannounce "lvd_evt", "last 10 seconds", 0;
+		sleep 5000;
+		mapannounce "lvd_evt", "last 5 seconds", 0;
+		sleep 1000;
+		mapannounce "lvd_evt", "last 4 seconds", 0;
+		sleep 1000;
+		mapannounce "lvd_evt", "last 3 seconds", 0;
+		sleep 1000;
+		mapannounce "lvd_evt", "last 2 seconds", 0;
+		sleep 1000;
+		mapannounce "lvd_evt", "last 1 seconds", 0;
+		sleep 1000;
+		mapannounce "lvd_evt", "The Event has been Draw !", 0;
+
+	} else if ( .score[1] > .score[2] ) {
+		announce "[ Ingrid ] : With the final clash echoing into silence, Light prevails, casting away the shadows that once threatened to engulf the world.",bc_blue;
+		sleep 2000;
+		announce "[ Ingrid ] : Congratulation Light Team",bc_blue;
+		sleep 5000;
+		callsub L_reward, 1, 0;
+		callsub L_reward, 2, 2;
+	}
+	else if ( .score[1] < .score[2] ) {
+		announce "[ Ingrid ] : The Darkness has triumphed, its power unchallenged and absolute..",bc_blue;
+		sleep 5000;
+		announce "[ Ingrid ] : Congratulation Darkness Team",bc_blue;
+		sleep 5000;
+		callsub L_reward, 2, 0;
+		callsub L_reward, 1, 2;
+	}
+	bg_warp .light, "prontera", 184,210;
+	bg_warp .dark, "prontera", 184,210;
+	bg_destroy .light;
+	bg_destroy .dark;
+	deletearray .team1aid;
+	deletearray .team2aid;
+	.lightvdark_event = 0;
+	donpcevent "light side::OnInit";
+	donpcevent "dark side::OnInit";
+	donpcevent "light side::OnPub";
+	donpcevent "dark side::OnPub";
+	end;
+L_reward:
+	set .@size, getarraysize( getd(".team"+ getarg(0) +"aid") );
+	for ( set .@i, 0; .@i < .@size; set .@i, .@i +1 )
+		if ( isloggedin( getd(".team"+ getarg(0) +"aid["+ .@i +"]" ) ) )
+			getitem .rewarditem[ getarg(1) ], .rewarditem[ getarg(1) +1 ], getd(".team"+ getarg(0) +"aid["+ .@i +"]" );
+	return;
+OnredDead: callsub L_dead, 1;
+OnblueDead: callsub L_dead, 2;
+L_dead:
+	set .score[ getarg(0) ], .score[ getarg(0) ] -1;
+	bg_updatescore "lvd_evt", .score[1], .score[2];
+	if ( .score[ getarg(0) ] == 0 )
+		awake strnpcinfo(0);
+	end;
+OnredQuit: callsub L_quit, 1, .light;
+OnblueQuit: callsub L_quit, 2, .dark;
+L_quit:
+	if ( bg_get_data( getarg(1), 0) ) end;
+	set .score[ getarg(0) ], 0;
+	awake strnpcinfo(0);
+	end;
+}
+
+prontera,184,213,3	script	light side	10573,{
+//cutin "light",2;
+
+	.@nb = query_sql("SELECT `name`,`kills` FROM `bgladder` ORDER BY `kills` DESC LIMIT 10",.@name$,.@kills);
+
+	if(!.@nb) {
+		mes "No Available Ranking.";
+		close2;
+//		cutin "",255;
+		end;
+	}
+			mes "[^10C8F5Light^000000 vs ^9117DDDarkness^000000 Ranking]";
+	for (.@i = 0; .@i < .@nb; .@i+= 10) {
+		for(.@j = 0; .@j < 10 && .@j < .@nb; .@j++)
+			mes "Name:~^1744DD "+.@name$[.@j]+"^000000 Kills: ^E50505"+.@kills[.@j]+"^000000 ";
+	}
+	close2;
+//	cutin "",255;
+	end;
+OnPub:
+OnInit:
+	if(getvariableofnpc(.lightvdark_event,"lightvsdarkness#control") != 0) {
+		delwaitingroom;
+		waitingroom "Light Team", getvariableofnpc( .minplayer2start, "lightvsdarkness#control" ) +1, "lightvsdarkness#control::OnStart", getvariableofnpc( .minplayer2start, "lightvsdarkness#control" ) > 0;
+	} else {
+		delwaitingroom;
+	}
+end;
+
+
+}
+prontera,187,211,3	script	dark side	10572,{
+	end;
+
+OnPub:
+OnInit:
+	if(getvariableofnpc(.lightvdark_event,"lightvsdarkness#control") != 0) {
+		delwaitingroom;
+		waitingroom "Darkness Team", getvariableofnpc( .minplayer2start, "lightvsdarkness#control" ) +1, "lightvsdarkness#control::OnStart", getvariableofnpc( .minplayer2start, "lightvsdarkness#control" ) > 0;
+	} else {
+		delwaitingroom;
+	}
+	end;
+}
+
+
+-	script	Event Buff	-1,{
+		sc_end SC_LUKFOOD;
+		sc_end SC_INTFOOD;
+		sc_end SC_DEXFOOD;
+		sc_end SC_STRFOOD;
+		sc_end SC_AGIFOOD;
+		sc_end SC_VITFOOD;
+		sc_end SC_FOOD_STR_CASH;
+		sc_end SC_FOOD_AGI_CASH;
+		sc_end SC_FOOD_VIT_CASH;
+		sc_end SC_FOOD_INT_CASH;
+		sc_end SC_FOOD_DEX_CASH;
+		sc_end SC_FOOD_LUK_CASH;
+		specialeffect2 EF_HEAL2;
+		percentheal 100,100;
+		specialeffect2 EF_INCAGILITY;
+		sc_start SC_INCREASEAGI,300000,10;
+		specialeffect2 EF_BLESSING;
+		sc_start SC_BLESSING,300000,10;
+
+		sc_end sc_stone;
+		sc_end sc_freeze;
+		sc_end sc_sleep;
+		sc_end sc_curse;
+		sc_end sc_silence;
+		sc_end sc_confusion;
+		sc_end sc_blind;
+		sc_end sc_bleeding;
+		sc_end sc_decreaseagi;
+		sc_end sc_poison;
+		sc_end sc_hallucination;
+		sc_end sc_stripweapon;
+		sc_end sc_striparmor;
+		sc_end sc_striphelm;
+		sc_end sc_stripshield;
+		sc_end sc_berserk;
+		sc_end SC_SpeedUp1;
+
+		repairall;
+		identifyall;
+end;
+
+}
+//Duplicate NPC Buffs
+lvd_evt,20,102,5	duplicate(Event Buff)	Event Buff#1	413
+lvd_evt,187,108,4	duplicate(Event Buff)	Event Buff#2	417
+
+
+lvd_evt	mapflag	battleground	2
+lvd_evt	mapflag	nosave	SavePoint
+lvd_evt	mapflag	nowarp
+lvd_evt	mapflag	nowarpto
+lvd_evt	mapflag	noteleport
+lvd_evt	mapflag	nomemo
+lvd_evt	mapflag	nopenalty
+lvd_evt	mapflag	pvp_noguild
+lvd_evt	mapflag	pvp_noparty
+lvd_evt	mapflag	noreturn
+//lvd_evt	mapflag	nocommand

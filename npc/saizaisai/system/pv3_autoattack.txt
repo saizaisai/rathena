@@ -1,0 +1,879 @@
+//
+//
+//	Author		Shakto
+//	Version		2022/09/11
+//	Web		https://ronovelty.com/
+//
+//
+function	script	convertTime	{
+	set .milissegundos, getarg(0);
+	
+	set .segundos, .milissegundos / 1000;
+	
+	set .minutos, .segundos / 60;
+	set .segundos, .segundos % 60;
+	
+	set .horas, .minutos / 60;
+	set .minutos, .minutos % 60;
+	
+	set .dias, .horas / 24;
+	set .horas, .horas % 24;
+	
+	set .@resultado$, "";
+	if (.dias > 0) {
+		set .@resultado$, .dias + "D:";
+	}
+	if (.horas > 0 || .dias > 0) {
+		set .@resultado$, .@resultado$ + .horas + "H:";
+	}
+	if (.minutos > 0 || .horas > 0 || .dias > 0) {
+		set .@resultado$, .@resultado$ + .minutos + "M:";
+	}
+	if (.segundos > 0 || .minutos > 0 || .horas > 0 || .dias > 0) {
+		set .@resultado$, .@resultado$ + .segundos + "S";
+	}
+	return .@resultado$;
+}
+
+
+-	script	bot_at	-1,{
+	function	__onoff	;
+OnInit:
+	bindatcmd "boton",strnpcinfo(3)+"::OnDo",99;
+	bindatcmd "botoff",strnpcinfo(3)+"::OnDo2",99;
+	bindatcmd "botend",strnpcinfo(3)+"::OnDo2",99;
+
+	//configuration
+	.duration_batery = 300000; // 1000 = 1s -- 60000 = 1m -- 3600000 = 1h, 86400000 = 1d etc... 
+	.duration_free = 300000; // 1000 = 1s -- 60000 = 1m -- 3600000 = 1h, 86400000 = 1d etc... 
+	.batery_id = 30501;
+	end;
+//salva o tempo restante do auto attack
+OnPCLogoutEvent:
+	if(getstatus(SC_AUTOATTACK)){
+		.@time_remaning = getstatus(SC_AUTOATTACK,4);
+		set #BotGameTimer,.@time_remaning*100;
+		sc_end SC_AUTOATTACK;
+	}
+end;
+
+//reset time free
+OnCLock0001:
+	query_sql "UPDATE `acc_reg_num` SET `value` = '0' WHERE `key` = '#daily_time_free'";
+end;
+
+OnDo:
+	//SAVE TIME remaining
+	if(getstatus(SC_AUTOATTACK,4)){
+		.@time_remaning = getstatus(SC_AUTOATTACK,4);
+		set #BotGameTimer,.@time_remaning*100;
+		sc_end SC_AUTOATTACK;
+	}
+	.@timer = 0;
+	.@timer = #BotGameTimer;
+	mes "^00B2EE[ Auto Attack ]^000000";
+	mes "Bot Time remaining: "+convertTime(.@timer)+"";
+	if(!#daily_time_free)
+		mes "You have free time to redeem.";
+	.@select = select((!#daily_time_free ? "Get free time":""),(countitem(.batery_id) ? "use battery":""),"Access the menu");
+	if(countitem(.batery_id) && .@select == 2){
+		clear;
+		delitem .batery_id,1;
+		set #BotGameTimer,#BotGameTimer+.duration_batery;
+		mes "battery used successfully,";
+		.@timer = #BotGameTimer;
+		mes "Now you have: "+convertTime(.@timer)+"";
+	}else if(!#daily_time_free && .@select == 1){
+		clear;
+		#daily_time_free = 1;
+		set #BotGameTimer,#BotGameTimer+.duration_free;
+		mes "Free time successfully redeemed,";
+		.@timer = #BotGameTimer;
+		mes "Now you have: "+convertTime(.@timer)+"";
+	}else if(.@select == 3){
+		clear;
+		goto(main_menu);
+	}else if(.@select == 1 && #daily_time_free){
+		clear;
+		mes "Sorry, you don't have free time to redeem.";
+	}else if(.@select == 2 && countitem(.batery_id)  <= 0){
+		clear;
+		mes "You don't have 1 x "+getitemname(.batery_id)+" necessary to recharge";
+	}
+	end;
+
+main_menu:
+	.@menu$ = "^00B2EE[ Auto Attack ]^000000";
+	mes .@menu$;
+	
+	.@main_menu = select("[Start autoattack]","[Configuration]","[Cancel]");
+	if( .@main_menu == 1 ){
+		sc_start4 SC_AUTOATTACK,#BotGameTimer,1,0,0,0;
+	}
+	if( .@main_menu == 2 )
+		goto(config_menu);
+	
+	close;
+
+config_menu:
+	clear;
+	.@menu$ = "^00B2EE[ Auto Attack ]^000000";
+	mes .@menu$;
+
+	// To disable an option, comment the line
+	menu	"Return",main_menu,
+			" ~ Melee attack",melee_attack,
+			" ~ Regeneration",regeneration_menu,
+			" ~ Attack Skills",attackskills_menu,
+			" ~ Buff Skills",buffskills_menu,
+			" ~ Buff Items",buffitems_menu,
+			" ~ Teleport",teleport_menu,
+			" ~ Monsters Selection",monsters_menu,
+			" ~ Items Pickup Selection",pickupitems_menu,
+			" ~ Reset all",reset_all;
+	end;
+
+reset_all:
+	clear;
+	.@menu$ = "[Reset settings]";
+	mes .@menu$;
+	
+	.@reset_menu = select("Confirm the reset of all settings","[Cancel]");
+
+	switch(.@reset_menu){
+		case 1:
+			setautoattack("10;0");
+			break;
+	}
+
+	goto(config_menu);
+	end;
+
+pickupitems_menu:
+	clear;
+	.@menu$ = "[Items Pickup Selection]";
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(9,0);
+
+	.@pickupitems_menu = select("[Loot / Fight] priorization","Pick up configuration","Add an item","Remove an item","Clear the list","[Cancel]");
+
+	switch(.@pickupitems_menu){
+		case 1:
+			.@pickup_prio_choice = 0;
+			// priorize fight = 0
+			// priorize loot = 1
+			switch(getautoattackint(9,3)){
+				case 0:
+					.@pickupitems_prio_menu  = select("Priorize loot","[Cancel]");
+					switch(.@pickupitems_prio_menu){
+						case 1:
+							.@pickup_prio_choice = 1;
+							break;
+						case 2 :
+							goto(pickupitems_menu);
+							break;
+					}
+						
+					break;
+				case 1:
+					.@pickupitems_prio_menu  = select("Priorize fight","[Cancel]");
+					switch(.@pickupitems_prio_menu){
+						case 1:
+							.@pickup_prio_choice = 0;
+							break;
+						case 2 :
+							goto(pickupitems_menu);
+							break;
+					}
+					break;			
+			}
+			setautoattack("9;3;" + .@pickup_prio_choice);
+			break;
+		case 2:
+			.@pickup_config_choice = 0;
+			// every item = 0
+			// on the list = 1
+			// no item = 2
+			switch(getautoattackint(9,2)){
+				case 0:
+					.@pickupitems_config_menu  = select("Pick up only items on the list","Don't pick up any item","[Cancel]");
+					switch(.@pickupitems_config_menu){
+						case 1:
+							.@pickup_config_choice = 1;
+							break;
+						case 2 :
+							.@pickup_config_choice = 2;
+							break;
+						case 3 :
+							goto(pickupitems_menu);
+							break;
+					}
+						
+					break;
+				case 1:
+					.@pickupitems_config_menu  = select("Pick up every items","Don't pick up any item","[Cancel]");
+					switch(.@pickupitems_config_menu){
+						case 1:
+							.@pickup_config_choice = 0;
+							break;
+						case 2 :
+							.@pickup_config_choice = 2;
+							break;
+						case 3 :
+							goto(pickupitems_menu);
+							break;
+					}
+					break;
+				case 2:
+					.@pickupitems_config_menu  = select("Pick up every items","Pick up only items on the list","[Cancel]");
+					switch(.@pickupitems_config_menu){
+						case 1:
+							.@pickup_config_choice = 0;
+							break;
+						case 2 :
+							.@pickup_config_choice = 1;
+							break;
+						case 3 :
+							goto(pickupitems_menu);
+							break;
+					}
+					break;				
+			}
+			setautoattack("9;2;" + .@pickup_config_choice);
+			break;
+		case 3:
+			clear;
+			mes .@menu$;
+			mes "Enter the id of the item to add on the list (20 max)";
+			do {
+				input .@itempickup_id;
+			} while(.@itempickup_id < 1);
+
+			setautoattack("9;1;" + .@itempickup_id);
+
+			break;
+		case 4:
+			if(getautoattackint(9,1) > 0){
+				mes "Enter the id of the item to delete from the list";
+
+				do {
+					input .@itempickup_id;
+				} while(.@itempickup_id < 1);
+				setautoattack("9;0;" + .@itempickup_id);
+			} else {
+				clear;
+				mes .@menu$;
+				mes "Sorry, you don't have any item of this list";
+				next;
+			}
+
+			break;
+		case 5:
+			setautoattack("9;-1;0");
+			break;
+
+		case 6:
+			goto(config_menu);
+			break;
+	}
+
+	goto(pickupitems_menu);
+	end;
+
+monsters_menu:
+	clear;
+	.@menu$ = "[Monsters Selection]";
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(8,0);
+
+	.@monsters_menu = select("Add a monster","Remove a monster","Clear the list",getautoattackint(8,0)?"Attack aggressive monsters":"Ignore aggressive monsters","[Cancel]");
+
+	switch(.@monsters_menu){
+		case 1:
+			clear;
+			mes .@menu$;
+			mes "Enter the id of the monster to add on the list (20 max)";
+			do {
+				input .@mob_id;
+			} while(.@mob_id < 1);
+
+			setautoattack("8;1;" + .@mob_id + ";" + getautoattackint(8,0));
+
+			break;
+		case 2:
+			if(getautoattackint(8,1) > 0){
+				mes "Enter the id of the monster to delete from the list";
+
+				do {
+					input .@mob_id;
+				} while(.@mob_id < 1);
+				setautoattack("8;0;" + .@mob_id + ";" + getautoattackint(8,0));
+			} else {
+				clear;
+				mes .@menu$;
+				mes "Sorry, you don't have any monster of this list";
+				next;
+			}
+
+			break;
+		case 3:
+			setautoattack("8;-1;0;0");
+			break;
+
+		case 4:
+			if(getautoattackint(8,0))
+				setautoattack("8;0;0;0");
+			else
+				setautoattack("8;0;0;1");
+
+			break;
+
+		case 5:
+			goto(config_menu);
+			break;
+	}
+
+	goto(monsters_menu);
+	end;
+
+teleport_menu:
+	clear;
+	.@menu$ = "[Teleport]";
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(7,0);
+
+	if(getautoattackint(7,0) == 1)
+		.@teleport_menu_txt$ = "Enable Teleport Skill";
+	else
+		.@teleport_menu_txt$ = "Disable Teleport Skill";
+
+	if(getautoattackint(7,1) == 1)
+		.@teleport_menu_txt$ += ":Enable Fly Wing";
+	else
+		.@teleport_menu_txt$ += ":Disable Fly Wing";
+		
+	.@teleport_menu_txt$ += ":Set / Modify Min Hp:Set / Modify TP delay:[Cancel]";
+
+	.@teleport_menu = select(.@teleport_menu_txt$);
+
+	switch(.@teleport_menu){
+		case 1:
+			if(getautoattackint(7,0))
+				setautoattack("7;0;0");
+			else
+				setautoattack("7;0;1");
+			break;
+		case 2:
+			if(getautoattackint(7,1))
+				setautoattack("7;1;0");
+			else
+				setautoattack("7;1;1");
+			break;
+		case 3:
+			do {
+				clear;
+				mes .@menu$;
+				mes "Choose the min value of HP % on which you will emergency escape on hit)";
+				mes "Min value is 5, Max value is 90 (0 to disable it)";
+				input .@teleport_minhpvalue;
+			} while(.@teleport_minhpvalue != 0 && (.@teleport_minhpvalue < 5 || .@teleport_minhpvalue > 90));
+			setautoattack("7;2;"+.@teleport_minhpvalue);
+			break;
+		case 4:
+			do {
+				clear;
+				mes .@menu$;
+				mes "Choose the delay in second on which you will teleport if you don't meet monster after this delay)";
+				mes "Min value is 2, Max value is 600 (0 to disable it)";
+				input .@teleport_delayvalue;
+			} while(.@teleport_delayvalue != 0 && (.@teleport_delayvalue < 2 || .@teleport_delayvalue > 600));
+			setautoattack("7;3;"+.@teleport_delayvalue);
+			break;
+		default:
+			goto(config_menu);
+			break;
+	}
+
+	goto(teleport_menu);
+	end;
+
+melee_attack:
+	clear;
+	.@menu$ = "[Melee attack]";
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(6,0);
+
+	.@melee_menu = select(getautoattackint(6,0)?"Enable":"Disable","[Cancel]");
+
+	if( .@melee_menu == 1 ){
+		if(getautoattackint(6,0))
+			setautoattack("6;0");
+		else
+			setautoattack("6;1");
+		clear;
+
+		goto(melee_attack);
+	}
+
+	goto(config_menu);
+	end;
+
+regeneration_menu:
+	mes "Clear menu";
+	clear;
+	.@menu$ = "[Regeneration]";
+	
+	mes .@menu$;
+	menu	"Return",config_menu,
+			" ~ Auto-Heal",heal_menu,
+			" ~ HP / SP Potions",potion_menu,
+			" ~ Sit to Rest",sit_regen_menu;
+	end;
+
+heal_menu:
+	clear;
+	.@menu$ = "[Auto-Heal]";
+	if(!getskilllv(28) && !getskilllv(2051) && !getskilllv(231)){
+		mes .@menu$;
+		mes "Sorry, you don't have any kind of heal skills of this list";
+		mes "Heal, Highness Heal, Potion Pitcher";
+		next;
+		goto(regeneration_menu);
+	}
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(0,0);
+
+	.@heal_menu = select("Add / Modify skills","Disable a skill","[Cancel]");
+	if( .@heal_menu == 1 ){
+		clear;
+		mes .@menu$;
+		mes "Enter the id of the skill choosen";
+		if(getskilllv(28)) // Heal
+			mes "^FF0000(28)^000000 [" + getskillinfostring(0,28) + "]" + " - Max lv : " + getskilllv(28);
+		if(getskilllv(2051)) // Highness Heal
+			mes "^FF0000(2051)^000000 [" + getskillinfostring(0,2051) + "]" + " - Max lv : " + getskilllv(2051);
+		if(getskilllv(231)) // Potion Pitcher
+			mes "^FF0000(231)^000000 [" + getskillinfostring(0,231) + "]" + " - Max lv : " + getskilllv(231);
+
+		input .@heal_skillid;
+		if(.@heal_skillid < 1 )
+			goto(heal_menu);
+
+		if((.@heal_skillid != 28 && .@heal_skillid != 2051 && .@heal_skillid != 231) || !getskilllv(.@heal_skillid)){
+			clear;
+			mes .@menu$;
+			mes "Please choose an available skill";
+			goto(heal_menu);
+		} else {
+			do{
+				clear;
+				mes .@menu$;
+				mes "Choose the skill lv to use";
+				mes "[" + getskillinfostring(0,.@heal_skillid) + "]" + " - Max lv : " + getskilllv(.@heal_skillid);
+				input .@heal_skilllv;
+			} while(.@heal_skilllv < 1 || .@heal_skilllv > getskilllv(.@heal_skillid));
+
+			do {
+				clear;
+				mes .@menu$;
+				mes "Choose the value of HP % to use the skill (ex : 10 to use skill if hp are below 10%)";
+				mes "Min value is 5, Max value is 90";
+				mes "[" + getskillinfostring(0,.@heal_skillid) + "]" + " - Lv : " + .@heal_skilllv;
+				input .@heal_minhpvalue;
+			} while(.@heal_minhpvalue < 5 || .@heal_minhpvalue > 90);
+			setautoattack("0;1;"+ .@heal_skillid + ";" + .@heal_skilllv + ";" + .@heal_minhpvalue);
+			clear;
+		}
+		goto(heal_menu);
+	}
+	if( .@heal_menu == 2 ){
+		if(getautoattackint(0,0) == 0){
+			clear;
+			mes .@menu$;
+			mes "There is no active auto heal skill to delete";
+			next;
+			goto(heal_menu);
+		} else {
+			mes "Please enter the skill id to disable.";
+			input .@heal_skillid;
+			if(.@heal_skillid < 1 )
+				goto(heal_menu);
+
+			if((.@heal_skillid != 28 && .@heal_skillid != 2051 && .@heal_skillid != 231) || !getskilllv(.@heal_skillid)){
+				clear;
+				mes .@menu$;
+				mes "Please choose an available skill";
+				goto(heal_menu);
+			} else 
+				setautoattack("0;0;"+ .@heal_skillid + ";0;0");
+			goto(heal_menu);
+		}
+	}
+
+	goto(regeneration_menu);
+	end;
+
+potion_menu:
+	clear;
+	.@menu$ = "[HP / SP Potions]";
+	if(getautoattackint(1,0) == 0){
+		mes .@menu$;
+		mes "Sorry, you don't have any kind of heal items";
+		next;
+		goto(regeneration_menu);
+	}
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(1,0);
+
+	.@potion_menu = select("Add / Modify Potions","Disable a potion","[Cancel]");
+	if( .@potion_menu == 1 ){
+		clear;
+		mes .@menu$;
+		mes getautoattackstring(1,-1);
+		mes "Enter the id of the consumable choosen";
+
+		input .@potion_id;
+
+		do {
+			clear;
+			mes .@menu$;
+			mes "Choose the value of HP % to use the consumable (ex : 10 to use it if hp are below 10%)";
+			mes "Min value is 5, Max value is 90 (0 to disable it)";
+			input .@potion_minhpvalue;
+		} while(.@potion_minhpvalue != 0 && (.@potion_minhpvalue < 5 || .@potion_minhpvalue > 90));
+
+		do {
+			clear;
+			mes .@menu$;
+			mes "Choose the value of SP % to use the consumable (ex : 10 to use it if sp are below 10%)";
+			mes "Min value is 5, Max value is 90 (0 to disable it)";
+			input .@potion_minspvalue;
+		} while(.@potion_minspvalue != 0 && (.@potion_minspvalue < 5 || .@potion_minspvalue > 90));
+
+		setautoattack("1;1;"+ .@potion_id + ";" + .@potion_minhpvalue + ";" + .@potion_minspvalue);
+		clear;
+
+		goto(potion_menu);
+	}
+	if( .@potion_menu == 2 ){
+		if(getautoattackint(1,0) == 0){
+			clear;
+			mes .@menu$;
+			mes "There is no active potion item to delete";
+			next;
+			goto(potion_menu);
+		} else {
+			mes "Please enter the potion item id to disable.";
+			input .@potion_id;
+			setautoattack("1;0;"+ .@potion_id + ";0;0");
+			goto(potion_menu);
+		}
+	}
+
+	goto(regeneration_menu);
+	end;
+
+sit_regen_menu:
+	clear;
+	.@menu$ = "[Sit to Rest]";
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(2,0); // status
+	mes getautoattackstring(2,1); // hp
+	mes getautoattackstring(2,2); // sp
+
+	.@sit_regen_menu = select(getautoattackint(2,0)?"Disable:Modify":"Enable","[Cancel]");
+	if( (.@sit_regen_menu == 1 && !getautoattackint(2,0))
+		|| (.@sit_regen_menu == 2 && getautoattackint(2,0))){
+		clear;
+		mes .@menu$;
+		mes "Choose the value of HP % to sit (ex : 10 to sit if hp are less than 10%)";
+		mes "Min value is 5, Max value is 90 (0 to disable it)";
+
+		do {
+			input .@sit_regen_minhpvalue;
+		} while(.@sit_regen_minhpvalue != 0 && (.@sit_regen_minhpvalue < 5 || .@sit_regen_minhpvalue > 90));
+
+		if(.@sit_regen_minhpvalue > 0){
+			clear;
+			mes .@menu$;
+			mes "Choose the value of HP % to stand (ex : 10 to stand if hp are more than 10%)";
+			mes "Min value is 5, Max value is 90 (0 to disable it)";
+			mes "Must be more than min hp value : " + .@sit_regen_minhpvalue;
+
+			do {
+				input .@sit_regen_maxhpvalue;
+			} while((.@sit_regen_maxhpvalue != 0 && (.@sit_regen_maxhpvalue < 5 || .@sit_regen_maxhpvalue > 90)) || (.@sit_regen_minhpvalue >= .@sit_regen_maxhpvalue));
+		}
+
+		clear;
+		mes .@menu$;
+		mes "Choose the value of SP % to sit (ex : 10 to sit if sp are less than 10%)";
+		mes "Min value is 5, Max value is 90 (0 to disable it)";
+
+		do {
+			input .@sit_regen_minspvalue;
+		} while(.@sit_regen_minspvalue != 0 && (.@sit_regen_minspvalue < 5 || .@sit_regen_minspvalue > 90));
+
+		if(.@sit_regen_minspvalue > 0){
+			clear;
+			mes .@menu$;
+			mes "Choose the value of SP % to stand (ex : 10 to stand if sp are more than 10%)";
+			mes "Min value is 5, Max value is 90 (0 to disable it)";
+			mes "Must be more than min sp value : " + .@sit_regen_minspvalue;
+
+			do {
+				input .@sit_regen_maxspvalue;
+			} while((.@sit_regen_maxspvalue != 0 && (.@sit_regen_maxspvalue < 5 || .@sit_regen_maxspvalue > 90)) || (.@sit_regen_minspvalue >= .@sit_regen_maxspvalue));
+		}
+		
+		setautoattack("2;1;"+ .@sit_regen_minhpvalue + ";" + .@sit_regen_maxhpvalue + ";" + .@sit_regen_minspvalue + ";" + .@sit_regen_maxspvalue);
+
+	} else if( .@sit_regen_menu == 1 && getautoattackint(2,0)){
+		setautoattack("2;0;0;0;0;0");
+	} else {
+		clear;
+		goto(regeneration_menu);
+	}
+
+	clear;
+	goto(sit_regen_menu);
+	end;
+
+buffskills_menu:
+	clear;
+	.@menu$ = "[Buff Skills]";
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(3,0);
+	
+	.@buffskills_menu = select("Add skills","Modify skills","Disable a skill","[Cancel]");
+
+	if( .@buffskills_menu < 3 ){
+		if( .@buffskills_menu == 1 ){
+			clear;
+			mes .@menu$;
+			mes "Enter the id of the skill choosen";
+			mes "--- List of skills availables ---";
+			mes getautoattackstring(3,-1);
+		} else {
+			if(getautoattackint(3,0) == 0){
+				mes .@menu$;
+				mes "There is no active auto buff skills to modify";
+				next;
+				goto(buffskills_menu);
+			}
+			mes "Enter the id of the skill choosen";
+		}
+
+		input .@buff_skillid;
+		if(.@buff_skillid < 1 )
+			goto(buffskills_menu);
+
+		if(!getskillinfoint(1,.@buff_skillid) || !getskilllv(.@buff_skillid)){
+			clear;
+			mes .@menu$;
+			mes "Sorry, you don't have that skill or this skill doesn't exist or is not self / support type";
+			next;
+			goto(buffskills_menu);
+		}	
+
+		do{
+			clear;
+			mes .@menu$;
+			mes "Choose the skill lv to use";
+			mes "[" + getskillinfostring(0,.@buff_skillid) + "]" + " - Max lv : " + getskilllv(.@buff_skillid);
+			input .@buff_skilllv;
+		} while(.@buff_skilllv < 1 || .@buff_skilllv > getskilllv(.@buff_skillid));
+
+		setautoattack("3;1;"+ .@buff_skillid + ";" + .@buff_skilllv);
+		clear;
+
+		goto(buffskills_menu);
+	} else if( .@buffskills_menu == 3 ){
+		if(getautoattackint(3,0) == 0){
+			mes .@menu$;
+			mes "There is no active auto buff skills to delete";
+			next;
+			goto(buffskills_menu);
+		} else {
+			mes "Enter the id of the skill choosen";
+			input .@buff_skillid;
+			if(.@buff_skillid < 1 )
+				goto(buffskills_menu);
+
+			if(!getskillinfoint(1,.@buff_skillid) || !getskilllv(.@buff_skillid)){
+				clear;
+				mes .@menu$;
+				mes "Sorry, you don't have that skill or this skill doesn't exist or is not self / support type";
+				next;
+				goto(buffskills_menu);
+			}
+			setautoattack("3;0;"+ .@buff_skillid + ";0");
+			goto(buffskills_menu);
+		}
+	}
+
+	goto(config_menu);
+	end;
+
+
+attackskills_menu:
+	clear;
+	.@menu$ = "[Attack Skills]";
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(4,0);
+	
+	.@attackskills_menu = select("Add skills","Modify skills","Disable a skill","[Cancel]");
+	if( .@attackskills_menu < 3 ){
+		if( .@attackskills_menu == 1 ){
+			clear;
+			mes .@menu$;
+			mes "Enter the id of the skill choosen";
+			mes "--- List of skills availables ---";
+			mes getautoattackstring(4,-1);
+		} else {
+			if(getautoattackint(4,0) == 0){
+				mes .@menu$;
+				mes "There is no active auto attack skills to modify";
+				next;
+				goto(attackskills_menu);
+			}
+			mes "Enter the id of the skill choosen";
+		}
+
+		input .@attack_skillid;
+		if(.@attack_skillid < 1 )
+			goto(attackskills_menu);
+
+		if(!getskillinfoint(2,.@attack_skillid) || !getskilllv(.@attack_skillid)){
+			clear;
+			mes .@menu$;
+			mes "Sorry, you don't have that skill or this skill doesn't exist or is not attack type";
+			next;
+			goto(attackskills_menu);
+		}	
+
+		do{
+			clear;
+			mes .@menu$;
+			mes "Choose the skill lv to use";
+			mes "[" + getskillinfostring(0,.@attack_skillid) + "]" + " - Max lv : " + getskilllv(.@attack_skillid);
+			input .@attack_skilllv;
+		} while(.@attack_skilllv < 1 || .@attack_skilllv > getskilllv(.@attack_skillid));
+
+		setautoattack("4;1;"+ .@attack_skillid + ";" + .@attack_skilllv);
+		clear;
+
+		goto(attackskills_menu);
+	} else if(.@attackskills_menu == 3) {
+		if(getautoattackint(4,0) == 0){
+			mes .@menu$;
+			mes "There is no active auto attack skills to delete";
+			next;
+			goto(attackskills_menu);
+		} else {
+			mes "Enter the id of the skill choosen";
+			input .@attack_skillid;
+			if(.@attack_skillid < 1 )
+				goto(attackskills_menu);
+
+			if(!getskillinfoint(2,.@attack_skillid) || !getskilllv(.@attack_skillid)){
+				clear;
+				mes .@menu$;
+				mes "Sorry, you don't have that skill or this skill doesn't exist or is not attack type";
+				next;
+				goto(attackskills_menu);
+			}
+			setautoattack("4;0;"+ .@attack_skillid + ";0");
+			goto(attackskills_menu);
+		}
+	}
+
+	goto(config_menu);
+	end;
+
+buffitems_menu:
+	clear;
+	.@menu$ = "[Buff Items]";
+
+	mes .@menu$;
+	mes "--- Current configuration ---";
+	mes getautoattackstring(5,656);
+	mes getautoattackstring(5,645);
+	mes getautoattackstring(5,657);
+
+	.@buffitems_menu = select("Add / Modify buff item","Disable a buff item","[Cancel]");
+	if( .@buffitems_menu == 1 ){
+		mes "Enter the id of the consumable choosen";
+
+		do {
+			input .@buffitem_id;
+		} while(.@buffitem_id != 656 && .@buffitem_id != 645 && .@buffitem_id != 657);
+
+		do {
+			clear;
+			mes .@menu$;
+			mes "Choose the value delay in seconds before each use";
+			mes "Min value is 5, Max value is 3600";
+			input .@buffitem_delayvalue;
+		} while(.@buffitem_delayvalue < 5 || .@buffitem_delayvalue > 3600);
+
+		setautoattack("5;1;"+ .@buffitem_id + ";" + .@buffitem_delayvalue);
+		clear;
+
+		goto(buffitems_menu);
+	}
+	if( .@buffitems_menu == 2 ){
+		if(getautoattackint(5,0) == 0){
+			clear;
+			mes .@menu$;
+			mes "There is no active buff item to delete";
+			next;
+			goto(buffitems_menu);
+		} else {
+			mes "Please enter the buff item id to disable.";
+
+			do {
+				input .@buffitem_id;
+			} while(.@buffitem_id != 656 && .@buffitem_id != 645 && .@buffitem_id != 657);
+
+			setautoattack("5;0;"+ .@buffitem_id + ";0");
+			goto(buffitems_menu);
+		}
+	}
+
+	goto(config_menu);
+	end;
+
+OnDo2:
+	if(getstatus(SC_AUTOATTACK)){
+		.@time_remaning = getstatus(SC_AUTOATTACK,4);
+		set #BotGameTimer,.@time_remaning*100;
+	}
+	sc_end SC_AUTOATTACK;
+	message strcharinfo(0),"END";
+	end;
+	function	__onoff	{
+		if(getarg(0) == 0)
+			return "^BEBEBE[OFF]^000000";
+		else
+			return "^000088[ON]^000000";
+	}
+}

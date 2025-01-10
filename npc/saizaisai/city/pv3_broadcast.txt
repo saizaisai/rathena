@@ -1,0 +1,91 @@
+-	script	Broadcaster	-1,{
+
+	ignoretimeout(1);
+	while(1){
+		mes .name$;
+		mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+"^000000!";
+		mes "Would you like to broadcast?";
+		if(.Price)
+		mes "Broadcast cost: ^0055FF"+callfunc("F_InsertComma",.Price)+"^000000z";
+		mes "^FFFFFF_^000000";
+		mes "^FF5500WARNING^000000 : Please don't use the broadcaster for Trash talks.";
+		next;
+		switch(select("> ^0055FFBroadcast^000000:> ^2EDB65Information^000000:> Cancel")){
+			case 1:
+				if(#BCDelay>gettimetick(2)){
+					mes .name$;
+					mes "You used broadcaster a while ago. please wait ^0055FF"+(#BCDelay-gettimetick(2))+"^000000 seconds.";
+					break;
+				}
+				if(Zeny < .Price){
+					mes .name$;
+					mes "You don't have enough zeny on your pocket. Please comeback when you have enough zeny.";
+					break;
+				}
+				mes .name$;
+				mes "Please choose the type of your broadcast.";
+				next;
+				switch(select("> ^41A4FFBuy^000000:> ^2EDB65Sell^000000:> ^FF5500Recruit^000000:> ^CCCCFFOthers^000000:> Cancel")){
+					case 1:
+						.Type = 1; .Color$ = "41A4FF";	break;
+					case 2:
+						.Type = 2; .Color$ = "2EDB65";	break;
+					case 3:
+						.Type = 3; .Color$ = "FF5500";	break;
+					case 4:
+						.Type = 4; .Color$ = "CCCCFF";	break;
+					case 5:
+						end;
+				}
+				mes .name$;
+				mes "Please Enter the message you want to broadcast.";
+				mes "\n^FF5500Max of 120 characters only";
+				next;
+				input .@message$;
+				mes .name$;
+				mes "Type ^0055FF"+callsub(OnTypeInfo,.Type)+"^000000";
+				mes "Your message is -";
+				mes "^0055FF"+.@message$+"^000000";
+				mes "^FFFFFF_^000000";
+				mes "Is this Correct?";
+				if(select("Yes, Broadcast:Cancel")==2) end;
+				announce "["+callsub(OnTypeInfo,.Type)+"]"+strcharinfo(0)+" : "+.@message$,bc_all,"0x"+.Color$;
+				set #BCDelay,gettimetick(2)+(.Cooldown*60);
+				Zeny -= .Price;
+				end;
+			case 2:
+				mes .name$;
+				mes "Broadcast cost ^0055FF"+.Price+"z^000000 and it has a "+.Cooldown+" Minutes Cooldown.";
+				mes "It is mainly used to broadcast buy and sell items or Recruitment of guildmates.";
+				break;
+			case 3:
+				mes .name$;
+				mes "Have a nice day!~";
+				end;
+		}
+		next;
+	}
+end;
+	
+OnTypeInfo:
+	switch(getarg(0)){
+		case 1: return "Buying";
+		case 2: return "Selling";
+		case 3: return "Recruit";
+		case 4:	default: return "";
+	}
+return "Others";
+
+OnInit:
+	.name$ = "^00B2EE[ BroadCaster ]^000000",
+	.Price = 30000; //300k Zeny
+	.Cooldown = 3; //Minutes
+	PUBTITLE:
+		showscript "BroadCaster";
+		sleep 3000;	
+	goto PUBTITLE;
+end;
+}
+prontera,143,210,5	duplicate(Broadcaster)	Broadcaster#prt	828
+//clashcity,136,159,3	duplicate(Broadcaster)	Broadcaster#main	10870
+//amatsu,102,101,5	duplicate(Broadcaster)	Broadcaster#amas1	10870

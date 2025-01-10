@@ -1,0 +1,534 @@
+//===== rAthena Script =======================================
+//    Extended Battleground
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  30-01-2023
+// By:
+//  Easycore         (Zephyrus, original author)
+//
+// Contact:
+//    - Web:  https://www.easycore-services.com/index.php?/profile/1-easycore/
+//    - rAthena:  https://rathena.org/board/profile/16425-easycore/
+//    - Discord:  Easycore#9709
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+
+// ==============================================================================
+// BattleGround System - Common NPCs
+// ==============================================================================
+
+// MapFlags
+// *********************************************************************
+
+bat_room	mapflag	nomemo
+bat_room	mapflag	nowarpto
+bat_room	mapflag	nobranch
+bat_room	mapflag	nopenalty
+bat_room	mapflag	noteleport
+bat_room	mapflag	nosave	SavePoint
+//bat_room	mapflag	allow_bg_items // Funcion no agregada [Easycore]
+// Mapflag Town is required to Join BG Queues
+bat_room	mapflag	town
+
+// General Guillaume
+// *********************************************************************
+bat_room,160,159,3	script	General Guillaume	4_M_KY_KIYOM,{
+	cutin "bat_kiyom2",2;
+	mes "[General Guillaume]";
+	mes "Hot-blooded adventurer, we need your ability to win this battle.";
+	next;
+	cutin "bat_kiyom1",2;
+	mes "[General Guillaume]";
+	mes "Our great king, Marcel Marollo VII, is very sick lately. His Majesty has declared that he chosen either me or Prince Croix as the next king amongst his 9 sons.";
+	next;
+	mes "[General Guillaume]";
+	mes "Two kings can't share a nation!";
+	mes "Only the one victorious from His Majesty's appointed battle will be enthroned.";
+	next;
+	mes "[General Guillaume]";
+	mes "This is however, not just a battle between us. This battle will determine the future of this country. I pledge on my honor to prove that I'm the one who can protect this Maroll from outside threats.";
+	close2;
+	cutin "",255;
+	end;
+}
+
+// General Croix
+// *********************************************************************
+bat_room,160,140,3	script	Prince Croix	4_M_CRU_CRUA,{
+	cutin "bat_crua1",2;
+	mes "[Prince Croix]";
+	mes "Wise adventurer, why don't you lend us your power for victory?";
+	next;
+	cutin "bat_crua2",2;
+	mes "[Prince Croix]";
+	mes "I do not wish to shed blood, but I have no choice but to fight for the possibility of peace and for the sake of my people.";
+	next;
+	mes "[Prince Croix]";
+	mes "General Guillaume may have an advantage in this battle as he is the great general of Maroll, but that doesn't automatically mean he'll win. I want to win this battle so that I can grant a better future for my people.";
+	close2;
+	cutin "",255;
+	end;
+}
+
+// Guard Dummy
+// *********************************************************************
+
+bat_room,161,141,3	script	Prince Croix's Aid::bat_aid	4_M_CRU_HEAD,{ end; }
+bat_room,161,139,3	duplicate(bat_aid)	Prince Croix's Aid::bat_aid2	4_M_CRU_HEAD
+bat_room,161,160,3	duplicate(bat_aid)	General Guillaume's Aid::bat_aid3	4_M_KY_HEAD
+bat_room,161,158,3	duplicate(bat_aid)	General Guillaume's Aid::bat_aid4	4_M_KY_HEAD
+
+// Flags
+// *********************************************************************
+
+-	script	Base Flag#bg	FAKE_NPC,{ end; }
+
+// BattleGround Warper - Exit
+// *********************************************************************
+
+bat_room,148,150,4	script	Teleporter#bat	4_F_TELEPORTER,{
+	mes "[Teleporter]";
+	mes "Do you wish to leave the battlefield? Use my service to return to town.";
+	next;
+	if (select("Leave:Don't Leave") == 2) {
+		mes "[Teleporter]";
+		mes "I'll be here whenever you're in need of my service.";
+		close;
+	}
+	set .@spoint$, getsavepoint(0);
+	set .@x, getsavepoint(1);
+	set .@y, getsavepoint(2);
+	mes "[Teleporter]";
+	mes "You will be sent back to " + .@spoint$ + ".";
+	close2;
+	warp .@spoint$, .@x, .@y;
+	end;
+}
+
+// Kafra
+// *********************************************************************
+bat_room,148,147,4	script	Kafra Staff::kaf_bat	4_F_KAFRA9,{
+	cutin "kafra_09",2;
+	callfunc "F_Kafra",0,2,1,150,0;
+}
+
+//== Badges Exchange =======================================
+bat_room,160,150,3	script	Erundek	4_M_MANAGER,{
+	if (checkweight(1201,1) == 0) {
+		mes "- Wait a minute !! -";
+		mes "- Currently you're carrying -";
+		mes "- too many items with you. -";
+		mes "- Please try again -";
+		mes "- after you loose some weight. -";
+		close;
+	}
+	mes "[Erundek]";
+	mes "Do you have the battlefield badges?";
+	mes "I can exchange Bravery Badges and Valor Badges for reward items.";
+	next;
+	switch(select("Exchange Badges", "Check the Catalog")) {
+		case 1:
+			mes "[Erundek]";
+			mes "Which type of items would you like to exchange?";
+			mes "To check more information about the reward items, please use our ^3131FFCatalog^000000.";
+			next;
+			switch(select("Weapon", "Armor", "Accessory", "Consumable")) {
+				case 1:
+					mes "[Erundek]";
+					mes "You chose ^3131FFWeapon^000000.";
+					mes "The following weapons are available for exchange with the battlefield badges.";
+					mes "Please note that items for ^3131FFBravery Badges are indicated as (BB)^000000, and ^3131FFValor Badges as (VB)^000000.";
+					next;
+					switch(select("Dagger/OneSword/TwoSword/TwoSpear", "Staff/Mace/TwoAxe/Shuriken", "Bow/Katar/Music/Whip", "Book/Knuckle", "Revolver/Rifle/Gatling/Shotgun/Launcher")) {
+						case 1:
+							mes "[Erundek]";
+							mes "The following items are available in the ^3131FFDagger, One-Handed Sword, Two-Handed Sword, and Two-Handed Spear^000000 category.";
+							next;
+							setarray .@Weapons[0],13036,7828,13037,7829,13411,7828,13410,7829,1183,7828,1184,7829,1425,7828,1482,7829;
+							break;
+						case 2:
+							mes "[Erundek]";
+							mes "The following items are available in the ^3131FFStaff / Mace / Two-Handed Axe / Huuma Shuriken^000000 category.";
+							next;
+							setarray .@Weapons[0],1632,7828,1633,7829,1634,7828,1635,7829,1543,7828,1542,7829,1380,7828,1379,7829,13305,7828,13306,7829;
+							break;
+						case 3:
+							mes "[Erundek]";
+							mes "The following weapons are available in the ^3131FFBow / Katar / Musical Instrument / Whip^000000 category.";
+							next;
+							setarray .@Weapons[0],1739,7828,1738,7829,1279,7828,1280,7829,1924,7828,1923,7829,1978,7828,1977,7829;
+							break;
+						case 4:
+							mes "[Erundek]";
+							mes "The following weapons are available in the ^3131FFBook / Knuckle^000000 category.";
+							next;
+							setarray .@Weapons[0],1574,7828,1575,7829,1824,7828,1823,7829;
+							break;
+						case 5:
+							mes "[Erundek]";
+							mes "The following weapons are available in the ^3131FFRevolver / Rifle / Gatling Gun / Shotgun / Grenade Launcher^000000 category.";
+							next;
+							setarray .@Weapons[0],13108,7828,13171,7829,13172,7828,13173,7829,13174,7829;
+							break;
+					}
+					.@menu$ = "";
+					for (.@i = 0; .@i < getarraysize(.@Weapons); .@i += 2)
+						.@menu$ += getitemname(.@Weapons[.@i])+((.@Weapons[.@i+1]==7828)?"(BB)":"(VB)")+":";
+					.@i = (select(.@menu$)-1)*2;
+					.@type$ = ((.@Weapons[.@i+1]==7828)?"(BB)":"(VB)");
+					mes "[Erundek]";
+					mes "You chose ^3131FF"+getitemname(.@Weapons[.@i])+.@type$+"^000000.";
+					mes "You can exchange for this item with ^FF0000100 "+getitemname(.@Weapons[.@i+1])+"^000000.";
+					mes "Would you like to exchange?";
+					next;
+					switch(select("Do not exchange", "Exchange")) {
+						case 1:
+							break;
+						case 2:
+							mes "[Erundek]";
+							mes "Would you like to spend ^FF0000100 "+getitemname(.@Weapons[.@i+1])+"^000000 and receive a ^3131FF"+getitemname(.@Weapons[.@i])+.@type$+"^000000?";
+							next;
+							mes "[Erundek]";
+							mes "Remember, Battleground Reward Items are ^FF0000Character Bound^000000. Are you sure you want this item?";
+							next;
+							switch(select("Yes", "No")) {
+							case 1:
+								mes "[Erundek]";
+								if (countitem(.@Weapons[.@i+1]) >= 100) {
+									mes "Thank you for exchanging.";
+									delitem .@Weapons[.@i+1],100;
+									getitem .@Weapons[.@i],1;
+								}
+								else mes "I'm sorry, but you don't have enough badges to exchange.";
+								close;
+							case 2:
+								break;
+							}
+							break;
+					}
+					mes "[Erundek]";
+					mes "Do you need more time to check the items?";
+					close;
+				case 2:
+					mes "[Erundek]";
+					mes "You chose ^3131FFArmor^000000.";
+					mes "The following armors are available for exchange with the battlefield badges.";
+					next;
+					switch(select("Garments / Shoes", "Armor")) {
+						case 1:
+							setarray .@items[0],2538,50,2539,50,2540,50,2435,50,2436,50,2437,50;
+							break;
+						case 2:
+							setarray .@items[0],2376,80,2377,80,2378,80,2379,80,2380,80,2381,80,2382,80;
+							break;
+						}
+					break;
+				case 3:
+					mes "[Erundek]";
+					mes "You chose ^3131FFAccessory^000000.";
+					mes "You can exchange the Medal of Honors with your Badges according to the job classes, as follows:";
+					next;
+					setarray .@items[0],2733,500,2720,500,2721,500,2722,500,2723,500,2724,500,2725,500;
+					.@menu1$ = "Gunslinger:Swordman/Taekwon Master:Thief:Acolyte:Magician:Archer:Merchant";
+					break;
+				case 4:
+					mes "[Erundek]";
+					mes "You chose ^3131FFConsumable^000000.";
+					mes "The following consumable items are available for exchange with the battlefield badges:";
+					next;
+					setarray .@items[0],12269,10,12270,10,12271,5,12272,10,12273,10;
+					break;
+			}
+			break;
+		case 2:
+			mes "[Erundek]";
+			mes "We have many items, so please take a look and purchase deliberately.";
+			close2;
+			readbook 11010,1;
+			end;
+	}
+	.@menu$ = "";
+	if (.@menu1$ != "") .@menu$ = .@menu1$;
+	else for (.@i = 0; .@i < getarraysize(.@items); .@i += 2)
+		.@menu$ += getitemname(.@items[.@i])+":";
+	.@i = (select(.@menu$)-1)*2;
+	mes "[Erundek]";
+	mes "You chose ^3131FF"+getitemname(.@items[.@i])+"^000000.";
+	switch(.@items[.@i]) {
+		case 2720: mes "This item is for Swordman and Taekwon Master Class only."; break;
+		case 2721: mes "This item is for Thief Class only."; break;
+		case 2722: mes "This item is for Acolyte Class only."; break;
+		case 2723: mes "This item is for Magician Class only."; break;
+		case 2724: mes "This item is for Archer Class only."; break;
+		case 2725: mes "This item is for Merchant Class only."; break;
+		case 2733: mes "This item is for Gunslinger only."; break;
+		default: break;
+	}
+	mes "You can exchange for this item with ^FF0000"+.@items[.@i+1]+" "+getitemname(7828)+" or "+.@items[.@i+1]+" "+getitemname(7829)+"^000000.";
+	mes "Would you like to exchange?";
+	next;
+	switch(select("Do not exchange", "Exchange")) {
+		case 1:
+			mes "[Erundek]";
+			mes "Do you need more time to check the items?";
+			break;
+		case 2:
+			mes "[Erundek]";
+			mes "Which Badge do you want to exchange?";
+			mes "You need ^3131FF"+.@items[.@i+1]+" Badges^000000 to exchange.";
+			next;
+			if (.@item[0] < 12269 || .@item[0] > 12273) {
+				mes "[Erundek]";
+				mes "Remember, Battleground Reward Items are ^FF0000Character Bound^000000. Are you sure you want this item?";
+				next;
+			}
+			.@j = select("Bravery Badge", "Valor Badge", "Cancel");
+			mes "[Erundek]";
+			if (.@j == 3) {
+				mes "You cancelled the exchange.";
+				break;
+			}
+			.@cost = ((.@j==1)?7828:7829);
+			if (countitem(.@cost) >= .@items[.@i+1]) {
+				mes "Thank you for exchanging.";
+				delitem .@cost, .@items[.@i+1];
+				getitem .@items[.@i],1;
+			}
+			else mes "You do not have enough "+getitemname(.@cost)+"s.";
+			break;
+	}
+	close;
+}
+
+bat_room,160,148,3	script	Telma	701,{
+	mes "[Telma]";
+	mes "Welcome, mighty warrior.";
+	mes "Do you need supplies for your battles?";
+	mes "I can exchange supplies for your badges...";
+
+	if (select("~ BG Supplies","~ WoE Supplies")==2) {
+		next;
+		mes "[Telma]";
+		mes "These supplies only work on ^FF0000WoE Maps^000000.";
+		switch(select("150 Condensed White Potion:150 Blue Potion:50 Glistening Coat:100 Bottle Grenade:100 Acid Bottle:300 Cobweb:5 Poison Bottle:80 Yellow Gemstone:70 Red Gemstone:60 Blue Gemstone:100 Speed Potion")) {
+		case 1:		callsub S_BuyConsumableWOE,547,150,100;		// Condensed White Potion
+		case 2:		callsub S_BuyConsumableWOE,505,150,100;		// Blue Potion
+		case 3:		callsub S_BuyConsumableWOE,7139,50,30;		// Glistening Coat
+		case 4:		callsub S_BuyConsumableWOE,7135,100,60;		// Bottle Grenade
+		case 5:		callsub S_BuyConsumableWOE,7136,100,60;		// Acid Bottle
+		case 6:		callsub S_BuyConsumableWOE,1025,300,80;		// Cobweb
+		case 7:		callsub S_BuyConsumableWOE,678,5,10;		// Poison Bottle
+		case 8:		callsub S_BuyConsumableWOE,715,80,20;	// Yellow Gemstone
+		case 9:		callsub S_BuyConsumableWOE,716,70,15;	// Red Gemstone
+		case 10:	callsub S_BuyConsumableWOE,717,60,10;	// Blue Gemstone
+		case 11:	callsub S_BuyConsumableWOE,12016,100,100;	// Speed Potion
+		}
+	}
+	
+	switch(select("150 Condensed White Potion:100 Blue Potion:15 Poison Bottle:50 Fire Bottle:50 Acid Bottle:50 Plant Bottle:50 Marine Sphere Bottle:50 Glistening Coat:50 Yellow Gemstone:50 Red Gemstone:100 Blue Gemstone:5 Speed Potion:20 Cobweb:10 Awakening Potion:10 Berserk Potion")) {
+		case 1:		callsub S_BuyConsumableBG,547,150;	// Condensed White Potion
+		case 2:		callsub S_BuyConsumableBG,505,100;	// Blue Potion
+		case 3:		callsub S_BuyConsumableBG,678,15;	// Poison Bottle
+		case 4:		callsub S_BuyConsumableBG,7135,50;	// Fire Bottle
+		case 5:		callsub S_BuyConsumableBG,7136,50;	// Acid Bottle
+		case 6:		callsub S_BuyConsumableBG,7137,50;	// Plant Bottle
+		case 7:		callsub S_BuyConsumableBG,7138,50;	// Marine Sphere Bottle
+		case 8:		callsub S_BuyConsumableBG,7139,50;	// Glistening Coat
+		case 9:		callsub S_BuyConsumableBG,715,50;	// Yellow Gemstone
+		case 10:	callsub S_BuyConsumableBG,716,50;	// Red Gemstone
+		case 11:	callsub S_BuyConsumableBG,717,100;	// Blue Gemstone
+		case 12:	callsub S_BuyConsumableBG,12016,5;	// Speed Potion
+		case 13:	callsub S_BuyConsumableBG,1025,20;	// Cobweb
+		case 14:	callsub S_BuyConsumableBG,14510,10;	// Light Awakening Potion
+		case 15:	callsub S_BuyConsumableBG,14511,20;	// Light Berserk Potion
+	}
+	end;
+
+S_BuyConsumableBG:
+	set .@item_id, getarg(0);
+	set .@amt, getarg(1);
+	next;
+	.@bg_item = 1;
+	mes "[Telma]";
+	mes "How many ^0000FF"+ .@amt +" "+ getitemname(.@item_id) +"s^000000 do you want?";
+	mes "1 = "+ .@amt   +" supplies = 1 badge";
+	mes "2 = "+ .@amt*2 +" supplies = 2 badges";
+	mes "3 = "+ .@amt*3 +" supplies = 3 badges";
+	mes "etc..";
+	next;
+	input .@sets;
+	mes "[Telma]";
+	if (.@sets < 1) {
+		mes "Put a positive number, greater than zero.";
+		close;
+	}
+	mes "So you want ^0000FF"+ (.@amt*.@sets) +" "+ getitemname(.@item_id) +"s^000000...";
+	mes "Remember these can only be used in Battleground Arenas";
+	mes "It will cost you "+ .@sets +" badge(s)...";
+	next;
+	switch(select("Give her "+ .@sets +" Bravery Badge(s):Give her "+ .@sets +" Valor Badge(s):Give her "+ .@sets +" War Badges")) {
+		case 1: set .@badge,7828; set .@cost,1; break;
+		case 2: set .@badge,7829; set .@cost,1; break;
+		case 3: set .@badge,7773; set .@cost,1; break;
+	}
+	.@bgchar = getBattleFlag("bg_reserved_char_id");
+	mes "[Telma]";
+	if (countitem(.@badge) < (.@cost*.@sets)) {
+		mes "You do not have enough ^FF0000"+getitemname(.@badge)+"s^000000 to buy "+(.@amt*.@sets)+" "+getitemname(.@item_id)+"s.";
+	} else if (!checkweight(.@item_id, .@amt*.@sets)) {
+		mes "You are overweight or have too many items in your inventory.";
+	} else {
+		delitem .@badge, .@cost*.@sets;
+		// Battleground's Consumables
+		getitem2 .@item_id,(.@amt*.@sets),1,0,0, 254, 0, .@bgchar & 0xFFFF, .@bgchar >> 0x10;
+		mes "Here are your: ^0000FF"+(.@amt*.@sets)+" "+getitemname(.@item_id)+"s^000000!";
+		mes "Remember they can only be used in Battleground Arenas";
+	}
+	close;
+
+S_BuyConsumableWOE:
+	set .@item_id, getarg(0);
+	set .@amt, getarg(1);
+	set .@cost, getarg(2);
+	set .@badge,7773;
+	next;
+	.@bg_item = 0;
+	.@sets = 1;
+	mes "[Telma]";
+	mes "So you want ^0000FF"+ (.@amt*.@sets) +" "+ getitemname(.@item_id) +"s^000000...";
+	next;
+	if (select("Give her ^FF0000"+.@cost+"^000000 War Badge(s)","Cancel")==2) close;
+	.@woechar = getBattleFlag("woe_reserved_char_id");
+	mes "[Telma]";
+	if (countitem(.@badge) < (.@cost*.@sets)) {
+		mes "You do not have enough ^FF0000"+getitemname(.@badge)+"s^000000 to buy "+(.@amt*.@sets)+" "+getitemname(.@item_id)+"s.";
+	} else if (!checkweight(.@item_id, .@amt*.@sets)) {
+		mes "You are overweight or have too many items in your inventory.";
+	} else {
+		delitem .@badge, .@cost*.@sets;
+		// WoE's Consumables
+		getitem2 .@item_id,(.@amt*.@sets),1,0,0, 254, 0, .@woechar & 0xFFFF, .@woechar >> 0x10;
+		mes "Here are your: ^0000FF"+(.@amt*.@sets)+" "+getitemname(.@item_id)+"s^000000!";
+		mes "Remember they can only be used in WoE Maps";
+	}
+	close;
+}
+
+-	script	Maroll Battle Recruiter::BatRecruit	728,{
+	mes "[Maroll Battle Recruiter]";
+	mes "Good day, adventurer.";
+	mes "I'm a knight from a far country called Maroll Kingdom.";
+	next;
+	mes "[Maroll Battle Recruiter]";
+	mes "The two princes of the kingdom are now battling for the throne of Maroll, and are in need of experienced soldiers like you.";
+	next;
+	switch(select("Join Battlegrounds:Warp to Battleground Room:Quit")) {
+		case 1:
+			next;
+			mes "[Maroll Battle Recruiter]";
+			mes "You will be sent to the waiting queue.";
+			close2;
+			doevent("BG_Core::OnDoJoinSolo");
+			end;
+		case 2:
+			mes "[Maroll Battle Recruiter]";
+			mes "May the war god bless you.";
+			close2;
+			getmapxy(.@mapname$,.@x,.@y,BL_NPC);
+			if (.@mapname$ == "prontera")
+				set bat_return,1;
+			else if (.@mapname$ == "moc_ruins")
+				set bat_return,2;
+			else if (.@mapname$ == "aldebaran")
+				set bat_return,3;
+			else if (.@mapname$ == "geffen")
+				set bat_return,4;
+			else if (.@mapname$ == "payon")
+				set bat_return,5;
+			else if (.@mapname$ == "lighthalzen")
+				set bat_return,6;
+			else if (.@mapname$ == "rachel")
+				set bat_return,7;
+			else if (.@mapname$ == "morocc")
+				set bat_return,8;
+			else
+				set bat_return,1;
+			warp "bat_room",154,150;
+			break;
+		case 3:
+			mes "[Maroll Battle Recruiter]";
+			mes "I'll always be stationed here for more soldiers. Feel free to come back whenever you're interested.";
+			close;
+	}
+	end;
+}
+
+prontera,123,83,3	duplicate(BatRecruit)	Maroll Battle Recruiter::BatRecruit1	728
+moc_ruins,75,162,3	duplicate(BatRecruit)	Maroll Battle Recruiter::BatRecruit2	728
+aldebaran,146,109,3	duplicate(BatRecruit)	Maroll Battle Recruiter::BatRecruit3	728
+geffen,109,66,3	duplicate(BatRecruit)	Maroll Battle Recruiter::BatRecruit4	728
+payon,189,105,3	duplicate(BatRecruit)	Maroll Battle Recruiter::BatRecruit5	728
+lighthalzen,153,86,5	duplicate(BatRecruit)	Maroll Battle Recruiter::BatRecruit6	728
+rachel,149,138,3	duplicate(BatRecruit)	Maroll Battle Recruiter::BatRecruit7	728
+
+// BattleGround Warper
+//============================================================
+bat_room,148,150,5	script	Teleporter#Battlefield	124,{
+	mes "[Teleporter]";
+	mes "Do you wish to leave the battlefield? Use my services to return to town.";
+	next;
+	switch(select("Leave:Don't Leave")) {
+	case 1:
+		mes "[Teleporter]";
+		switch(bat_return) {
+		default:
+		case 1:
+			setarray .@mapname$[0],"Prontera.","prontera";
+			setarray .@xy[0],116,72;
+			break;
+		case 2:
+			setarray .@mapname$[0],"Morocc Ruins.","moc_ruins";
+			setarray .@xy[0],152,48;
+			break;
+		case 3:
+			setarray .@mapname$[0],"Al De Baran.","aldebaran";
+			setarray .@xy[0],168,112;
+			break;
+		case 4:
+			setarray .@mapname$[0],"Geffen.","geffen";
+			setarray .@xy[0],120,39;
+			break;
+		case 5:
+			setarray .@mapname$[0],"Payon.","payon";
+			setarray .@xy[0],161,58;
+			break;
+		case 6:
+			setarray .@mapname$[0],"Lighthalzen.","lighthalzen";
+			setarray .@xy[0],159,93;
+			break;
+		case 7:
+			setarray .@mapname$[0],"Rachel.","rachel";
+			setarray .@xy[0],115,124;
+			break;
+		case 8:
+			setarray .@mapname$[0],"Morocc.","morocc";
+			setarray .@xy[0],156,46;
+			break;
+		}
+		mes "You will be sent back to "+.@mapname$[0]+".";
+		close2;
+		warp .@mapname$[1],.@xy[0],.@xy[1];
+		break;
+	case 2:
+		mes "[Teleporter]";
+		mes "I'll be here whenever you're in need of my services.";
+		close;
+	}
+	end;
+}
+
+// Repairman
+//============================================================
+bat_room,142,146,3	script	Repairman#bat_room	52,{
+	callfunc "repairmain","Reparador";
+	end;
+}

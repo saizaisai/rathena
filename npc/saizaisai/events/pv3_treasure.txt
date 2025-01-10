@@ -1,0 +1,499 @@
+-	script	::evt_treasure	-1,{
+	if(checkriding()){
+		message strcharinfo(0),"Remove your mount~";
+		end;
+	}
+	getunitdata(getnpcid(0),.@ud);
+	unitwalk getcharid(3),.@ud[UNPC_X],.@ud[UNPC_Y],strnpcinfo(0)+"::OnOpenChest";
+end;
+
+OnOpenChest:
+	getmapxy(.@pmap$,.@px,.@py);
+	getmapxy(.@nmap$,.@nx,.@ny,BL_NPC);
+	if(distance(.@px,.@py,.@nx,.@ny) > 2) end;
+	if(.Delay){
+		showscript "Opening the box...",getcharid(3),SELF;
+		progressbar "",.Delay;
+	}
+	if(getd(".NPCTIME_"+getnpcid(0)) >= gettimetick(2)) end;
+	for(.@i=0;.@i<.MaxItems;.@i++)
+		.@dropped += callsub(OnMakeItem);
+	if(!.@dropped)
+		dispbottom "[Treasure] Bad Luck! No items inside this chest!~",0xFF0000;
+	setd ".NPCTIME_"+getnpcid(0),gettimetick(2)+.Delay;
+	moveNPC strnpcinfo(0),0,0;
+	.Current--;
+	if(!.Current)
+		mapannounce "goldroom","[Treasure Event] All treasure boxes has been opened!!",bc_map;
+	else if(.Current < 5)
+		mapannounce "goldroom","[Treasure Event] There are only "+.Current+" treasure box left!!",bc_map;
+	else if(rand(101)%5 == 0)
+		mapannounce "goldroom","[Treasure Event] "+(.Treasure-.Current)+" out of "+.Treasure+" treasue box are already opened!",bc_map;
+end;
+
+OnMakeItem:
+	.@id = getnpcid(0);
+	.@map$ = strnpcinfo(4);
+	getunitdata(.@id,.@ud);
+	.@rand = rand(1,10000);
+	for(.@i=0;.@i<getarraysize(.Items);.@i+=3)
+		if(.@rand <= .Items[.@i+2]){
+			.@items[.@x] = .Items[.@i];
+			.@amt[.@x] = .Items[.@i+1];
+			.@x++;
+		}
+	if(getarraysize(.@items) < 1) return 0;
+	.@idx = rand(getarraysize(.@items));
+	if(getd("$RareItem_"+.@items[.@idx])) return 0;
+	//getfreecell("goldroom",.@cellx,.@celly,.@ud[UNPC_X],.@ud[UNPC_Y],2,2);
+	getitem .@items[.@idx],.@amt[.@idx];
+	//makeitem .@items[.@idx],.@amt[.@idx],.@map$,.@cellx,.@celly;
+	if(inarray(.RareItems,.@items[.@idx]) >=0 ){
+		mapannounce "goldroom","[Treasure Event] "+strcharinfo(0)+" found a "+getitemname(.@items[.@idx])+" from a treasure box!!",bc_map;
+		setd "$RareItem_"+.@items[.@idx],1;
+	}
+return 1;
+
+OnStartEvent:
+	freeloop(1);
+	for(.@i=0;.@i<.Treasure;.@i++){
+		getfreecell("goldroom",.@x,.@y);
+		moveNPC "Treasure Box#trea"+.@i,.@x,.@y;
+	}
+	$@Treasure = 0;
+	.Current = .Treasure;
+	freeloop(0);
+	announce "[Treasure Event] "+.Treasure+" Treasure Box were found at Elemental Map! use command @go treasure",bc_all;
+	sleep 5000;
+	announce "[Treasure Event] Open up a treasure box and see what's inside of them! use command @go treasure",bc_all;
+end;
+
+OnEventMenu:
+	if(select((getgmlevel()>=99 ? "Initialize Treasures":"")+":Start Treasure Event")==1){
+		message strcharinfo(0),"Treasure Event is initialized";
+		$@Treasure = 1;
+	} else {
+		if(!$@Treasure){
+			dispbottom "Treasure event is not initialize, Ask the admin..",0xFF0000;
+			end;
+		}
+		donpcevent strnpcinfo(3)+"::OnStartEvent";
+	}
+end;
+
+OnInit:
+	.Delay = 3;	// Delay before player an open it.
+	setarray .RareItems[0],5376,5376,5423,5359,5800,5389,5462,5463,5361,50908,51857,51858,50130,55015,18566,7179;
+				//50692,5518,5389,5967,19126,5359,5800,5664,5463,5452,5451,50977,51813,54004,52657,55015,50864,18536,18858,5210;
+	setarray .Items[0],
+				5376,1,200,	//Flying Evil Wing
+				5376,1,200,	//Robo Eye
+				7179,500,200,	//Pods 500
+				5423,1,200,	//I love china
+				5359,1,200,	//Captain's Hat
+				5800,1,200,	//Blush of Groom
+				5389,1,200,	//Angel Spirit
+				5462,1,200,	//Spiked Scarf
+				5463,1,200,	//Rainbow Scarf
+				5361,1,200,	//Gangster Scarf
+				50908,1,200,	//Halo Black
+				51857,1,200,	//Mario Hat
+				51858,1,200,	//Luigi Hat
+				50130,1,200,	//Thunach Green
+				55010,1000,200,	//1000 Event Token
+				674,1,200,	//Mithril Coin
+//				55015,1,100,	//2nd Job Baby Costume
+				5379,1,500,	//Balloon Hat
+				5468,1,500,	//Parade Hat
+				18566,1,500,	//Nut Donut in Mouth
+				12103,10,200,	//10x Bloody Branch
+				55011,5,200,	//Food Box 5x
+				55009,5,500,	//MVP Voucher
+				55007,10,1000,	//Streamer Coin
+				55011,1,2000,	//Food Box
+				14003,3,2000,	//ESB
+				55010,20,2000,	//Event Token
+				12263,1,3000,	//Field Manual
+				14592,1,3000;	//Job Manual
+				/*
+				50692,1,100,
+				5518,1,100,
+				5389,1,100,
+				5967,1,100,
+				19126,1,100,
+				5359,1,100,
+				5800,1,100,
+				5664,1,100,
+				5463,1,100,
+				5452,1,100,
+				5451,1,100,
+				50977,1,100,
+				51813,1,100,
+				54004,1,100,
+				52657,1,100,
+//				55015,1,100,
+				50864,1,100,
+				18536,1,100,
+				18858,1,100,
+				5210,1,100,
+				14003,3,1000,
+				12210,1,300,
+				55003,1,200,
+				55011,1,3000,
+				55010,20,3000,
+				55009,2,2000,
+				55007,20,2000,
+				51674,1,100,
+				51680,1,100,
+				51679,1,100;
+	`			*/
+
+	for(.@i=0;.@i<getarraysize(.Items);.@i+=3)
+		setd "$RareItem_"+.Items[.@i],0;
+
+	.MaxItems = 3;
+	.Treasure = 300;	//(1-100)
+	bindatcmd "treasure",strnpcinfo(3)+"::OnEventMenu",99,100;
+end;
+
+}
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea0	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea1	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea2	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea3	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea4	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea5	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea6	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea7	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea8	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea9	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea10	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea11	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea12	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea13	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea14	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea15	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea16	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea17	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea18	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea19	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea20	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea21	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea22	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea23	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea24	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea25	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea26	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea27	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea28	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea29	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea30	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea31	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea32	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea33	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea34	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea35	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea36	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea37	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea38	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea39	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea40	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea41	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea42	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea43	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea44	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea45	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea46	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea47	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea48	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea49	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea50	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea51	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea52	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea53	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea54	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea55	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea56	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea57	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea58	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea59	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea60	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea61	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea62	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea63	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea64	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea65	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea66	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea67	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea68	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea69	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea70	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea71	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea72	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea73	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea74	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea75	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea76	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea77	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea78	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea79	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea80	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea81	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea82	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea83	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea84	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea85	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea86	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea87	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea88	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea89	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea90	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea91	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea92	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea93	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea94	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea95	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea96	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea97	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea98	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea99	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea100	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea101	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea102	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea103	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea104	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea105	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea106	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea107	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea108	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea109	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea110	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea111	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea112	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea113	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea114	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea115	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea116	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea117	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea118	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea119	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea120	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea121	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea122	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea123	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea124	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea125	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea126	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea127	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea128	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea129	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea130	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea131	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea132	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea133	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea134	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea135	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea136	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea137	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea138	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea139	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea140	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea141	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea142	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea143	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea144	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea145	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea146	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea147	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea148	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea149	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea150	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea151	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea152	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea153	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea154	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea155	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea156	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea157	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea158	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea159	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea160	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea161	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea162	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea163	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea164	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea165	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea166	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea167	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea168	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea169	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea170	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea171	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea172	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea173	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea174	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea175	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea176	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea177	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea178	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea179	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea180	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea181	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea182	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea183	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea184	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea185	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea186	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea187	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea188	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea189	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea190	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea191	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea192	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea193	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea194	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea195	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea196	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea197	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea198	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea199	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea200	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea201	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea202	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea203	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea204	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea205	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea206	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea207	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea208	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea209	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea210	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea211	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea212	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea213	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea214	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea215	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea216	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea217	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea218	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea219	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea220	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea221	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea222	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea223	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea224	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea225	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea226	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea227	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea228	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea229	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea230	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea231	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea232	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea233	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea234	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea235	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea236	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea237	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea238	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea239	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea240	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea241	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea242	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea243	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea244	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea245	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea246	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea247	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea248	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea249	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea250	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea251	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea252	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea253	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea254	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea255	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea256	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea257	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea258	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea259	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea260	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea261	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea262	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea263	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea264	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea265	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea266	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea267	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea268	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea269	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea270	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea271	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea272	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea273	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea274	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea275	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea276	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea277	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea278	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea279	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea280	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea281	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea282	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea283	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea284	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea285	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea286	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea287	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea288	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea289	10005
+
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea290	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea291	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea292	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea293	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea294	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea295	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea296	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea297	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea298	10005
+goldroom,0,0,0	duplicate(evt_treasure)	Treasure Box#trea299	10005
+
+goldroom,153,153,0	warp	goldroom01	1,1,goldroom,0,0
+
+goldroom	mapflag	nomemo
+//goldroom	mapflag	nowarp
+//goldroom	mapflag	nowarpto
+goldroom	mapflag	nosave
+goldroom	mapflag	noreturn
+goldroom	mapflag	noteleport
+goldroom	mapflag	loadevent

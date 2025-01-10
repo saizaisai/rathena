@@ -1,0 +1,637 @@
+-	script	Multi-Ladder	-1,{
+
+OnInit:
+	/************* CONFIGURATION *************/
+	// PK Settings
+	.soundeffect = 1; 		// Kill sound effects : 0 - Disable, 1 - Play sound effect to all players on map, 2 - Play sound effect to an area around the killer, 3 - Play soundeffect to killer only
+	.announce = 0; 			// Announce to : 0 - Global, 1 - Map, 2 - Area
+	.announce_map = 1; 		// Announce the map name where player die/kill in the announcement : 0 - Disable = 1 - Announce map
+	.announce_kill = 1;		// Announce the player names killer and victim : 0 - Disable, 1 - Announce Player Names
+	.payback_eff = 2;		// Enable Payback Effect : 0 - Disable , 1 - Enable , 2 - Add Message to both player
+	.show_killer_name = 1; 	// Shows the killer name when the player dies[not announce] : 0 - off = 1 - on
+	.show_killed_name = 1; 	// Shows the killed player name when the player kills[not announce] : 0 - off = 1 - on
+	.largest_multi = 7;		// Largest Multi Kill to be announced 5 = Rampage 7 = Massacre 3 = Triple Kill
+	.gmrecord_lv = 0; 		// A GM kill should not be recorded, GM Level can be found in conf/groups.conf. 0 - Allow GM Kills, 1 or Above Disables any GM Kills record.
+	.ladder_lv = 90;		// Player needed level to start recording ladder. 0 - Record All Level
+	
+	// Types of Rankings
+	setarray $@Rank_Type$[0],
+				"PvP", 					// Type 0 Name
+				"GvG",					// Type 1 Name
+				"Battleground",			// Type 2 Name
+				"War of Emperium",		// Type 3 Name
+				"King of Emperium",		// Type 4 Name
+				"Champion PvP";			// Type 5 Name
+
+	// PVP REWARD
+	setarray $@Type_0_Rewards$[0],
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1";
+	// GVG REWARD
+	setarray $@Type_1_Rewards$[0],
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1";
+	// BATTLEGROUND REWARD
+	setarray $@Type_2_Rewards$[0],
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1";
+	// WAR OF EMP REWARD
+	setarray $@Type_3_Rewards$[0],
+						"501,1,502,1,503,1",
+						"501,2,502,2,503,2",
+						"501,3,502,3,503,3";
+
+	// KING OF EMPERIUM REWARD						
+	setarray $@Type_4_Rewards$[0],
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1";
+
+	// CHAMPION PVP
+	setarray $@Type_5_Rewards$[0],
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1",
+						"501,1,502,1,503,1";
+
+	setarray .Type_0_Maps$[0],
+				"pr3_pvp00","pr3_pvp01","pr3_pvp04";
+				
+	setarray .Type_1_Maps$[0],
+				"guild_vs2","guild_vs4","guild_vs5";
+				
+	setarray .Type_2_Maps$[0],
+				"bat_a03","bat_a04","bat_a05","bat_b03",
+				"bat_b04","bat_b05","bat_c04",
+				"bat_c05","bat_c06","bat_c07",
+				"bat_c08","schg_cas06","schg_cas07",
+				"schg_cas08","arug_cas06","arug_cas07","arug_cas08","rush_cas01","rush_cas02",
+				"rush_cas03","rush_cas04","bat_cc","bat_cc2";
+				
+	setarray .Type_3_Maps$[0],
+				"prtg_cas01","prtg_cas02","prtg_cas03","prtg_cas04","prtg_cas05",
+				"gefg_cas01","gefg_cas02","gefg_cas03","gefg_cas04","gefg_cas05",
+				"payg_cas01","payg_cas02","payg_cas03","payg_cas04","payg_cas05",
+				"aldeg_cas01","aldeg_cas02","aldeg_cas03","aldeg_cas04","aldeg_cas05",
+				"arug_cas01","arug_cas02","arug_cas03","arug_cas04","arug_cas05",
+				"schg_cas01","schg_cas02","schg_cas03","schg_cas04","schg_cas05",
+				"mocg_cas01","mocg_cas02","mocg_cas03","mocg_cas04","mocg_cas05";
+				
+	setarray .Type_4_Maps$[0],
+				"koe_grid","koe_gloss","koe_mash","koetown";
+
+	setarray .Type_5_Maps$[0],
+				"pr3_champ";
+
+	setarray .SoundEffect_Kill_Announce$[1],
+				"First Blood",
+				"SKIPPED",
+				"Killing Spree",
+				"Dominating",
+				"Mega Kill",
+				"Unstoppable",
+				"Wicked Sick",
+				"Monster Kill",
+				"GODLIKE",
+				"BEYOND GODLIKE";
+
+	setarray .SoundEffect_Spree_Announce$[2],
+				"just got a Double Kill",
+				"just got a Triple Kill",
+				"just got an Ultra Kill",
+				"is on a Rampage",
+				"is on a Genocide",
+				"is on a MASSACRE";
+		
+	for(.@i = 0 ;.@i < getarraysize($@Rank_Type$); .@i++)
+		for(.@j = 0 ;.@j < getarraysize(getd(".Type_"+.@i+"_Maps$"));.@j++)
+			setmapflag getd(".Type_"+.@i+"_Maps$["+.@j+"]"),mf_loadevent;
+end;
+
+OnPCKillEvent:
+	if( getgmlevel() >= gmrecord_lv && getgmlevel(convertpcinfo(killedrid,CPC_CHAR)) >= gmrecord_lv && gmrecord_lv) end;
+//	debugmes "killerrid:"+killerrid+" killedrid"+killedrid+" \n";
+	if (killerrid == killedrid)end;	
+	for(.@i = 0 ;.@i < getarraysize($@Rank_Type$); .@i++)
+		if( inarray(getd(".Type_"+.@i+"_Maps$"),strcharinfo(3)) >= 0 )
+			.@j = callsub(OnValidatedKill,.@i,getcharid(3),killedrid,.@j);
+
+	if(strcharinfo(3) == "pr3_champ"){
+		query_sql("SELECT `last_unique_id` FROM `login` WHERE `account_id` = "+getcharid(3)+" ",.macID$);
+		query_sql("SELECT `last_unique_id` FROM `login` WHERE `account_id` = "+killedrid+" ",.macID2$);
+
+		query_sql("SELECT `last_ip` FROM `login` WHERE `account_id` = "+getcharid(3)+" ",.LastIP$);
+		query_sql("SELECT `last_ip` FROM `login` WHERE `account_id` = "+killedrid+" ",.LastIP2$);
+		if(.macID$ == .macID2$ || .LastIP$ == .LastIP2$){
+			dispbottom "Don't abuse pvp points";
+		}else{
+			set #PVPPoints, #PVPPoints + 1;
+			dispbottom "PVP Points: " + #PVPPoints;
+			set #lastkilledIP,.macID2$;
+			set #lastkilledMac,.LastIP2$;
+		}
+	}
+
+		if(strcharinfo(3) != "pr3_pvp00" || strcharinfo(3) != "pr3_pvp01" ||
+			strcharinfo(3) != "pr3_pvp04" || strcharinfo(3) != "guild_vs2" ||
+			strcharinfo(3) != "guild_vs4" || strcharinfo(3) != "guild_vs5" ||
+			strcharinfo(3) != "bat_a03" || strcharinfo(3) != "bat_a04" ||
+			strcharinfo(3) != "bat_a05" || strcharinfo(3) != "bat_b03" ||
+			strcharinfo(3) != "bat_b04" || strcharinfo(3) != "bat_b05" ||
+			strcharinfo(3) != "bat_c04" || strcharinfo(3) != "bat_c05" ||
+			strcharinfo(3) != "bat_c06" || strcharinfo(3) != "bat_c07" ||
+			strcharinfo(3) != "bat_c08" || strcharinfo(3) != "schg_cas06" ||
+			strcharinfo(3) != "schg_cas07" || strcharinfo(3) != "schg_cas08" ||
+			strcharinfo(3) != "arug_cas06" || strcharinfo(3) != "arug_cas07" ||
+			strcharinfo(3) != "arug_cas08" || strcharinfo(3) != "rush_cas01" ||
+			strcharinfo(3) != "rush_cas02" || strcharinfo(3) != "rush_cas03" ||
+			strcharinfo(3) != "rush_cas04" || strcharinfo(3) != "bat_cc" ||
+			strcharinfo(3) != "bat_cc2" || strcharinfo(3) != "prtg_cas01" ||
+			strcharinfo(3) != "prtg_cas02" || strcharinfo(3) != "prtg_cas03" ||
+			strcharinfo(3) != "prtg_cas04" || strcharinfo(3) != "prtg_cas05" ||
+			strcharinfo(3) != "gefg_cas01" || strcharinfo(3) != "gefg_cas02" ||
+			strcharinfo(3) != "gefg_cas03" || strcharinfo(3) != "gefg_cas04" ||
+			strcharinfo(3) != "gefg_cas05" || strcharinfo(3) != "payg_cas01" ||
+			strcharinfo(3) != "payg_cas02" || strcharinfo(3) != "payg_cas03" ||
+			strcharinfo(3) != "payg_cas04" || strcharinfo(3) != "payg_cas05" ||
+			strcharinfo(3) != "aldeg_cas01" || strcharinfo(3) != "aldeg_cas02" ||
+			strcharinfo(3) != "aldeg_cas03" || strcharinfo(3) != "aldeg_cas04" ||
+			strcharinfo(3) != "aldeg_cas05" || strcharinfo(3) != "arug_cas01" ||
+			strcharinfo(3) != "arug_cas02" || strcharinfo(3) != "arug_cas03" ||
+			strcharinfo(3) != "arug_cas04" || strcharinfo(3) != "arug_cas05" ||
+			strcharinfo(3) != "schg_cas01" || strcharinfo(3) != "schg_cas02" ||
+			strcharinfo(3) != "schg_cas03" || strcharinfo(3) != "schg_cas04" ||
+			strcharinfo(3) != "schg_cas05" || strcharinfo(3) != "mocg_cas01" ||
+			strcharinfo(3) != "mocg_cas02" || strcharinfo(3) != "mocg_cas03" ||
+			strcharinfo(3) != "mocg_cas04" || strcharinfo(3) != "mocg_cas05") {
+		if(.show_killer_name ) dispbottom "You were killed by "+rid2name(getcharid(3));
+		if(.payback_eff){
+			if(getvar(@payback,convertpcinfo(getcharid(3),CPC_CHAR)) == getcharid(0)){
+				if(.payback_eff >= 2) dispbottom strcharinfo(0,convertpcinfo(getcharid(3),CPC_CHAR))+" retribution to you is success",0xFF0000;
+				soundeffect getvar(YumiSFX,convertpcinfo(getcharid(3),CPC_CHAR))+"_Payback.wav",0;
+				set @payback,0,convertpcinfo(getcharid(3),CPC_CHAR);
+				.@payback = 1;
+			}
+			@payback = convertpcinfo(getcharid(3),CPC_CHAR);
+		}
+		// Shutdown Ready
+		if(getd("@c_yumi_streaks1_6") > 2){
+			if(getd("@c_yumi_streaks1_6") >=10) .@c = 10;
+			else .@c = getd("@c_yumi_streaks1_6");
+			.@shutdown$ = strcharinfo(0,convertpcinfo(getcharid(3),CPC_CHAR))+" has ended "+strcharinfo(0)+"'s "+.SoundEffect_Kill_Announce$[.@c]+"["+getd("@c_yumi_streaks1_6")+"]!";
+		}
+		setd "@c_yumi_streaks1_6",0;
+		setd "@yumi_deaths1_6",(getd("@yumi_deaths1_6")+1);
+		if(getcharid(3) == getcharid(0)) end;
+		//Player Kills
+		setd "@yumi_kills1_6",(getd("@yumi_kills1_6")+1);
+		setd "@c_yumi_streaks1_6",(getd("@c_yumi_streaks1_6")+1);
+		if(.announce_kill){
+			callsub OnAnnounce,strcharinfo(0)+" has pawned "+strcharinfo(0,convertpcinfo(killedrid,CPC_CHAR))+"'s head"+( (.announce_map)?(" at "+strcharinfo(3)):"")+"!",0,0;
+		}
+		if(.@shutdown$ != "")
+			callsub OnAnnounce,.@shutdown$,0,1;
+		if(.@payback && .payback_eff){
+			if(.payback_eff >= 2) dispbottom "Your revenge has been fulfilled",0xFF0000;
+			soundeffect getvar(YumiSFX,convertpcinfo(getcharid(3),CPC_CHAR))+"_Payback.wav",0;
+		}
+		//Streak Kills
+		if(getd("@c_yumi_streaks_6") && getd("@c_yumi_streaks_6") != 2){
+			.@b = (getd("@c_yumi_streaks_6") >= 10 ? 10:getd("@c_yumi_streaks_6"));
+			callsub OnAnnounce,strcharinfo(0)+" "+(.@b == 1 ? "has drew "+(Sex ? "his":"her")+" ":"is ")+(.@b == 3 ? "on ":"")+.SoundEffect_Kill_Announce$[.@b]+"["+getd("@c_yumi_streaks_6")+"]"+(getd("@c_yumi_streaks_6") > 10 ? "! Someone kill "+(Sex ? "him":"her")+"!":"!"),0,0;
+			if(.soundeffect && !.@payback)
+				callsub OnSoundEffect,1,.@b,0;
+		}
+		//Multi Kills
+		//if(!getarg(3))
+		@yumi_multi += 1;
+		deltimer strnpcinfo(0)+"::OnResetStreak";
+		addtimer 10000+(@yumi_multi*2000),strnpcinfo(0)+"::OnResetStreak";
+		if(@yumi_multi >= 2){
+			if(@yumi_multi >= .largest_multi) .@c = .largest_multi;
+			else .@c = @yumi_multi;
+			sleep2 2000;
+			callsub OnAnnounce,strcharinfo(0)+" "+.SoundEffect_Spree_Announce$[.@c]+"!!",1,0;
+			if(.soundeffect)
+				callsub OnSoundEffect,0,.@c,0;
+		}
+		if(!getd("@yumi_streaktime_6"))
+			setd "@yumi_streaktime_6",gettimetick(2);
+		if(getd("@c_yumi_streaks_6")>getd("@yumi_streaks_6")){
+			setd "@yumi_streaks_6",getd("@c_yumi_streaks_6");
+			setd "@yumi_streaktime_6",gettimetick(2);
+		}
+	}
+end;
+
+OnPCDieEvent:
+	sc_end_class getcharid(0),20;
+	getmapxy(.@map$,.@x,.@y);
+	//if( strcharinfo(3) == "clashcity" && .@x >= 139 && .@x <= 160 && .@y >= 160 && .@y <= 139 ) // Complicated
+	if(checkcell(.@map$,.@x,.@y,cell_chkpvp)) // Easy
+//		makeitem2 7420,1,.@map$,.@x,.@y,1,0,0,254,0,getcharid(0)&0xffff,(getcharid(0)>>16)&0xffff;
+end;
+
+OnValidatedKill: //arg(0) - Type , arg(1) - Killer ID, arg(2) - Killed ID
+	/******* Victim Session *******/
+	if ( .ladder_lv > BaseLevel ) end;
+		if(.show_killed_name ) dispbottom "You have killed "+rid2name(getarg(2));
+	attachrid getarg(2);
+	if ( .ladder_lv > BaseLevel) end;
+	if(getarg(1) == getcharid(0)){
+		dispbottom "You have killed yourself",0xFF0000;
+	} else { 
+		if(.show_killer_name ) dispbottom "You were killed by "+rid2name(getarg(1));
+		if(.payback_eff){
+			if(getvar(@payback,convertpcinfo(getarg(1),CPC_CHAR)) == getcharid(0)){
+				if(.payback_eff >= 2) dispbottom strcharinfo(0,convertpcinfo(getarg(1),CPC_CHAR))+" retribution to you is success",0xFF0000;
+				soundeffect getvar(YumiSFX,convertpcinfo(getarg(1),CPC_CHAR))+"_Payback.wav",0;
+				set @payback,0,convertpcinfo(getarg(1),CPC_CHAR);
+				.@payback = 1;
+			}
+			@payback = convertpcinfo(getarg(1),CPC_CHAR);
+		}
+		// Shutdown Ready
+		if(getd("@c_yumi_streaks_"+getarg(0)) > 2){
+			if(getd("@c_yumi_streaks_"+getarg(0))>=10) .@c = 10;
+			else .@c = getd("@c_yumi_streaks_"+getarg(0));
+			.@shutdown$ = strcharinfo(0,convertpcinfo(getarg(1),CPC_CHAR))+" has ended "+strcharinfo(0)+"'s "+.SoundEffect_Kill_Announce$[.@c]+"["+getd("@c_yumi_streaks_"+getarg(0))+"]!";
+		}
+	}
+	setd "@c_yumi_streaks_"+getarg(0),0;
+	setd "@yumi_deaths_"+getarg(0),(getd("@yumi_deaths_"+getarg(0))+1);
+	query_sql("REPLACE INTO `pvpladder` VALUES ("+getcharid(0)+",'"+escape_sql(strcharinfo(0))+"',"+getarg(0)+","+getd("@yumi_kills_"+getarg(0))+","+getd("@yumi_deaths_"+getarg(0))+","+getd("@yumi_streaks_"+getarg(0))+",from_unixtime("+getd("@yumi_streaktime_"+getarg(0))+"))");
+	detachrid;
+	/******* Killer Session *******/
+	attachrid getarg(1);
+	if(getarg(1) == getcharid(0)) end;
+	//Player Kills
+	setd "@yumi_kills_"+getarg(0),(getd("@yumi_kills_"+getarg(0))+1);
+	setd "@c_yumi_streaks_"+getarg(0),(getd("@c_yumi_streaks_"+getarg(0))+1);
+	if(.announce_kill){
+		callsub OnAnnounce,strcharinfo(0)+" has pawned "+strcharinfo(0,convertpcinfo(getarg(2),CPC_CHAR))+"'s head"+( (.announce_map)?(" at "+strcharinfo(3)):"")+"!",getarg(3),0;
+	}
+	if(.@shutdown$ != "")
+		callsub OnAnnounce,.@shutdown$,getarg(3),1;
+	if(.@payback && .payback_eff){
+		if(.payback_eff >= 2) dispbottom "Your revenge has been fulfilled",0xFF0000;
+		soundeffect getvar(YumiSFX,convertpcinfo(getarg(1),CPC_CHAR))+"_Payback.wav",0;
+	}
+	//Streak Kills
+	if(getd("@c_yumi_streaks_"+getarg(0)) && getd("@c_yumi_streaks_"+getarg(0)) != 2){
+		.@b = (getd("@c_yumi_streaks_"+getarg(0)) >= 10 ? 10:getd("@c_yumi_streaks_"+getarg(0)));
+		callsub OnAnnounce,strcharinfo(0)+" "+(.@b == 1 ? "has drew "+(Sex ? "his":"her")+" ":"is ")+(.@b == 3 ? "on ":"")+.SoundEffect_Kill_Announce$[.@b]+"["+getd("@c_yumi_streaks_"+getarg(0))+"]"+(getd("@c_yumi_streaks_"+getarg(0)) > 10 ? "! Someone kill "+(Sex ? "him":"her")+"!":"!"),getarg(3),0;
+		if(.soundeffect && !.@payback)
+			callsub OnSoundEffect,1,.@b,getarg(3);
+	}
+	//Multi Kills
+	if(!getarg(3))
+		@yumi_multi += 1;
+	deltimer strnpcinfo(0)+"::OnResetStreak";
+	addtimer 10000+(@yumi_multi*2000),strnpcinfo(0)+"::OnResetStreak";
+	if(@yumi_multi >= 2){
+		if(@yumi_multi >= .largest_multi) .@c = .largest_multi;
+		else .@c = @yumi_multi;
+		sleep2 2000;
+		callsub OnAnnounce,strcharinfo(0)+" "+.SoundEffect_Spree_Announce$[.@c]+"!!",getarg(3),0;
+		if(.soundeffect)
+			callsub OnSoundEffect,0,.@c,getarg(3);
+	}
+	if(!getd("@yumi_streaktime_"+getarg(0)))
+		setd "@yumi_streaktime_"+getarg(0),gettimetick(2);
+	if(getd("@c_yumi_streaks_"+getarg(0))>getd("@yumi_streaks_"+getarg(0))){
+		setd "@yumi_streaks_"+getarg(0),getd("@c_yumi_streaks_"+getarg(0));
+		setd "@yumi_streaktime_"+getarg(0),gettimetick(2);
+	}
+	if(strcharinfo(3) != "prontera") #PVPPOINTS++;
+	query_sql("REPLACE INTO `pvpladder` VALUES ("+getcharid(0)+",'"+escape_sql(strcharinfo(0))+"',"+getarg(0)+","+getd("@yumi_kills_"+getarg(0))+","+getd("@yumi_deaths_"+getarg(0))+","+getd("@yumi_streaks_"+getarg(0))+",from_unixtime("+getd("@yumi_streaktime_"+getarg(0))+"))");
+return 1;
+
+OnSoundEffect:
+	if(getarg(2)) return;
+	getmapxy(.@map$,.@x,.@y,BL_PC);
+	if(getarg(0)==1)	
+		.@str$ = "_KS";
+	else
+		.@str$ = "_MK";
+	if(.soundeffect == 1) soundeffectall YumiSFX+.@str$+getarg(1)+".wav",0,.@map$;
+	else if(.soundeffect == 2) soundeffectall YumiSFX+.@str$+getarg(1)+".wav",0;
+	else if(.soundeffect >= 3) soundeffect YumiSFX+.@str$+getarg(1)+".wav",0;
+return;
+
+OnAnnounce:
+	if(getarg(1)>=1) return;
+	getmapxy(.@map$,.@x,.@y,BL_PC);
+	switch(.announce){		
+		case 1: if(getarg(2)) mapannounce .@map$,getarg(0),16|bc_map,0xFF0000;
+			else mapannounce .@map$,getarg(0),16|bc_map;
+			break;
+		case 2: if(getarg(2)) areaannounce .@map$,.@x-13,.@y-13,.@x+13,.@y+13,getarg(0),16|bc_area,0xFF0000;
+			else areaannounce .@map$,.@x-13,.@y-13,.@x+13,.@y+13,getarg(0),16|bc_area;
+			break;
+		case 0:
+		default: if(getarg(2)) pvpannounce getarg(0),16|bc_all,0x00FFFF;
+			else pvpannounce getarg(0),0x00FFFF;
+			break;
+	}
+return;
+
+OnResetStreak:
+	set @yumi_multi,0;
+end;
+
+OnPCLoadMapEvent:
+	for(.@i = 0 ;.@i < getarraysize($@Rank_Type$); .@i++)
+		if( inarray(getd(".Type_"+.@i+"_Maps$"),strcharinfo(3)) >= 0 )
+			if ( getd("@yumi_kills_"+.@i) == 0 && getd("@yumi_deaths_"+.@i) == 0 ){
+				query_sql("SELECT kills, deaths, streaks, unix_timestamp(streaktime) FROM pvpladder WHERE char_id = "+ getcharid(0) +" AND type = "+.@i, .@kills, .@deaths, .@streaks, .@streaktime);
+				setd "@yumi_kills_"+.@i,.@kills;
+				setd "@yumi_deaths_"+.@i,.@deaths;
+				if(getd("@c_yumi_streaks_"+.@i) < getd("@yumi_streaks_"+.@i))
+					setd "@yumi_streaks_"+.@i,.@streaks;
+				setd "@yumi_streaktime_"+.@i,.@streaktime;
+			}
+	if(inarray(.Type_2_Maps$,strcharinfo(3)) >= 0 && strcharinfo(3) != @bglastmap$){
+		@bglastmap$ = strcharinfo(3);
+		callfunc "bg_remove_buff";
+	}
+end;
+
+}
+
+-	script	Felicity	-1,{
+goto OnMenu;
+OnInit:
+	.name$ = "^00B2EE[ Ranking PvP ]^000000";
+	.pl_page = 10;	// Count of players shown on ranking per page.
+	setarray .SoundEffect_Name$[0],
+				"Original",	//This is Free
+				"Male Immortal",	//Price Starts Here
+				"Female Immortal",
+				"Super Star",
+				"Bloody Hell",
+				"Hail Champion",
+				"Disintegrate";
+				
+	setarray .SoundEffect_Price[1],2,2,2,2,2,2;
+	.Payment = 7179; //Proof Of Donation
+end;
+
+OnMenu:
+	mes .name$;
+	mes (gettime(3)>= 6&&gettime(3)<= 12?"Good Morning":(gettime(3)>=13&&gettime(3)<=18?"Good afternoon":"Good Night"))+", ^FFA500"+strcharinfo(0)+".^000000";
+	mes "I am the PK Ranking Manager.";
+	mes "I manage all PK on the server";
+	mes "What can i help you today?";
+	next;
+	switch(select("> ^0055FFCheck Rankings^000000:> ^FFB236Change Sound Effects^000000:> ^0FBD3DInformation^000000:"+(getgmlevel()>=99 ? "^FF5500> [GM] Administration^000000:":":")+"> Cancel")){
+		case 1:
+			mes .name$;
+			mes "Please select a ranking that you want an information to.";
+			.@menu$ = "";
+			for(.@i=0;.@i<getarraysize($@Rank_Type$);.@i++)
+				.@menu$ = .@menu$ + "> "+$@Rank_Type$[.@i]+":";
+			next;
+			.@type = select(.@menu$)-1;
+			mes .name$;
+			mes "What would you like to know about "+$@Rank_Type$[.@type]+" Rankings?";
+			next;
+			switch(select("> Kill Ranking:> Streak Ranking:> Personal Information:> "+$@Rank_Type$[.@type]+" Maps:> Back")){
+				case 1:
+					.@a = query_sql("SELECT name,kills,deaths FROM pvpladder WHERE type ="+.@type+" ORDER BY kills DESC",.@name$,.@kills,.@deaths);
+					if(!.@a) callsub OnNoRank;
+					if(.@a > 30) .@a = 30;
+					for(.@i=0;.@i<.@a;.@i++){
+						if(.@i%.pl_page == 0){
+							next;
+							mes "[ ^FF5500"+$@Rank_Type$[.@type]+" Ranking^000000 ]";
+							mes "^0FBD3DPlayer Name^000000 ------ ^0055FFKills^000000 -- ^FF5500Deaths^000000";
+						}
+							mes (.@i+1)+". ^0FBD3D"+.@name$[.@i]+"^000000 - <^0055FF"+.@kills[.@i]+"^000000> <^FF5500"+.@deaths[.@i]+"^000000>";					}
+					break;
+				case 2:
+					.@b = query_sql("SELECT name,streaks FROM pvpladder WHERE type ="+.@type+" ORDER BY streaks DESC",.@name$,.@streaks);
+					if(!.@b) callsub OnNoRank;
+					if(.@b > 30) .@b = 30;
+					for(.@i=0;.@i<.@b;.@i++){
+						if(.@i%.pl_page == 0){
+							mes "[ ^FF5500"+$@Rank_Type$[.@type]+" Ranking^000000 ]";
+							mes "^0FBD3DPlayer Name^000000 ------ ^0055FFHighest Streak^000000";
+						}
+							mes (.@i+1)+". ^0FBD3D"+.@name$[.@i]+"^000000 - <^0055FF"+.@streaks[.@i]+"^000000>";
+						if(.@i%.pl_page == 0 && .@i >=.pl_page) next;
+					}
+					break;
+				case 3:
+					.@c = query_sql("SELECT name,type,kills,deaths,streaks,streaktime FROM pvpladder WHERE char_id ="+getcharid(0)+" AND type = "+.@type+" ORDER BY type ASC",.@name$,.@type,.@kills,.@deaths,.@streaks,.@streaktime$);
+					if(!.@c){
+						mes .name$;
+						mes "You don't have any personal battle information yet.";
+						break;
+					}
+					mes .name$;
+					mes "^0055FFPlayer Name^000000 : "+.@name$;
+					mes "^0FBD3DType^000000 : "+$@Rank_Type$[.@type];
+					mes "   ^0055FFKills^000000 : "+.@kills;
+					mes "   ^FF5500Deaths^000000 : "+.@deaths;
+					mes "   ^EDCE00Highest Streak^000000 : "+.@streaks;
+					mes "   ^20E6C8Time^000000 : "+(.@streaktime$ == "1970-01-01 08:00:00" ? "^FF5500Not Applicable^000000":.@streaktime$);
+					break;
+				case 4:
+					mes .name$;
+					mes "Here are the list of "+$@Rank_Type$[.@type]+" Maps :";
+					for(.@i=0;.@i<getarraysize(getvariableofnpc(getd(".Type_"+.@type+"_Maps$"),"Multi-Ladder"));.@i++)
+						mes (.@i+1)+". "+getvariableofnpc(getd(".Type_"+.@type+"_Maps$["+.@i+"]"),"Multi-Ladder");
+					break;
+				default:
+					callsub OnMenu;
+			}
+			break;
+		case 2:
+			while(1){
+				mes .name$;
+				mes "Welcome to Sound Effects Corner!\n\n";
+				mes "Feel free to configure your Sound effects!";
+				.@menu$ = "";
+				for(.@i=0;.@i<getarraysize(.SoundEffect_Name$);.@i++)
+					.@menu$ = .@menu$ + "> "+.SoundEffect_Name$[.@i]+":";
+				.@menu$ = .@menu$ + "> Back";
+				.@voice = select(.@menu$)-1;
+				if(.@voice >= getarraysize(.SoundEffect_Name$)) break;
+				while(++.@c){
+					switch(select((((getd("#MultiSFX_"+getcharid(3)+"_"+.@voice) && .@voice) || !.@voice)  ? ":> Change SFX":"> Purchase SFX:")+":> Test SFX:> Back")){
+						case 1:
+							clear();
+							mes .name$;
+							mes "The Price for ^0055FF"+.SoundEffect_Name$[.@voice]+"^000000 is "+.SoundEffect_Price[.@voice]+"x "+getitemname(.Payment)+".";
+							next;
+							if(select("Purchase Now:Cancel")==2) end;
+							if(countitem(.Payment)<.SoundEffect_Price[.@voice]){
+								mes .name$;
+								mes "Insufficient amount of ^0055FF"+getitemname(.Payment)+"^000000.";
+								end;
+							}
+							mes .name$;
+							mes "Purchase is Successful!";
+							mes "Thank you for your patronage!\n";
+							mes "We also change your Sound effect to ^0055FF"+.SoundEffect_Name$[.@voice]+"^000000";
+							delitem .Payment,.SoundEffect_Price[.@voice];
+							setd "#MultiSFX_"+getcharid(3)+"_"+.@voice,1;
+							YumiSFX = .@voice;
+							end;
+						case 2:
+							clear();
+							mes .name$;
+							mes "Successfully Changed your PK Sound effect into ^0055FF"+.SoundEffect_Name$[.@voice]+"^000000.";
+							YumiSFX = .@voice;
+							end;
+						case 3:
+							while(1){
+								.@testSFX = select("Streak 1::Streak 3:Streak 4:Streak 5:Streak 6:Streak 7:Streak 8:Streak 9:Streak 10:Multi Kill 2:Multi Kill 3:Multi Kill 4:Multi Kill 5:Multi Kill 6:Multi Kill 7:Quit PvP:Payback:Back");
+								if(.@testSFX<=10) soundeffect .@voice+"_KS"+.@testSFX+".wav",0;
+								else if(.@testSFX<=16) soundeffect .@voice+"_MK"+(.@testSFX-9)+".wav",0;
+								else if(.@testSFX==17) soundeffect .@voice+"_Ragequit.wav",0;
+								else if(.@testSFX==18) soundeffect .@voice+"_Payback.wav",0;
+								else if(.@testSFX==19) break;
+							}
+							break;
+						case 4:
+							.@c = -1;
+							break;
+					}
+				}
+				clear();
+			}
+			break;
+		case 3:
+			mes .name$;
+			mes "Hello There!";
+			mes "This Ranking is here to provide information about the current standings on each battle fields.";
+			mes "Each Type of Battles has their own rankings, This is to show how players are good on respective battle fields.";
+			next;
+			break;
+		case 4:
+			mes .name$;
+			mes "What would you like to do master?";
+			next;
+			.@reward = 1;
+			switch(select("> ^FF5500Reset a ranking^000000:> ^0055FFReset a ranking with rewards^000000:> Back")){
+				case 1:
+					.@reward = 0;
+				case 2:
+					mes .name$;
+					mes "Which ranking would you like to reset?";
+					.@menu$ = "";
+					for(.@i=0;.@i<getarraysize($@Rank_Type$);.@i++)
+						.@menu$ = .@menu$ + "> "+$@Rank_Type$[.@i]+":";
+					next;
+					.@res = select(.@menu$)-1;
+					mes .name$;
+					mes "Are you sure you want to reset "+$@Rank_Type$[.@res]+" ranking?";
+					if(.@reward){
+						mes "^0055FFList of Rewards^000000 : ";
+						for(.@i=0;.@i<getarraysize(getd("$@Type_"+.@res+"_Rewards$"));.@i++){
+							mes "^0FBD3DTop "+(.@i+1)+" reward^000000 :";
+							explode(.@tmp$,getd("$@Type_"+.@res+"_Rewards$["+.@i+"]"),",");
+							for(.@j=0;.@j<getarraysize(.@tmp$);.@j+=2)
+								mes " - "+.@tmp$[.@j+1]+"x "+getitemname(atoi(.@tmp$[.@j]));
+						}
+					}
+					next;
+					if(select("> Reset now:> Cancel")==2) end;
+					if(.@reward) callsub OnReward,.@res;
+					mes .name$;
+					mes "Please wait....";
+					sleep2 1000;
+					clear();
+					mes .name$;
+					mes "Ranking reset is successful!";
+					if(.@reward)
+						mes "All rewards are sent!";
+					query_sql("DELETE FROM pvpladder WHERE type="+.@res);
+					addrid(0);
+					for(.@i=0;.@i<getarraysize($@Rank_Type$);.@i++){
+						setd "@c_yumi_streaks_"+.@i,0;
+						setd "@yumi_streaks_"+.@i,0;
+						setd "@yumi_kills_"+.@i,0;
+						setd "@yumi_deaths_"+.@i,0;
+						setd "@yumi_streaktime_"+.@i,0;
+					}
+					end;
+				case 3:
+					break;
+			}
+			break;
+		case 5:
+			end;
+	}
+	next;
+	callsub OnMenu;
+end;
+
+OnReward:
+	.@limit = query_sql("SELECT char_id,name FROM pvpladder WHERE type="+getarg(0)+" ORDER BY kills DESC LIMIT "+getarraysize(getd("$@Type_"+getarg(0)+"_Rewards$")),.@cid,.@name$);
+	.@str$ = gettimestr("%B %d, %Y",21);
+	for(.@i=0;.@i<.@limit;.@i++){
+		.@charid = .@cid[.@i];
+		.@sender$ = "no-reply";
+		.@title$ = "** Ranking Reward: "+$@Rank_Type$[getarg(0)]+" **";
+		.@body$ = "Warrior,\r\n \r\n Congratulations!\r\n You successfully reached Top "+(.@i+1)+"\r\n in kills at "+$@Rank_Type$[getarg(0)]+" rankings! on\r\n "+.@str$+".\r\n \r\n \r\n \r\n \r\n [ Your reward is attached. ]";
+		deletearray .@tmp$;
+		explode(.@tmp$,getd("$@Type_"+.@res+"_Rewards$["+.@i+"]"),",");
+			.@a = 0;
+			for(.@j=0;.@j<getarraysize(.@tmp$);.@j+=2){
+				.@reward_id[.@a] = atoi(.@tmp$[.@j]);
+				.@reward_amount[.@a++] = atoi(.@tmp$[.@j+1]);
+			}
+		if (.@reward_id)
+			mail .@charid, .@sender$, .@title$, .@body$, .@reward_zeny, .@reward_id, .@reward_amount;
+		else
+			mail .@charid, .@sender$, .@title$, .@body$, .@reward_zeny;
+	
+		if (!getd(".@str_"+.@charid) && isloggedin(convertpcinfo(.@charid,CPC_ACCOUNT),.@charid)) {
+			setd ".@str_"+.@charid,1;
+			message rid2name(convertpcinfo(.@charid,CPC_ACCOUNT)),"You've got mail!";
+		}
+	}
+return;
+
+OnNoRank:
+	mes .name$;
+	mes "No one is on the ranking yet.";
+	next;
+	callsub OnMenu;
+end;
+}
+
+prontera,164,173,4	duplicate(Felicity)	PvP Ladder#prontera	835
+
+pr3_pvp00,22,57,5	script	PvP Exit#Main	10895,{
+	mes "[ ^FF5500"+strnpcinfo(1)+"^000000 ]";
+	.@cidle = checkidle();
+	if(.@cidle<5){
+		mes "Please wait for "+(5-.@cidle)+" more seconds before you can exit";
+		mes "^FF0000Note: Do not attack, Walk^000000";
+		end;
+	}
+	mes "Would you like to exit??";
+	next;
+	if(select("Exit:Cancel")==2)
+		end;
+	mapannounce strcharinfo(3),strcharinfo(0)+" has left the battlefield.",16|bc_map,0xFF0000,FW_BOLD;
+	soundeffectall YumiSFX+"_Ragequit.wav",0;
+	warp "SavePoint",0,0;
+	end;
+	OnInit:
+		PUBTITLE:
+			showscript "Exit Arena";
+			sleep 3000;
+		goto PUBTITLE;
+	end;
+}
+
+//pr3_champ,86,54,3	duplicate(PvP Exit#Main)	PvP Exit#pr3_champ1	10895
+//pr3_champ,54,86,3	duplicate(PvP Exit#Main)	PvP Exit#pr3_champ2	10895
+//pr3_champ,54,17,2	duplicate(PvP Exit#Main)	PvP Exit#pr3_champ3	10895

@@ -1,0 +1,28 @@
+//===== rAthena Script =======================================
+//= AFK MapFlags
+//===== Descrição: ===========================================
+//= Allows the player to use the @afk command.
+//============================================================
+
+prontera	mapflag	afk
+//prontera	mapflag	autotrade
+//izlude	mapflag	afk
+//moc_ruins	mapflag	afk
+//geffen	mapflag	afk
+//payon	mapflag	afk
+//pay_arche	mapflag	afk
+//alberta	mapflag	afk
+//aldebaran	mapflag	afk
+//yuno	mapflag	afk
+//lighthalzen	mapflag	afk
+//einbroch	mapflag	afk
+//einbech	mapflag	afk
+//comodo	mapflag	afk
+//umbala	mapflag	afk
+//amatsu	mapflag	afk
+//gonryun	mapflag	afk
+//ayothaya	mapflag	afk
+//louyang	mapflag	afk
+//hugel	mapflag	afk
+//rachel	mapflag	afk
+//veins	mapflag	afk

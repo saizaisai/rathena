@@ -1,0 +1,417 @@
+//===== rAthena Script =======================================
+//    Extended Battleground
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  27-01-2023
+// By:
+//  Easycore
+//
+// Contact:
+//    - Web:  https://www.easycore-services.com/index.php?/profile/1-easycore/
+//    - rAthena:  https://rathena.org/board/profile/16425-easycore/
+//    - Discord:  Easycore#9709
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+
+// Battleground Queue Engine
+// *********************************************************************
+
+// ==============================================================================
+// BattleGround System - Tierra Bossnia
+// ==============================================================================*/
+
+-	script	Tierra_Boss	-1,{
+	end;
+
+OnInit:
+	// Configuration
+	.reward_id = 7773;				// Item ID for reward (default War Badge)
+	.qty_win = 20;					// Reward amount for winners
+	.qty_los = 10;					// Reward amount for losers
+	.qty_tie = 10;					// Reward amount for draw
+	.qty_bos =  3;					// Extra reward amount for each boss killed
+	.condition = 3;					// How many bosses team must defeat for victory (Min 1 Max 3)
+	// ===========
+	// For Bosses Configurations edit db/import/mob_db_bg.yml
+	end;
+
+OnTeam1Active:
+	warp "bat_cc2",61,120;
+	end;
+OnTeam2Active:
+	warp "bat_cc2",138,63;
+	end;
+
+OnTeam1Quit:
+OnTeam2Quit:
+	if (!$@BG_Status) end;
+	bg_desert;
+	end;
+	
+OnTeam1Die:
+OnTeam2Die:
+	end;
+
+OnStart:
+	announce "Battleground -- " + $@BG_C_Name$ + " has started!.",bc_all,$@BG_Color$[$@BG_Index];
+	$@BG_Status = 1;
+	$@BG_Current$ = $@BG_Names$[($@BG_Index*2)];
+	initnpctimer;
+	.guillaume_boss = 0;
+	.croix_boss = 0;
+	.Neutral_Base = 0;
+	sleep 2000;
+	bg_warp($@BG_Team1,"bat_cc2",61,120);
+	bg_warp($@BG_Team2,"bat_cc2",138,63);
+	sleep 2000;
+	donpcevent "#gtb_respawn::OnBGStart";
+	donpcevent "#ctb_respawn::OnBGStart";
+	bg_updatescore "bat_cc2",.croix_boss,.guillaume_boss;
+	sleep 3000;
+	donpcevent "Balance_Flag::OnBGStart";
+	donpcevent "Guillaume_Boss::OnSummon";
+	donpcevent "Croix_Boss::OnSummon";
+	donpceventall "OnEmblemBOSS";
+	mapannounce "bat_cc2","-- Capture the Balance Flag to remove immunity of Enemy Guardians --",1,0x483D8B;
+	end;
+
+OnNeutralReset:
+	set .Neutral_Base, 0;
+	killmonster "bat_cc2","Tierra_Boss::OnNeutralBreak";
+	setunitdata(getvariableofnpc(.Boss,"Guillaume_Boss"),UMOB_DMGIMMUNE,1);
+	setunitdata(getvariableofnpc(.Boss,"Croix_Boss"),UMOB_DMGIMMUNE,1);
+	set .Flag, bg_monster(0,"bat_cc2",100,92,"Balance Flag",20403,"Tierra_Boss::OnNeutralBreak");
+	sleep 2000;
+	if ($@BG_Status != 1 || $@BG_Current$ != "Tierra_Boss")
+		end;
+	mapannounce "bat_cc2","-- Balance Flag returned to normality --",1,0x483D8B;
+	end;
+
+OnNeutralBreak:
+	if ($@BG_Status != 1 || $@BG_Current$ != "Tierra_Boss")
+		end;
+	set .Neutral_Base, getcharid(4);
+	if (getcharid(4) == $@BG_Team1) {
+		mapannounce "bat_cc2","-- Guillaume captured the Balance Flag. Croix guardian is now vulnerable to attacks!! --",1,0x0000FF;
+		setunitdata(getvariableofnpc(.Boss,"Guillaume_Boss"),UMOB_DMGIMMUNE,1);
+		setunitdata(getvariableofnpc(.Boss,"Croix_Boss"),UMOB_DMGIMMUNE,0);
+		showscript("I am vulnerable! Protect me!",getvariableofnpc(.Boss,"Croix_Boss"));
+		set .Flag, bg_monster(.Neutral_Base,"bat_cc2",100,92,"Guillaume Flag",20404,"Tierra_Boss::OnNeutralBreak");
+		setunitdata(.Flag, UMOB_GROUP_ID, 100);
+	} else if (getcharid(4) == $@BG_Team2) {
+		mapannounce "bat_cc2","-- Croix captured the Balance Flag. Guillaume guardian is now vulnerable to attacks!! --",1,0xFF0000;
+		setunitdata(getvariableofnpc(.Boss,"Guillaume_Boss"),UMOB_DMGIMMUNE,0);
+		setunitdata(getvariableofnpc(.Boss,"Croix_Boss"),UMOB_DMGIMMUNE,1);
+		showscript("I am vulnerable! Protect me!",getvariableofnpc(.Boss,"Guillaume_Boss"));
+		set .Flag, bg_monster(.Neutral_Base,"bat_cc2",100,92,"Croix Flag",20405,"Tierra_Boss::OnNeutralBreak");
+		setunitdata(.Flag, UMOB_GROUP_ID, 101);
+	} else {
+		set .Neutral_Base, 0;
+		setunitdata(getvariableofnpc(.Boss,"Guillaume_Boss"),UMOB_DMGIMMUNE,1);
+		setunitdata(getvariableofnpc(.Boss,"Croix_Boss"),UMOB_DMGIMMUNE,1);
+		set .Flag, bg_monster(0,"bat_cc2",100,92,"Balance Flag",20403,"Tierra_Boss::OnNeutralBreak");
+	}
+	bg_rankpoints(BGR_BOSS_FLAGS,1,$@flag_boss);
+	end;
+
+OnTimer600000:
+	mapannounce "bat_cc2","Battle of Tierra Bossnia will end in 5 minutes",1,0x483D8B;
+	end;
+OnTimer840000:
+	mapannounce "bat_cc2","Battle of Tierra Bossnia will end in 1 minute",1,0x483D8B;
+	end;
+
+OnTimer900000:
+OnMatchEnd:
+	stopnpctimer;
+	stopnpctimer "Guillaume_Boss";
+	stopnpctimer "Croix_Boss";
+	donpcevent "#gtb_respawn::OnBGStop";
+	donpcevent "#ctb_respawn::OnBGStop";
+	donpcevent "Balance_Flag::OnBGStop";
+	killmonster "bat_cc2","Guillaume_Boss::OnBoss";
+	killmonster "bat_cc2","Croix_Boss::OnBoss";
+	set $@BG_Status, 2;
+	// =======================================================
+	// Team Rewards
+	// =======================================================
+	if (.guillaume_boss < .croix_boss) {
+		bg_reward($@BG_Team1,.reward_id,.qty_win + (getvariableofnpc(.croix_boss, "Tierra_Boss")*.qty_bos),0,0,"BG_Boss",1,1,0,$@boss_win);
+		bg_reward($@BG_Team2,.reward_id,.qty_los + (getvariableofnpc(.guillaume_boss, "Tierra_Boss")*.qty_bos),0,0,"BG_Boss",1,1,2,$@boss_los);
+		mapannounce "bat_cc2","The Guillaume army has won the Battle of Tierra Bossnia!",1,0x0000FF;
+	} else if (.guillaume_boss > .croix_boss) {
+		bg_reward($@BG_Team1,.reward_id,.qty_los + (getvariableofnpc(.croix_boss, "Tierra_Boss")*.qty_bos),0,0,"BG_Boss",1,1,2,$@boss_los);
+		bg_reward($@BG_Team2,.reward_id,.qty_win + (getvariableofnpc(.guillaume_boss, "Tierra_Boss")*.qty_bos),0,0,"BG_Boss",1,1,0,$@boss_win);
+		mapannounce "bat_cc2","The Croix army has won the Battle of Tierra Bossnia!",1,0xFF0000;
+	} else {
+		bg_reward($@BG_Team1,.reward_id,.qty_tie + (getvariableofnpc(.croix_boss, "Tierra_Boss")*.qty_bos),0,0,"BG_Boss",1,1,1,$@boss_tie);
+		bg_reward($@BG_Team2,.reward_id,.qty_tie + (getvariableofnpc(.guillaume_boss, "Tierra_Boss")*.qty_bos),0,0,"BG_Boss",1,1,1,$@boss_tie);
+		mapannounce "bat_cc2","The battle is over. This is a Tie...!",1,0x483D8B;
+	}
+	// =======================================================
+	set .Neutral_Base, 0;
+	set .guillaume_boss, 0;
+	set .croix_boss, 0;
+	sleep 5000;
+	donpcevent "Tierra_Boss::OnEnd";
+	donpcevent "BG_Core::OnEnd";
+	end;
+OnEnd:
+	sleep 1000;
+	mapwarp "bat_cc2","bat_room",154,150;
+	bg_updatescore "bat_cc2",50,50;
+	bg_updatescore "bat_cc2",.croix_boss,.guillaume_boss;
+	end;
+}
+
+-	script	Guillaume_Boss	-1,{
+	end;
+
+OnSummon:
+	set .@Boss, 21406 + getvariableofnpc(.guillaume_boss, "Tierra_Boss");
+	mapannounce "bat_cc2","-- Guillaume Guardian [" + strmobinfo(2,.@Boss) + "] entering the battle --",1,0x0000FF;
+	set .Boss, bg_monster($@BG_Team1,"bat_cc2",53,128,"Guillaume Guardian",.@Boss,"Guillaume_Boss::OnBoss");
+	setunitdata(.Boss,UMOB_DMGIMMUNE,1);
+	setunitdata(.Boss, UMOB_GROUP_ID, 100);
+	switch(.@Boss) {
+		case 21406: setunittitle(.Boss,"[First Guardian]"); break;
+		case 21407: setunittitle(.Boss,"[Second Guardian]"); break;
+		case 21408: setunittitle(.Boss,"[Last Guardian]"); break;
+	}
+	initnpctimer;
+	end;
+
+OnTimer2000:
+	stopnpctimer;
+	if (.Boss) {
+		bg_monster_reveal .Boss,1,0x0000FF;
+		getunitdata(.Boss, .@mobdata);
+		.btick++;
+		if (.btick > 4 && distance(54,127,.@mobdata[UMOB_X],.@mobdata[UMOB_Y]) > 15) {
+			unitwarp(.Boss, "this", 54, 127);
+			.btick = 0;
+		} else if (.btick > 4)
+			.btick = 0;
+		initnpctimer;
+	}
+	end;
+
+OnBoss:
+	stopnpctimer;
+	bg_monster_reveal .Boss,2,0x0000FF; // Hide Spot
+	set getvariableofnpc(.guillaume_boss, "Tierra_Boss"), getvariableofnpc(.guillaume_boss, "Tierra_Boss") + 1;
+	bg_updatescore "bat_cc2",getvariableofnpc(.croix_boss,"Tierra_Boss"),getvariableofnpc(.guillaume_boss,"Tierra_Boss");
+	set .Boss, 0;
+	if (playerattached())
+		bg_rankpoints(BGR_BOSS_KILLED,1,$@boss_killed);
+	if (getvariableofnpc(.guillaume_boss, "Tierra_Boss") >= getvariableofnpc(.condition,"Tierra_Boss"))
+		donpcevent "Tierra_Boss::OnMatchEnd";
+	else
+	{
+		donpcevent "Guillaume_Boss::OnSummon";
+		donpcevent "Tierra_Boss::OnNeutralReset";
+	}
+	end;
+}
+
+-	script	Croix_Boss	-1,{
+	end;
+
+OnSummon:
+	set .@Boss, 21406 + getvariableofnpc(.croix_boss, "Tierra_Boss");
+	mapannounce "bat_cc2","-- Croix Guardian [" + strmobinfo(2,.@Boss) + "] entering the battle --",1,0xFF0000;
+	set .Boss, bg_monster($@BG_Team2,"bat_cc2",146,55,"Croix Guardian",.@Boss,"Croix_Boss::OnBoss");
+	setunitdata(.Boss,UMOB_DMGIMMUNE,1);
+	setunitdata(.Boss, UMOB_GROUP_ID, 101);
+	switch(.@Boss) {
+		case 21406: setunittitle(.Boss,"[First Guardian]"); break;
+		case 21407: setunittitle(.Boss,"[Second Guardian]"); break;
+		case 21408: setunittitle(.Boss,"[Last Guardian]"); break;
+	}
+	initnpctimer;
+	end;
+
+OnTimer2000:
+	stopnpctimer;
+	if (.Boss) {
+		bg_monster_reveal .Boss,1,0xFF0000;
+		getunitdata(.Boss, .@mobdata);
+		.btick++;
+		if (.btick > 4 && distance(146,55,.@mobdata[UMOB_X],.@mobdata[UMOB_Y]) > 15) {
+			unitwarp(.Boss, "this", 146, 55);
+			.btick = 0;
+		} else if (.btick > 4)
+			.btick = 0;
+		initnpctimer;
+	}
+	end;
+
+OnBoss:
+	stopnpctimer;
+	bg_monster_reveal .Boss,2,0xFF0000; // Hide Spot
+	set getvariableofnpc(.croix_boss, "Tierra_Boss"), getvariableofnpc(.croix_boss, "Tierra_Boss") + 1;
+	bg_updatescore "bat_cc2",getvariableofnpc(.croix_boss,"Tierra_Boss"),getvariableofnpc(.guillaume_boss,"Tierra_Boss");
+	set .Boss, 0;
+	if (playerattached())
+		bg_rankpoints(BGR_BOSS_KILLED,1,$@boss_killed);
+	if (getvariableofnpc(.croix_boss, "Tierra_Boss") >= getvariableofnpc(.condition,"Tierra_Boss"))
+		donpcevent "Tierra_Boss::OnMatchEnd";
+	else
+	{
+		donpcevent "Croix_Boss::OnSummon";
+		donpcevent "Tierra_Boss::OnNeutralReset";
+	}
+	end;
+}
+
+-	script	Balance_Flag	-1,{
+	end;
+
+OnBGStart:
+	viewpointmap "bat_cc2",1,100,92,1,0xFFFFFF;
+	bg_monster 0,"bat_cc2",100,92,"Balance Flag",20403,"Tierra_Boss::OnNeutralBreak";
+	initnpctimer;
+	end;
+
+OnBGStop:
+	stopnpctimer;
+	viewpointmap "bat_cc2",2,100,92,1,0xFFFFFF;
+	killmonster "bat_cc2","Tierra_Boss::OnNeutralBreak";
+	end;
+
+OnTimer2000:
+	initnpctimer;
+	set .@NB, getvariableofnpc(.Neutral_Base,"Tierra_Boss");
+	if (.@NB == $@BG_Team1)
+		viewpointmap "bat_cc2",1,100,92,1,0x0000FF;
+	else if (.@NB == $@BG_Team2)
+		viewpointmap "bat_cc2",1,100,92,1,0xFF0000;
+	else
+		viewpointmap "bat_cc2",1,100,92,1,0xFFFFFF;
+	end;
+}
+
+// MapFlags
+// *********************************************************************
+
+bat_cc2	mapflag	battleground	2
+bat_cc2	mapflag	nomemo
+bat_cc2	mapflag	nosave	SavePoint
+bat_cc2	mapflag	noteleport
+bat_cc2	mapflag	nowarp
+bat_cc2	mapflag	nowarpto
+bat_cc2	mapflag	noreturn
+bat_cc2	mapflag	nobranch
+bat_cc2	mapflag	nopenalty
+bat_cc2	mapflag	noloot
+bat_cc2	mapflag	bg_nomobmove
+
+// Other Flags
+// *********************************************************************
+bat_cc2,88,146,4	script	Flag#BOSS_Blue	GUILD_FLAG,{
+	end;
+OnEmblemBOSS:
+	bg_flagemblem($@BG_Team1);
+	end;
+}
+bat_cc2,97,146,4	script	Flag#BOSS_Red	GUILD_FLAG,{
+	end;
+OnEmblemBOSS:
+	bg_flagemblem($@BG_Team2);
+	end;
+}
+
+bat_cc2,139,53,1	duplicate(Base Flag#bg)	Croix Base#tb_1	974
+bat_cc2,149,62,4	duplicate(Base Flag#bg)	Croix Base#tb_2	974
+bat_cc2,50,121,1	duplicate(Base Flag#bg)	Guillaume Base#tb_1	973
+bat_cc2,60,131,1	duplicate(Base Flag#bg)	Guillaume Base#tb_2	973
+
+// Battleground Respawn
+// *********************************************************************
+
+bat_cc2,88,143,5	script	Therapist in battle#boss1	4_F_SISTER,{
+	getmapxy(.@map$,.@x,.@y, BL_PC);
+	if (distance(.@x,.@y,88,143) > 6)
+		end;
+	mes "[Therapist in battle]";
+	mes "Just close your eyes, and take a deep breathe.";
+	mes "You can be free from pain.";
+	specialeffect 312;
+	percentheal 100,100;
+	repairall;
+	close2;
+	openstorage;
+	end;
+OnInit:
+	setcell("bat_cc2",85,134,92,146,CELL_BASILICA,1);
+	setunittitle(getnpcid(0), "[Blue Team]");
+	setunitdata(getnpcid(0), UNPC_GROUP_ID, 100);
+	end;
+}
+
+bat_cc2,97,143,3	script	Therapist in battle#boss2	4_F_SISTER,{
+	getmapxy(.@map$,.@x,.@y, BL_PC);
+	if (distance(.@x,.@y,97,143) > 6)
+		end;
+	mes "[Therapist in battle]";
+	mes "Just close your eyes, and take a deep breathe.";
+	mes "You can be free from pain.";
+	specialeffect 312;
+	percentheal 100,100;
+	repairall;
+	close2;
+	openstorage;
+	end;
+OnInit:
+	setcell("bat_cc2",93,134,100,146,CELL_BASILICA,1);
+	setunittitle(getnpcid(0), "[Red Team]");
+	setunitdata(getnpcid(0), UNPC_GROUP_ID, 101);
+	end;
+}
+
+bat_cc2,88,139,0	script	#gtb_respawn	HIDDEN_WARP_NPC,{
+	end;
+
+OnBGStart:
+	initnpctimer;
+	end;
+
+OnBGStop:
+	stopnpctimer;
+	end;
+
+OnTimer1000:
+	if ((.tick++) > 25) .tick = 0;
+	showscript("Respawn in : "+(25-.tick)+" seconds",getnpcid(0,"Therapist in battle#boss1"));
+	if (.tick == 24)
+		specialeffect 83;
+	else if (.tick == 25) {
+		areapercentheal "bat_cc2",85,134,92,146,100,100;
+		areawarp "bat_cc2",85,134,92,146,"bat_cc2",54,127;
+	}
+	initnpctimer;
+	end;
+}
+
+bat_cc2,96,139,0	script	#ctb_respawn	HIDDEN_WARP_NPC,{
+	end;
+
+OnBGStart:
+	initnpctimer;
+	end;
+
+OnBGStop:
+	stopnpctimer;
+	end;
+
+OnTimer1000:
+	if ((.tick++) > 25) .tick = 0;
+	showscript("Respawn in : "+(25-.tick)+" seconds",getnpcid(0,"Therapist in battle#boss2"));
+	if (.tick == 24)
+		specialeffect 83;
+	else if (.tick == 25) {
+		areapercentheal "bat_cc2",93,134,100,146,100,100;
+		areawarp "bat_cc2",93,134,100,146,"bat_cc2",146,55;
+	}
+	initnpctimer;
+	end;
+}

@@ -1,0 +1,260 @@
+//===== rAthena Script =======================================
+//    Extended Battleground
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  30-01-2023
+// By:
+//  Easycore
+//
+// Contact:
+//    - Web:  https://www.easycore-services.com/index.php?/profile/1-easycore/
+//    - rAthena:  https://rathena.org/board/profile/16425-easycore/
+//    - Discord:  Easycore#9709
+//============================================================
+
+// Battleground Core Script
+-	script	BG_Core	-1,{
+	end;
+
+OnInit:
+	//Battleground Index
+	$@BG_Index = -1;
+	//Battleground Status
+	$@BG_Status = 0;
+	//Battleground Arena Names
+	deletearray $@BG_Names$[0],10;
+	//Battleground Sript Handler Names
+	// Comment // to disable a game mode
+	setarray $@BG_Names$[0],
+				"Conquest",    "6",
+				"Flavius_CTF", "7",
+				"Flavius_SC",  "8",
+				"Flavius_TD",  "9",
+				"Tierra_Boss","10",
+				"Rush",       "11",
+				"Tierra_DOM", "12",
+				"Tierra_TI",  "13";
+	//Battleground Message Colors
+	setarray $@BG_Color$[0],"0xA0522D","0x808000","0xFFA500","0xDDA0DD","0x9ACD32","0x4169E1","0x3399FF","0xDC143C","0x9ACD32";
+	///**********************************
+	// Battleground Rank Points - Fame
+	///**********************************
+	// Double Inferno
+	$@skulls =				1;	// Skulls sacrice
+	$@ti_win =				25;	// Victory
+	$@ti_los =				5;	// Defeat
+	$@ti_tie =				10;	// Draw
+	// Stone Control
+	$@sc_stole =			1;	// Stone Stolen
+	$@sc_captured =			5;	// Stone Captured
+	$@sc_win =				25;	// Victory
+	$@sc_los =				5;	// Defeat
+	$@sc_tie =				10;	// Draw
+	// Team DeathMatch
+	$@td_kill =				1;	// Kills
+	$@td_win =				25;	// Victory
+	$@td_los =				5;	// Defeat
+	$@td_tie =				10;	// Draw
+	// Capture the Flag
+	$@ctf_taken =			1;	// Flag picked up
+	$@ctf_captured =		25;	// Flag captured
+	$@ctf_win =				25;	// Victory
+	$@ctf_los =				5;	// Defeat
+	$@ctf_tie =				10;	// Draw
+	// Domination
+	$@dom_bases =			10;	// Base Captured
+	$@dom_off_kill =		1;	// Offensive Kills
+	$@dom_def_kill =		1;	// Defensive Kills
+	$@dom_win =				25;	// Victory
+	$@dom_los =				5;	// Defeat
+	$@dom_tie =				10;	// Draw
+	// Bossnia
+	$@flag_boss =			3;	// Control flag killed
+	$@boss_killed =			15;	// Boss killed
+	$@boss_win =			25;	// Victory
+	$@boss_los =			5;	// Defeat
+	$@boss_tie =			10;	// Draw
+	// Conquest
+	$@gstone_killed =		5;	// Guardian Stone killed
+	$@cq_barri =			1;	// Barricade killed
+	$@cq_win =				10;	// Victory
+	$@cq_los =				5;	// Defeat
+	// Rush
+	$@ru_capture =			10;	// Emperium captured
+	$@ru_win =				25;	// Victory
+	$@ru_los =				5;	// Defeat
+	$@ru_tie =				10;	// Draw
+	// Conquest & Rush
+	$@bg_emp =				25;	// Emperium Broken
+	///**********************************
+	//Battlegrounds Happy Hour
+	.HappyHour = 1;			// (0: disabled | 1: enabled)
+	.HappyHourRates = 20;	// Extra reward rates
+	.BGRewardRates = getbattleflag("bg_reward_rates");
+
+	set .BG_Count, getarraysize($@BG_Names$)/2;
+
+	bindatcmd "joinbg",strnpcinfo(3) + "::OnDoJoin";
+	bindatcmd "rotate",strnpcinfo(3) + "::OnRotate",2,2;
+	bindatcmd "bgstop",strnpcinfo(3) + "::OnBGStop",99,99;
+	bindatcmd "bgsize",strnpcinfo(3) + "::OnBGSize",99,99;
+	bindatcmd "bghappyhour",strnpcinfo(3) + "::OnBGHHCommand",99,99;
+
+	initnpctimer;
+	donpcevent "BG_Core::OnEnd";
+	end;
+
+OnRotateFinished:
+	.@notransfer = 1;
+/// @rotate
+OnTimer120000:
+OnRotate:
+	if ($@BG_Status)
+		end;
+	if ($@BG_Id)
+		$@BG_O_Name$ = bg_queue_info($@BG_Id,0);	// Store Old Arena Name
+	if (($@BG_Index++) >= .BG_Count-1)
+		$@BG_Index = 0;								// Restart Rotation
+	$@BG_Id = atoi($@BG_Names$[($@BG_Index*2)+1]);	// Store new BG_ID
+	$@BG_Current$ = $@BG_Names$[($@BG_Index*2)];	// Store new Script Name
+	$@BG_C_Name$ = bg_queue_info($@BG_Id,0);		// Store new Arena Name
+	.@required = ((bg_queue_info($@BG_Id,1)*2)-bg_queue_info($@BG_Id,3));
+	if ($@BG_O_Name$ != "" && !.@notransfer)
+		bg_queue_transfer_all($@BG_O_Name$,$@BG_C_Name$);
+	if (getbattleflag("feature.bgqueue"))
+		bg_announce "Battleground -- " + $@BG_C_Name$ + " - "+ .@required +" more players to start.",$@BG_Color$[$@BG_Index];
+	initnpctimer;
+	end;
+
+/// @bgstop
+OnBGStop:
+	if ($@BG_Status == 1)
+		donpcevent $@BG_Current$+"::OnMatchEnd";
+	end;
+
+/// @joinbg
+OnDoJoin:
+	if (.@atcmd_numparameters != 1 || set(.@x, atoi(.@atcmd_parameters$[0])) > 2) {
+		message(strcharinfo(0),"Usage: @joinbg <mode>");
+		message(strcharinfo(0),"modes: 0: Solo Join");
+		message(strcharinfo(0),"               1: Party Join");
+		message(strcharinfo(0),"               2: Guild Join");
+		message(strcharinfo(0),"@joinbg failed");
+		end;
+	}
+OnDoJoinSolo:
+	if (!getbattleflag("feature.bgqueue")) {
+		message(strcharinfo(0),"-- Battleground is currently disabled --");
+		end;
+	}
+	if (getcharqueue() != -1) {
+		bg_queue_show(); //Already in Queue
+		end;
+	}
+	switch(.@x) {
+		default:
+		case 0: bg_queue_join($@BG_C_Name$,0); break;
+		case 1: bg_queue_join($@BG_C_Name$,1); break;
+		case 2: bg_queue_join($@BG_C_Name$,2); break;
+	}
+	if (getcharqueue() != -1)
+		donpcevent "BG_Core::OnJoinQueue";
+	end;
+
+/// @bgsize <1-10> <min>
+OnBGSize:
+	.@x = atoi(.@atcmd_parameters$[0]);
+	.@x2 = atoi(.@atcmd_parameters$[1]);
+	if (.@x2 < 1) {
+		message strcharinfo(0), "Usage: @bgsize <0-"+.BG_Count+"> <min players> <max players>";
+		dispbottom "#0 - All Arenas",0xFFFFFF;
+		for(.@i = 0; .@i < .BG_Count; .@i++)
+			announce "#"+(.@i+1)+" - "+bg_queue_info(atoi($@BG_Names$[(.@i*2)+1]),0),bc_self,$@BG_Color$[.@i];	
+		end;
+	}
+	if (.@x <= .BG_Count) {
+		bg_set_data(atoi($@BG_Names$[((.@x-1)*2)+1]),0,.@x2,0);
+		message strcharinfo(0),"["+bg_queue_info(atoi($@BG_Names$[((.@x-1)*2)+1]),0)+"] min players is now <"+.@x2+">.";
+	} else {
+		for(.@i = 0; .@i < .BG_Count; .@i++)
+			bg_set_data(atoi($@BG_Names$[(.@i*2)+1]),0,.@x2/2,0);
+		message strcharinfo(0),"[All Arenas] min players is now <"+.@x2+">.";
+	}
+	end;
+
+/// @bghappyhour
+OnBGHHCommand:
+	if (.HappyHour == 0) {
+		message strcharinfo(0),"Happy Hour is currently disabled.";
+		end;
+	}
+	if (getbattleflag("feature.bgqueue") == 0) {
+		message strcharinfo(0),"Battlegrounds are currently disabled.";
+		end;
+	}
+	if (!.HWE)
+		donpcevent "BG_Core::OnDoHappyHour";
+	else
+		donpcevent "BG_Core::OnEndHappyHour";
+	end;
+/// Queue setup join
+OnJoinQueue:
+	if ($@BG_Team1 || $@BG_Team2)
+		end;
+	.@required = ((bg_queue_info($@BG_Id,1)*2)-bg_queue_info($@BG_Id,3));
+	if (.@required)
+		bg_announce "Battleground -- " + $@BG_C_Name$ + " -- "+ .@required +" more players to start.",$@BG_Color$[$@BG_Index];
+	end;
+/// Active game join
+OnJoinActive:
+	.@BG_Count1 = bg_get_data($@BG_Team1,0);
+	.@BG_Count2 = bg_get_data($@BG_Team2,0);
+	.@BG_Max =    bg_queue_info($@BG_Id,2);
+	.@msg$ = "Battleground -- "+ $@BG_C_Name$ +" -- B: "+ .@BG_Count1+"/"+ .@BG_Max +", R: "+.@BG_Count2+"/"+ .@BG_Max +" (Playing)";
+	bg_announce .@msg$,$@BG_Color$[$@BG_Index];
+	end;
+/// Ends arena
+OnEnd:
+	sleep 100;
+	$@BG_Status = 0;
+	if ($@BG_Id) bg_queue_finish($@BG_Id);
+	if ($@BG_Team1) { bg_team_leave $@BG_Team1; bg_destroy $@BG_Team1; $@BG_Team1 = 0; }
+	if ($@BG_Team2) { bg_team_leave $@BG_Team2; bg_destroy $@BG_Team2; $@BG_Team2 = 0; }
+	donpcevent "BG_Core::OnRotateFinished";
+	end;
+/// Battleground Happy Hour
+OnDoHappyHour:
+OnClock1600:
+OnClock2000:
+	if (getbattleflag("feature.bgqueue") == 0 || .HappyHour == 0) end;
+	.HWE = 1;
+	bg_announce "-- Battleground Happy Hour has begun --","0x1E90FF";
+	setbattleflag "bg_reward_rates",getbattleflag("bg_reward_rates")+.HappyHourRates; // +20% Reward Rates
+	end;
+OnEndHappyHour:
+OnClock1800:
+OnClock2200:
+	if (getbattleflag("feature.bgqueue") == 0 || .HappyHour == 0) end;
+	.HWE = 0;
+	bg_announce "-- Battleground Happy Hour is over --","0xEEE8AA";
+	setbattleflag "bg_reward_rates",.BGRewardRates; // Normal Rates
+	end;
+}
+
+function	script	F_EndSpeedBG	{
+	sc_end SC_HIDING;
+	sc_end SC_CLOAKING;
+	sc_end SC_CHASEWALK;
+	// Renewal invisibility
+	sc_end SC_CLOAKINGEXCEED;
+	sc_end SC_CAMOUFLAGE;
+	sc_end SC__INVISIBILITY;
+	sc_end SC_SPEEDUP0;
+	//sc_end SC_SPEEDUP1;
+	sc_end SC_SPEED;
+	sc_end SC_INCREASEAGI;
+	sc_end SC_BERSERK;
+	sc_end SC_WINDWALK;
+	sc_end SC_AVOID;
+	return 0;
+}
