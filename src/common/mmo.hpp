@@ -587,15 +587,15 @@ struct mmo_charstatus {
 	int32 sword_faith, sword_calls;
 
 //<<<<<<< HEAD
-	short weapon, costume_weapon; // enum weapon_type
-	short shield; // view-id
-	short head_top,head_mid,head_bottom;
-	short robe;
+///	short weapon, costume_weapon; // enum weapon_type
+//	short shield; // view-id
+//	short head_top,head_mid,head_bottom;
+//	short robe;
 //=======
-	//int16 weapon; // enum weapon_type
-	//int16 shield; // view-id
-	//int16 head_top,head_mid,head_bottom;
-	//int16 robe;
+	int16 weapon, costume_weapon; // enum weapon_type
+	int16 shield; // view-id
+	int16 head_top,head_mid,head_bottom;
+	int16 robe;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	uint8 body_direction;
 

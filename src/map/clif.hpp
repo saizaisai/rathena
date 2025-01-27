@@ -1321,15 +1321,15 @@ void clif_buyingstore_entry( map_session_data& sd, struct block_list* tbl = null
 void clif_buyingstore_disappear_entry( map_session_data& sd, struct block_list* tbl = nullptr );
 void clif_buyingstore_itemlist( map_session_data& sd, map_session_data& pl_sd );
 //<<<<<<< HEAD
-void clif_buyingstore_trade_failed_buyer(map_session_data* sd, short result);
-void clif_buyingstore_update_item(map_session_data* sd, t_itemid nameid, unsigned short amount, uint32 char_id, int32 zeny);
-void clif_buyingstore_delete_item(map_session_data* sd, short index, unsigned short amount, int32 price);
-void clif_buyingstore_trade_failed_seller(map_session_data* sd, short result, t_itemid nameid);
+//void clif_buyingstore_trade_failed_buyer(map_session_data* sd, short result);
+//void clif_buyingstore_update_item(map_session_data* sd, t_itemid nameid, unsigned short amount, uint32 char_id, int32 zeny);
+//void clif_buyingstore_delete_item(map_session_data* sd, short index, unsigned short amount, int32 price);
+//void clif_buyingstore_trade_failed_seller(map_session_data* sd, short result, t_itemid nameid);
 //=======
-//void clif_buyingstore_trade_failed_buyer(map_session_data* sd, int16 result);
-//void clif_buyingstore_update_item(map_session_data* sd, t_itemid nameid, uint16 amount, uint32 char_id, int32 zeny);
-//void clif_buyingstore_delete_item(map_session_data* sd, int16 index, uint16 amount, int32 price);
-//void clif_buyingstore_trade_failed_seller(map_session_data* sd, int16 result, t_itemid nameid);
+void clif_buyingstore_trade_failed_buyer(map_session_data* sd, int16 result);
+void clif_buyingstore_update_item(map_session_data* sd, t_itemid nameid, uint16 amount, uint32 char_id, int32 zeny);
+void clif_buyingstore_delete_item(map_session_data* sd, int16 index, uint16 amount, int32 price);
+void clif_buyingstore_trade_failed_seller(map_session_data* sd, int16 result, t_itemid nameid);
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 
 /// Search Store System

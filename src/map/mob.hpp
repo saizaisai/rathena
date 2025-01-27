@@ -199,11 +199,11 @@ struct s_mob_skill {
 	int16 target;
 	int32 val[5];
 //<<<<<<< HEAD
-	short emotion;
-	unsigned short msg_id;
+//	short emotion;
+//	unsigned short msg_id;
 //=======
-//	int16 emotion;
-//	uint16 msg_id;
+	int16 emotion;
+	uint16 msg_id;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 };
 
@@ -362,10 +362,10 @@ struct mob_data {
 	int16 centerX, centerY; // Spawn center of this individual monster
 	struct s_mob_lootitem *lootitems;
 //<<<<<<< HEAD
-	short mob_id;
+//	short mob_id;
 	uint32 tdmg; //Stores total damage given to the mob, for exp calculations. [Skotlex]
 //=======
-//	int16 mob_id;
+	int16 mob_id;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	int32 level;
 	int32 target_id,attacked_id,norm_attacked_id;

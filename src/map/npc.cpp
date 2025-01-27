@@ -3796,9 +3796,9 @@ struct npc_data *npc_create_npc(int16 m, int16 x, int16 y){
  * @return nullptr:failed creation, npc_data* new warp
  */
 //<<<<<<< HEAD
-struct npc_data* npc_add_warp(char* name, short from_mapid, short from_x, short from_y, short xs, short ys, unsigned short to_mapindex, short to_x, short to_y)
+//struct npc_data* npc_add_warp(char* name, short from_mapid, short from_x, short from_y, short xs, short ys, unsigned short to_mapindex, short to_x, short to_y)
 //=======
-//struct npc_data* npc_add_warp(char* name, int16 from_mapid, int16 from_x, int16 from_y, int16 xs, int16 ys, uint16 to_mapindex, int16 to_x, int16 to_y)
+struct npc_data* npc_add_warp(char* name, int16 from_mapid, int16 from_x, int16 from_y, int16 xs, int16 ys, uint16 to_mapindex, int16 to_x, int16 to_y)
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 {
 	int32 i, flag = 0;
@@ -5345,17 +5345,17 @@ static const char* npc_parse_mob(char* w1, char* w2, char* w3, char* w4, const c
 	mob.num = (unsigned short)num;
 	mob.active = 0;
 //<<<<<<< HEAD
-	mob.id = (short) mob_id;
-	mob.x = (unsigned short)x;
-	mob.y = (unsigned short)y;
-	mob.xs = (signed short)xs;
-	mob.ys = (signed short)ys;
+//	mob.id = (short) mob_id;
+//	mob.x = (unsigned short)x;
+//	mob.y = (unsigned short)y;
+//	mob.xs = (signed short)xs;
+//	mob.ys = (signed short)ys;
 //=======
-//	mob.id = (int16) mob_id;
-//	mob.x = (uint16)x;
-//	mob.y = (uint16)y;
-//	mob.xs = (int16)xs;
-//	mob.ys = (int16)ys;
+	mob.id = (int16) mob_id;
+	mob.x = (uint16)x;
+	mob.y = (uint16)y;
+	mob.xs = (int16)xs;
+	mob.ys = (int16)ys;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	if (mob_lv > 0 && mob_lv <= MAX_LEVEL)
 		mob.level = mob_lv;

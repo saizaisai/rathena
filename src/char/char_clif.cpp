@@ -55,9 +55,9 @@ bool pincode_allowed( char* pincode );
 // 0: success
 // 1: failed
 //<<<<<<< HEAD
-void chclif_moveCharSlotReply( int32 fd, struct char_session_data* sd, unsigned short index, short reason ){
+//void chclif_moveCharSlotReply( int32 fd, struct char_session_data* sd, unsigned short index, short reason ){
 //=======
-//void chclif_moveCharSlotReply( int32 fd, struct char_session_data* sd, uint16 index, int16 reason ){
+void chclif_moveCharSlotReply( int32 fd, struct char_session_data* sd, uint16 index, int16 reason ){
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	WFIFOHEAD(fd,8);
 	WFIFOW(fd,0) = HEADER_HC_ACK_CHANGE_CHARACTER_SLOT;

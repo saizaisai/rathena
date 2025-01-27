@@ -62,57 +62,57 @@ int16 current_equip_opt_index; /// Contains random option index of an equipped i
 uint16 SCDisabled[SC_MAX]; ///< List of disabled SC on map zones. [Cydh]
 
 //<<<<<<< HEAD
-static unsigned short status_calc_str(struct block_list *,status_change *,int32);
-static unsigned short status_calc_agi(struct block_list *,status_change *,int32);
-static unsigned short status_calc_vit(struct block_list *,status_change *,int32);
-static unsigned short status_calc_int(struct block_list *,status_change *,int32);
-static unsigned short status_calc_dex(struct block_list *,status_change *,int32);
-static unsigned short status_calc_luk(struct block_list *,status_change *,int32);
-static unsigned short status_calc_pow(struct block_list *, status_change *, int32);
-static unsigned short status_calc_sta(struct block_list *, status_change *, int32);
-static unsigned short status_calc_wis(struct block_list *, status_change *, int32);
-static unsigned short status_calc_spl(struct block_list *, status_change *, int32);
-static unsigned short status_calc_con(struct block_list *, status_change *, int32);
-static unsigned short status_calc_crt(struct block_list *, status_change *, int32);
-static unsigned short status_calc_batk(struct block_list *,status_change *,int32);
-static unsigned short status_calc_watk(struct block_list *,status_change *,int32);
-static signed short status_calc_hit(struct block_list *,status_change *,int32);
-static signed short status_calc_critical(struct block_list *,status_change *,int32);
-static signed short status_calc_flee(struct block_list *,status_change *,int32);
-static signed short status_calc_flee2(struct block_list *,status_change *,int32);
+//static unsigned short status_calc_str(struct block_list *,status_change *,int32);
+//static unsigned short status_calc_agi(struct block_list *,status_change *,int32);
+////static unsigned short status_calc_vit(struct block_list *,status_change *,int32);
+//static unsigned short status_calc_int(struct block_list *,status_change *,int32);
+//static unsigned short status_calc_dex(struct block_list *,status_change *,int32);
+//static unsigned short status_calc_luk(struct block_list *,status_change *,int32);
+//static unsigned short status_calc_pow(struct block_list *, status_change *, int32);
+//static unsigned short status_calc_sta(struct block_list *, status_change *, int32);
+//static unsigned short status_calc_wis(struct block_list *, status_change *, int32);
+//static unsigned short status_calc_spl(struct block_list *, status_change *, int32);
+//static unsigned short status_calc_con(struct block_list *, status_change *, int32);
+//static unsigned short status_calc_crt(struct block_list *, status_change *, int32);
+//static unsigned short status_calc_batk(struct block_list *,status_change *,int32);
+//static unsigned short status_calc_watk(struct block_list *,status_change *,int32);
+//static signed short status_calc_hit(struct block_list *,status_change *,int32);
+//static signed short status_calc_critical(struct block_list *,status_change *,int32);
+//static signed short status_calc_flee(struct block_list *,status_change *,int32);
+//static signed short status_calc_flee2(struct block_list *,status_change *,int32);
 //=======
-//static uint16 status_calc_str(struct block_list *,status_change *,int32);
-//static uint16 status_calc_agi(struct block_list *,status_change *,int32);
-//static uint16 status_calc_vit(struct block_list *,status_change *,int32);
-//static uint16 status_calc_int(struct block_list *,status_change *,int32);
-//static uint16 status_calc_dex(struct block_list *,status_change *,int32);
-//static uint16 status_calc_luk(struct block_list *,status_change *,int32);
-//static uint16 status_calc_pow(struct block_list *, status_change *, int32);
-//static uint16 status_calc_sta(struct block_list *, status_change *, int32);
-//static uint16 status_calc_wis(struct block_list *, status_change *, int32);
-//static uint16 status_calc_spl(struct block_list *, status_change *, int32);
-//static uint16 status_calc_con(struct block_list *, status_change *, int32);
-//static uint16 status_calc_crt(struct block_list *, status_change *, int32);
-//static uint16 status_calc_batk(struct block_list *,status_change *,int32);
-//static uint16 status_calc_watk(struct block_list *,status_change *,int32);
-//static int16 status_calc_hit(struct block_list *,status_change *,int32);
-//static int16 status_calc_critical(struct block_list *,status_change *,int32);
-//static int16 status_calc_flee(struct block_list *,status_change *,int32);
-//static int16 status_calc_flee2(struct block_list *,status_change *,int32);
+static uint16 status_calc_str(struct block_list *,status_change *,int32);
+static uint16 status_calc_agi(struct block_list *,status_change *,int32);
+static uint16 status_calc_vit(struct block_list *,status_change *,int32);
+static uint16 status_calc_int(struct block_list *,status_change *,int32);
+static uint16 status_calc_dex(struct block_list *,status_change *,int32);
+static uint16 status_calc_luk(struct block_list *,status_change *,int32);
+static uint16 status_calc_pow(struct block_list *, status_change *, int32);
+static uint16 status_calc_sta(struct block_list *, status_change *, int32);
+static uint16 status_calc_wis(struct block_list *, status_change *, int32);
+static uint16 status_calc_spl(struct block_list *, status_change *, int32);
+static uint16 status_calc_con(struct block_list *, status_change *, int32);
+static uint16 status_calc_crt(struct block_list *, status_change *, int32);
+static uint16 status_calc_batk(struct block_list *,status_change *,int32);
+static uint16 status_calc_watk(struct block_list *,status_change *,int32);
+static int16 status_calc_hit(struct block_list *,status_change *,int32);
+static int16 status_calc_critical(struct block_list *,status_change *,int32);
+static int16 status_calc_flee(struct block_list *,status_change *,int32);
+static int16 status_calc_flee2(struct block_list *,status_change *,int32);
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 static defType status_calc_def(struct block_list *bl, status_change *sc, int32);
 static int16 status_calc_def2(struct block_list *,status_change *,int32);
 static defType status_calc_mdef(struct block_list *bl, status_change *sc, int32);
 //<<<<<<< HEAD
-static signed short status_calc_mdef2(struct block_list *,status_change *,int32);
-static unsigned short status_calc_speed(struct block_list *,status_change *,int32);
-static short status_calc_aspd_rate(struct block_list *,status_change *,int32);
-static unsigned short status_calc_dmotion(struct block_list *bl, status_change *sc, int32 dmotion);
+//static signed short status_calc_mdef2(struct block_list *,status_change *,int32);
+//static unsigned short status_calc_speed(struct block_list *,status_change *,int32);
+//static short status_calc_aspd_rate(struct block_list *,status_change *,int32);
+//static unsigned short status_calc_dmotion(struct block_list *bl, status_change *sc, int32 dmotion);
 //=======
-//static int16 status_calc_mdef2(struct block_list *,status_change *,int32);
-//static uint16 status_calc_speed(struct block_list *,status_change *,int32);
-//static int16 status_calc_aspd_rate(struct block_list *,status_change *,int32);
-//static uint16 status_calc_dmotion(struct block_list *bl, status_change *sc, int32 dmotion);
+static int16 status_calc_mdef2(struct block_list *,status_change *,int32);
+static uint16 status_calc_speed(struct block_list *,status_change *,int32);
+static int16 status_calc_aspd_rate(struct block_list *,status_change *,int32);
+static uint16 status_calc_dmotion(struct block_list *bl, status_change *sc, int32 dmotion);
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 #ifdef RENEWAL_ASPD
 static int16 status_calc_aspd(struct block_list *bl, status_change *sc, bool fixed);

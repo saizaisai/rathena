@@ -7520,11 +7520,11 @@ BUILDIN_FUNC(checkweight2)
 	//variable sub checkweight
 	int32 i = 0, slots = 0, weight = 0;
 //<<<<<<< HEAD
-	short fail = 0;
-	unsigned short amount2 = 0;
+//	short fail = 0;
+//	unsigned short amount2 = 0;
 //=======
-//	int16 fail = 0;
-//	uint16 amount2 = 0;
+	int16 fail = 0;
+	uint16 amount2 = 0;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 
 	//variable for array parsing
@@ -9686,9 +9686,9 @@ BUILDIN_FUNC(successrefitem) {
 //<<<<<<< HEAD
 	int pass = 0; //Mir4 Mining Sys (Hyroshima)
 	int64 ichk = 0; //Mir4 Mining Sys (Hyroshima)
-	short i = -1, up = 1;
+//	short i = -1, up = 1;
 //=======
-//	int16 i = -1, up = 1;
+	int16 i = -1, up = 1;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	int32 pos;
 	TBL_PC *sd;
@@ -20289,15 +20289,15 @@ BUILDIN_FUNC(setunitdata)
 			case UMOB_MAXHP: md->base_status->hp = md->base_status->max_hp = (uint32)value; status_set_maxhp(bl, (uint32)value, 0); clif_name_area(&md->bl); break;
 			case UMOB_MASTERAID: md->master_id = value; break;
 //<<<<<<< HEAD
-			case UMOB_MAPID: if (mapname) value = map_mapname2mapid(mapname); unit_warp(bl, (short)value, 0, 0, CLR_TELEPORT); break;
-			case UMOB_X: if (!unit_walktoxy(bl, (short)value, md->bl.y, 2)) unit_movepos(bl, (short)value, md->bl.y, 0, 0); break;
-			case UMOB_Y: if (!unit_walktoxy(bl, md->bl.x, (short)value, 2)) unit_movepos(bl, md->bl.x, (short)value, 0, 0); break;
-			case UMOB_SPEED: md->base_status->speed = (unsigned short)value; status_calc_misc(bl, &md->status, md->level); calc_status = true; break;
+//			case UMOB_MAPID: if (mapname) value = map_mapname2mapid(mapname); unit_warp(bl, (short)value, 0, 0, CLR_TELEPORT); break;
+//			case UMOB_X: if (!unit_walktoxy(bl, (short)value, md->bl.y, 2)) unit_movepos(bl, (short)value, md->bl.y, 0, 0); break;
+//			case UMOB_Y: if (!unit_walktoxy(bl, md->bl.x, (short)value, 2)) unit_movepos(bl, md->bl.x, (short)value, 0, 0); break;
+//			case UMOB_SPEED: md->base_status->speed = (unsigned short)value; status_calc_misc(bl, &md->status, md->level); calc_status = true; break;
 //=======
-//			case UMOB_MAPID: if (mapname) value = map_mapname2mapid(mapname); unit_warp(bl, (int16)value, 0, 0, CLR_TELEPORT); break;
-//			case UMOB_X: if (!unit_walktoxy(bl, (int16)value, md->bl.y, 2)) unit_movepos(bl, (int16)value, md->bl.y, 0, 0); break;
-//			case UMOB_Y: if (!unit_walktoxy(bl, md->bl.x, (int16)value, 2)) unit_movepos(bl, md->bl.x, (int16)value, 0, 0); break;
-//			case UMOB_SPEED: md->base_status->speed = (uint16)value; status_calc_misc(bl, &md->status, md->level); calc_status = true; break;
+			case UMOB_MAPID: if (mapname) value = map_mapname2mapid(mapname); unit_warp(bl, (int16)value, 0, 0, CLR_TELEPORT); break;
+			case UMOB_X: if (!unit_walktoxy(bl, (int16)value, md->bl.y, 2)) unit_movepos(bl, (int16)value, md->bl.y, 0, 0); break;
+			case UMOB_Y: if (!unit_walktoxy(bl, md->bl.x, (int16)value, 2)) unit_movepos(bl, md->bl.x, (int16)value, 0, 0); break;
+			case UMOB_SPEED: md->base_status->speed = (uint16)value; status_calc_misc(bl, &md->status, md->level); calc_status = true; break;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 			case UMOB_MODE:
 				md->base_status->mode = (enum e_mode)value;
@@ -20374,13 +20374,13 @@ BUILDIN_FUNC(setunitdata)
 			case UMOB_GROUP_ID: md->ud.group_id = value; unit_refresh(bl); break;
 			case UMOB_IGNORE_CELL_STACK_LIMIT: md->ud.state.ignore_cell_stack_limit = value > 0; break;
 //<<<<<<< HEAD
-			case UMOB_RES: md->base_status->res = (short)value; calc_status = true; break;
-			case UMOB_MRES: md->base_status->mres = (short)value; calc_status = true; break;
-			case UMOB_DAMAGETAKEN: md->damagetaken = (unsigned short)value; break;
+//			case UMOB_RES: md->base_status->res = (short)value; calc_status = true; break;
+//			case UMOB_MRES: md->base_status->mres = (short)value; calc_status = true; break;
+//			case UMOB_DAMAGETAKEN: md->damagetaken = (unsigned short)value; break;
 //=======
-//			case UMOB_RES: md->base_status->res = (int16)value; calc_status = true; break;
-//			case UMOB_MRES: md->base_status->mres = (int16)value; calc_status = true; break;
-//			case UMOB_DAMAGETAKEN: md->damagetaken = (uint16)value; break;
+			case UMOB_RES: md->base_status->res = (int16)value; calc_status = true; break;
+			case UMOB_MRES: md->base_status->mres = (int16)value; calc_status = true; break;
+			case UMOB_DAMAGETAKEN: md->damagetaken = (uint16)value; break;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 			default:
 				ShowError("buildin_setunitdata: Unknown data identifier %d for BL_MOB.\n", type);
@@ -20697,29 +20697,29 @@ BUILDIN_FUNC(setunitdata)
 			case UNPC_DMOTION: nd->status.dmotion = (int16)value; break;
 			case UNPC_SEX: nd->vd.sex = (char)value; unit_refresh(bl); break;
 //<<<<<<< HEAD
-			case UNPC_CLASS: npc_setclass(nd, (short)value); break;
-			case UNPC_HAIRSTYLE: clif_changelook(bl, LOOK_HAIR, (unsigned short)value); break;
-			case UNPC_HAIRCOLOR: clif_changelook(bl, LOOK_HAIR_COLOR, (unsigned short)value); break;
-			case UNPC_HEADBOTTOM: clif_changelook(bl, LOOK_HEAD_BOTTOM, (unsigned short)value); break;
-			case UNPC_HEADMIDDLE: clif_changelook(bl, LOOK_HEAD_MID, (unsigned short)value); break;
-			case UNPC_HEADTOP: clif_changelook(bl, LOOK_HEAD_TOP, (unsigned short)value); break;
-			case UNPC_CLOTHCOLOR: clif_changelook(bl, LOOK_CLOTHES_COLOR, (unsigned short)value); break;
-			case UNPC_SHIELD: clif_changelook(bl, LOOK_SHIELD, (unsigned short)value); break;
-			case UNPC_WEAPON: clif_changelook(bl, LOOK_WEAPON, (unsigned short)value); break;
-			case UNPC_ROBE: clif_changelook(bl, LOOK_ROBE, (unsigned short)value); break;
-			case UNPC_BODY2: clif_changelook(bl, LOOK_BODY2, (unsigned short)value); break;
+//			case UNPC_CLASS: npc_setclass(nd, (short)value); break;
+//			case UNPC_HAIRSTYLE: clif_changelook(bl, LOOK_HAIR, (unsigned short)value); break;
+//			case UNPC_HAIRCOLOR: clif_changelook(bl, LOOK_HAIR_COLOR, (unsigned short)value); break;
+//			case UNPC_HEADBOTTOM: clif_changelook(bl, LOOK_HEAD_BOTTOM, (unsigned short)value); break;
+//			case UNPC_HEADMIDDLE: clif_changelook(bl, LOOK_HEAD_MID, (unsigned short)value); break;
+//			case UNPC_HEADTOP: clif_changelook(bl, LOOK_HEAD_TOP, (unsigned short)value); break;
+//			case UNPC_CLOTHCOLOR: clif_changelook(bl, LOOK_CLOTHES_COLOR, (unsigned short)value); break;
+//			case UNPC_SHIELD: clif_changelook(bl, LOOK_SHIELD, (unsigned short)value); break;
+//			case UNPC_WEAPON: clif_changelook(bl, LOOK_WEAPON, (unsigned short)value); break;
+//			case UNPC_ROBE: clif_changelook(bl, LOOK_ROBE, (unsigned short)value); break;
+//			case UNPC_BODY2: clif_changelook(bl, LOOK_BODY2, (unsigned short)value); break;
 //=======
-//			case UNPC_CLASS: npc_setclass(nd, (int16)value); break;
-//			case UNPC_HAIRSTYLE: clif_changelook(bl, LOOK_HAIR, (uint16)value); break;
-//			case UNPC_HAIRCOLOR: clif_changelook(bl, LOOK_HAIR_COLOR, (uint16)value); break;
-//			case UNPC_HEADBOTTOM: clif_changelook(bl, LOOK_HEAD_BOTTOM, (uint16)value); break;
-//			case UNPC_HEADMIDDLE: clif_changelook(bl, LOOK_HEAD_MID, (uint16)value); break;
-//			case UNPC_HEADTOP: clif_changelook(bl, LOOK_HEAD_TOP, (uint16)value); break;
-//			case UNPC_CLOTHCOLOR: clif_changelook(bl, LOOK_CLOTHES_COLOR, (uint16)value); break;
-//			case UNPC_SHIELD: clif_changelook(bl, LOOK_SHIELD, (uint16)value); break;
-//			case UNPC_WEAPON: clif_changelook(bl, LOOK_WEAPON, (uint16)value); break;
-//			case UNPC_ROBE: clif_changelook(bl, LOOK_ROBE, (uint16)value); break;
-//			case UNPC_BODY2: clif_changelook(bl, LOOK_BODY2, (uint16)value); break;
+			case UNPC_CLASS: npc_setclass(nd, (int16)value); break;
+			case UNPC_HAIRSTYLE: clif_changelook(bl, LOOK_HAIR, (uint16)value); break;
+			case UNPC_HAIRCOLOR: clif_changelook(bl, LOOK_HAIR_COLOR, (uint16)value); break;
+			case UNPC_HEADBOTTOM: clif_changelook(bl, LOOK_HEAD_BOTTOM, (uint16)value); break;
+			case UNPC_HEADMIDDLE: clif_changelook(bl, LOOK_HEAD_MID, (uint16)value); break;
+			case UNPC_HEADTOP: clif_changelook(bl, LOOK_HEAD_TOP, (uint16)value); break;
+			case UNPC_CLOTHCOLOR: clif_changelook(bl, LOOK_CLOTHES_COLOR, (uint16)value); break;
+			case UNPC_SHIELD: clif_changelook(bl, LOOK_SHIELD, (uint16)value); break;
+			case UNPC_WEAPON: clif_changelook(bl, LOOK_WEAPON, (uint16)value); break;
+			case UNPC_ROBE: clif_changelook(bl, LOOK_ROBE, (uint16)value); break;
+			case UNPC_BODY2: clif_changelook(bl, LOOK_BODY2, (uint16)value); break;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 			case UNPC_DEADSIT: nd->vd.dead_sit = (char)value; unit_refresh(bl); break;
 			case UNPC_GROUP_ID: nd->ud.group_id = value; unit_refresh(bl); break;

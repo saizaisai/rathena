@@ -946,10 +946,10 @@ static int32 pet_performance(map_session_data *sd, struct pet_data *pd)
 	else
 		val = 1;
 
-	pet_stop_walking(pd,2000<<8);
+	//pet_stop_walking(pd,2000<<8);
 	clif_pet_performance(pd, rnd_value(1, val));
 //=======
-	//unit_stop_walking( &pd->bl, USW_NONE, 2000 );
+	unit_stop_walking( &pd->bl, USW_NONE, 2000 );
 	//clif_send_petdata( nullptr, *pd, CHANGESTATEPET_PERFORMANCE );
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	pet_lootitem_drop( *pd, nullptr );

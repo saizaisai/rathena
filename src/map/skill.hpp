@@ -562,13 +562,13 @@ int32 skill_addtimerskill(struct block_list *src,t_tick tick,int32 target,int32 
 int32 skill_additional_effect( struct block_list* src, struct block_list *bl,uint16 skill_id,uint16 skill_lv,int32 attack_type,enum damage_lv dmg_lv,t_tick tick);
 int32 skill_counter_additional_effect( struct block_list* src, struct block_list *bl,uint16 skill_id,uint16 skill_lv,int32 attack_type,t_tick tick);
 //<<<<<<< HEAD
-short skill_blown(struct block_list* src, struct block_list* target, char count, int8 dir, enum e_skill_blown flag);
-int32 skill_break_equip(struct block_list *src,struct block_list *bl, unsigned short where, int32 rate, int32 flag);
-int32 skill_strip_equip(struct block_list *src,struct block_list *bl, unsigned short where, int32 rate, int32 lv, int32 time);
+//short skill_blown(struct block_list* src, struct block_list* target, char count, int8 dir, enum e_skill_blown flag);
+//int32 skill_break_equip(struct block_list *src,struct block_list *bl, unsigned short where, int32 rate, int32 flag);
+//int32 skill_strip_equip(struct block_list *src,struct block_list *bl, unsigned short where, int32 rate, int32 lv, int32 time);
 //=======
-//int16 skill_blown(struct block_list* src, struct block_list* target, char count, int8 dir, enum e_skill_blown flag);
-//int32 skill_break_equip(struct block_list *src,struct block_list *bl, uint16 where, int32 rate, int32 flag);
-//int32 skill_strip_equip(struct block_list *src,struct block_list *bl, uint16 where, int32 rate, int32 lv, int32 time);
+int16 skill_blown(struct block_list* src, struct block_list* target, char count, int8 dir, enum e_skill_blown flag);
+int32 skill_break_equip(struct block_list *src,struct block_list *bl, uint16 where, int32 rate, int32 flag);
+int32 skill_strip_equip(struct block_list *src,struct block_list *bl, uint16 where, int32 rate, int32 lv, int32 time);
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 // Skills unit
 std::shared_ptr<s_skill_unit_group> skill_id2group(int32 group_id);

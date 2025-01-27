@@ -172,9 +172,9 @@ static inline uint16 client_nameid( t_itemid server_nameid ){
 #endif
 
 ////<<<<<<< HEAD
-static inline void WBUFPOS(uint8* p, unsigned short pos, short x, short y, unsigned char dir) {
+//static inline void WBUFPOS(uint8* p, unsigned short pos, short x, short y, unsigned char dir) {
 //=======
-//static inline void WBUFPOS(uint8* p, uint16 pos, int16 x, int16 y, unsigned char dir) {
+static inline void WBUFPOS(uint8* p, uint16 pos, int16 x, int16 y, unsigned char dir) {
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	p += pos;
 	p[0] = (uint8)(x>>2);
@@ -185,9 +185,9 @@ static inline void WBUFPOS(uint8* p, unsigned short pos, short x, short y, unsig
 
 // client-side: x0+=sx0*0.0625-0.5 and y0+=sy0*0.0625-0.5
 //<<<<<<< HEAD
-static inline void WBUFPOS2(uint8* p, unsigned short pos, short x0, short y0, short x1, short y1, uint8 sx0, uint8 sy0) {
+//static inline void WBUFPOS2(uint8* p, unsigned short pos, short x0, short y0, short x1, short y1, uint8 sx0, uint8 sy0) {
 //=======
-//static inline void WBUFPOS2(uint8* p, uint16 pos, int16 x0, int16 y0, int16 x1, int16 y1, uint8 sx0, uint8 sy0) {
+static inline void WBUFPOS2(uint8* p, uint16 pos, int16 x0, int16 y0, int16 x1, int16 y1, uint8 sx0, uint8 sy0) {
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	p += pos;
 	p[0] = (uint8)(x0>>2);
@@ -200,17 +200,17 @@ static inline void WBUFPOS2(uint8* p, unsigned short pos, short x0, short y0, sh
 
 
 //<<<<<<< HEAD
-static inline void WFIFOPOS(int32 fd, unsigned short pos, short x, short y, unsigned char dir) {
+//static inline void WFIFOPOS(int32 fd, unsigned short pos, short x, short y, unsigned char dir) {
+//	WBUFPOS(WFIFOP(fd,pos), 0, x, y, dir);
+//}
+//
+//static inline void RBUFPOS(const uint8* p, unsigned short pos, short* x, short* y, unsigned char* dir) {
+//=======
+static inline void WFIFOPOS(int32 fd, uint16 pos, int16 x, int16 y, unsigned char dir) {
 	WBUFPOS(WFIFOP(fd,pos), 0, x, y, dir);
 }
 
-static inline void RBUFPOS(const uint8* p, unsigned short pos, short* x, short* y, unsigned char* dir) {
-//=======
-//static inline void WFIFOPOS(int32 fd, uint16 pos, int16 x, int16 y, unsigned char dir) {
-//	WBUFPOS(WFIFOP(fd,pos), 0, x, y, dir);
-//}
-
-// inline void RBUFPOS(const uint8* p, uint16 pos, int16* x, int16* y, unsigned char* dir) {
+ inline void RBUFPOS(const uint8* p, uint16 pos, int16* x, int16* y, unsigned char* dir) {
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	p += pos;
 
@@ -229,9 +229,9 @@ static inline void RBUFPOS(const uint8* p, unsigned short pos, short* x, short* 
 
 
 //<<<<<<< HEAD
-static inline void RBUFPOS2(const uint8* p, unsigned short pos, short* x0, short* y0, short* x1, short* y1, unsigned char* sx0, unsigned char* sy0) {
+//static inline void RBUFPOS2(const uint8* p, unsigned short pos, short* x0, short* y0, short* x1, short* y1, unsigned char* sx0, unsigned char* sy0) {
 //=======
-//static inline void RBUFPOS2(const uint8* p, uint16 pos, int16* x0, int16* y0, int16* x1, int16* y1, unsigned char* sx0, unsigned char* sy0) {
+static inline void RBUFPOS2(const uint8* p, uint16 pos, int16* x0, int16* y0, int16* x1, int16* y1, unsigned char* sx0, unsigned char* sy0) {
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	p += pos;
 
@@ -262,18 +262,18 @@ static inline void RBUFPOS2(const uint8* p, unsigned short pos, short* x0, short
 
 
 //<<<<<<< HEAD
-static inline void RFIFOPOS(int32 fd, unsigned short pos, short* x, short* y, unsigned char* dir) {
+//static inline void RFIFOPOS(int32 fd, unsigned short pos, short* x, short* y, unsigned char* dir) {
 //=======
-//static inline void RFIFOPOS(int32 fd, uint16 pos, int16* x, int16* y, unsigned char* dir) {
+static inline void RFIFOPOS(int32 fd, uint16 pos, int16* x, int16* y, unsigned char* dir) {
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	RBUFPOS(RFIFOP(fd,pos), 0, x, y, dir);
 }
 
 
 //<<<<<<< HEAD
-static inline void RFIFOPOS2(int32 fd, unsigned short pos, short* x0, short* y0, short* x1, short* y1, unsigned char* sx0, unsigned char* sy0) {
+//static inline void RFIFOPOS2(int32 fd, unsigned short pos, short* x0, short* y0, short* x1, short* y1, unsigned char* sx0, unsigned char* sy0) {
 //=======
-//static inline void RFIFOPOS2(int32 fd, uint16 pos, int16* x0, int16* y0, int16* x1, int16* y1, unsigned char* sx0, unsigned char* sy0) {
+static inline void RFIFOPOS2(int32 fd, uint16 pos, int16* x0, int16* y0, int16* x1, int16* y1, unsigned char* sx0, unsigned char* sy0) {
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	RBUFPOS2(WFIFOP(fd,pos), 0, x0, y0, x1, y1, sx0, sy0);
 }
@@ -19552,9 +19552,9 @@ void clif_buyingstore_update_item( map_session_data* sd, t_itemid nameid, unsign
 ///
 /// NOTE:   This function has to be called _instead_ of clif_delitem/clif_dropitem.
 //<<<<<<< HEAD
-void clif_buyingstore_delete_item(map_session_data* sd, short index, unsigned short amount, int32 price)
+//void clif_buyingstore_delete_item(map_session_data* sd, short index, unsigned short amount, int32 price)
 //=======
-//void clif_buyingstore_delete_item(map_session_data* sd, int16 index, uint16 amount, int32 price)
+void clif_buyingstore_delete_item(map_session_data* sd, int16 index, uint16 amount, int32 price)
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 {
 	int32 fd = sd->fd;

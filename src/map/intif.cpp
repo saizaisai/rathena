@@ -3395,11 +3395,11 @@ void intif_parse_itembound_ack(int32 fd) {
  */
 void intif_parse_itembound_store2gstorage(int32 fd) {
 //<<<<<<< HEAD
-	unsigned short i, failed = 0;
-	short count = RFIFOW(fd, 4), guild_id = RFIFOW(fd, 6);
+//	unsigned short i, failed = 0;
+//	short count = RFIFOW(fd, 4), guild_id = RFIFOW(fd, 6);
 //=======
-//	uint16 i, failed = 0;
-//	int16 count = RFIFOW(fd, 4), guild_id = RFIFOW(fd, 6);
+	uint16 i, failed = 0;
+	int16 count = RFIFOW(fd, 4), guild_id = RFIFOW(fd, 6);
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	struct s_storage *gstor = guild2storage(guild_id);
 

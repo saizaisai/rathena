@@ -582,11 +582,11 @@ ACMD_FUNC(mapmove)
 {
 	char map_name[MAP_NAME_LENGTH_EXT];
 //<<<<<<< HEAD
-	unsigned short mapindex;
-	short x = 0, y = 0;
+//	unsigned short mapindex;
+//	short x = 0, y = 0;
 //=======
-//	uint16 mapindex;
-//	int16 x = 0, y = 0;
+	uint16 mapindex;
+	int16 x = 0, y = 0;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	int16 m = -1;
 
@@ -6014,11 +6014,11 @@ ACMD_FUNC(addwarp)
 {
 	char mapname[MAP_NAME_LENGTH_EXT], warpname[NPC_NAME_LENGTH];
 //<<<<<<< HEAD
-	short x,y;
-	unsigned short m;
+//	short x,y;
+//	unsigned short m;
 //=======
-	//int16 x,y;
-	//uint16 m;
+	int16 x,y;
+	uint16 m;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	struct npc_data* nd;
 

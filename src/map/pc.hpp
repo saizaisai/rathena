@@ -331,11 +331,11 @@ struct s_add_drop {
 	unsigned short group; ///Group ID
 	int32 rate; ///Rate, 1 ~ 10000, -1 ~ -100000
 //<<<<<<< HEAD
-	short race; ///Target Race, bitwise value of 1<<x. if < 0 means Monster ID
-	unsigned short class_; ///Target Class, bitwise value of 1<<x
+//	short race; ///Target Race, bitwise value of 1<<x. if < 0 means Monster ID
+//	unsigned short class_; ///Target Class, bitwise value of 1<<x
 //=======
-	//int16 race; ///Target Race, bitwise value of 1<<x. if < 0 means Monster ID
-	//uint16 class_; ///Target Class, bitwise value of 1<<x
+	int16 race; ///Target Race, bitwise value of 1<<x. if < 0 means Monster ID
+	uint16 class_; ///Target Class, bitwise value of 1<<x
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 };
 
@@ -524,11 +524,11 @@ public:
 		uint32 changemap : 1;
 		uint32 callshop : 1; // flag to indicate that a script used callshop; on a shop
 //<<<<<<< HEAD
-		short pmap; // Previous map on Map Change
-		unsigned short autoloot;
+//		short pmap; // Previous map on Map Change
+//		unsigned short autoloot;
 //=======
-		//int16 pmap; // Previous map on Map Change
-		//uint16 autoloot;
+		int16 pmap; // Previous map on Map Change
+		uint16 autoloot;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 		t_itemid autolootid[AUTOLOOTITEM_SIZE]; // [Zephyrus]
 		unsigned short autoloottype;
@@ -866,13 +866,13 @@ public:
 
 	int32 pvp_timer;
 //<<<<<<< HEAD
-	short pvp_point;
-	unsigned short pvp_rank, pvp_lastusers;
-	unsigned short pvp_won, pvp_lost;
+//	short pvp_point;
+//	unsigned short pvp_rank, pvp_lastusers;
+//	unsigned short pvp_won, pvp_lost;
 //=======
-	//int16 pvp_point;
-	//uint16 pvp_rank, pvp_lastusers;
-	//uint16 pvp_won, pvp_lost;
+	int16 pvp_point;
+	uint16 pvp_rank, pvp_lastusers;
+	uint16 pvp_won, pvp_lost;
 //>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 
 	char eventqueue[MAX_EVENTQUEUE][EVENT_NAME_LENGTH];
