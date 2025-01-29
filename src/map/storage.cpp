@@ -201,6 +201,22 @@ static enum e_storage_add storage_canAddItem(struct s_storage *stor, int32 idx, 
 
 	if (!stor->state.put)
 		return STORAGE_ADD_NOACCESS;
+	
+//	if (stor->stor_id == COLLECTION_STORAGE) {
+//		const std::shared_ptr<item_data> data = item_db.find(items[idx].nameid);
+//		const map_session_data* sd = map_id2sd(stor->id);
+//		if (!data || !sd) {
+//			return STORAGE_ADD_INVALID;
+//		}
+//
+//		if (!data->flag.collection) {
+//			return STORAGE_ADD_INVALID;
+//		}
+//
+//		if (util::vector_exists(sd->collection, data->nameid)) {
+//			return STORAGE_ADD_INVALID;
+//		}
+//	}
 
 	return STORAGE_ADD_OK;
 }
@@ -291,8 +307,29 @@ static int32 storage_additem(map_session_data* sd, struct s_storage *stor, struc
 	stor->dirty = true;
 	clif_storageitemadded(sd,&stor->u.items_storage[i],i,amount);
 	clif_updatestorageamount(*sd, stor->amount, stor->max_amount);
-
+	// add item to collection
+	if (stor->stor_id == COLLECTION_STORAGE) {
+		sd->collection.push_back(data->nameid);
+		sd->state.collection_flag = 3;
+		char output[128];
+		sprintf(output, "#map_%s", data->map_collection);
+		pc_setregistry(sd, add_str(output), pc_readreg2(sd,output)+1);
+		storage_premiumStorage_close(sd);
+		clif_specialeffect(&sd->bl, 2311, SELF);
+		add_timer(gettick() + 1500, card_collection, sd->bl.id, 0);
+	}
 	return 0;
+}
+
+TIMER_FUNC(card_collection) {
+	struct block_list* bl = map_id2bl(id);
+	map_session_data * sd = BL_CAST(BL_PC, bl);
+
+	if( !sd )
+		return 0;
+
+	clif_specialeffect(&sd->bl, 2312, SELF);
+	return 1;
 }
 
 /**
@@ -309,12 +346,32 @@ int32 storage_delitem(map_session_data* sd, struct s_storage *stor, int32 index,
 
 	stor->u.items_storage[index].amount -= amount;
 	stor->dirty = true;
+	std::shared_ptr<item_data> data = item_db.find(stor->u.items_storage[index].nameid);
 
 	if( stor->u.items_storage[index].amount == 0 ) {
 		memset(&stor->u.items_storage[index],0,sizeof(stor->u.items_storage[0]));
 		stor->amount--;
 		if( sd->state.storage_flag == 1 || sd->state.storage_flag == 3 )
 			clif_updatestorageamount(*sd, stor->amount, stor->max_amount);
+	}
+
+	// remove item form collection
+	if (stor->stor_id == COLLECTION_STORAGE) {
+		if(battle_config.collection_storage_remove_card){
+			map_session_data* sdd = map_id2sd(stor->id);
+			char output[255];
+			sprintf(output, msg_txt(sdd, 2176));
+			clif_displaymessage(sdd->fd, output);
+			storage_premiumStorage_close(sdd);
+			return 1;
+		}
+		const t_itemid id = stor->u.items_storage[index].nameid;
+		sd->collection.erase(std::remove(sd->collection.begin(), sd->collection.end(), id), sd->collection.end());
+		sd->state.collection_flag = 3;
+
+		if (data && data->icon) 
+			clif_status_change(&sd->bl, data->icon, 0, 0, 0, 0, 0);
+		storage_premiumStorage_close(sd);
 	}
 
 	if( sd->state.storage_flag == 1 || sd->state.storage_flag == 3 )
@@ -336,6 +393,38 @@ void storage_storageadd(map_session_data* sd, struct s_storage *stor, int32 inde
 	enum e_storage_add result;
 
 	nullpo_retv(sd);
+
+	if (stor->stor_id == COLLECTION_STORAGE) {
+		const std::shared_ptr<item_data> data = item_db.find(sd->inventory.u.items_inventory[index].nameid);
+		const map_session_data* sd = map_id2sd(stor->id);
+		map_session_data* sdd = map_id2sd(stor->id);
+		if (!data || !sd) {
+			return;
+		}
+
+		if (!data->flag.collection) {
+			char output[255];
+			sprintf(output, msg_txt(sdd, 2177));
+			clif_displaymessage(sdd->fd, output);
+			return;
+		}
+
+		if (util::vector_exists(sd->collection, data->nameid)) {
+			char output[255];
+			sprintf(output, msg_txt(sdd, 2178),data->ename);
+			clif_displaymessage(sdd->fd, output);
+			storage_premiumStorage_close(sdd);
+			return;
+		}
+
+		if(amount != data->collection_card_count){
+			char output[255];
+			sprintf(output, msg_txt(sdd, 2175), data->collection_card_count, data->ename);
+			clif_displaymessage(sdd->fd, output);
+			storage_premiumStorage_close(sdd);
+			return;
+		}
+	}
 
 	result = storage_canAddItem(stor, index, sd->inventory.u.items_inventory, amount, MAX_INVENTORY);
 	if (result == STORAGE_ADD_INVALID)
@@ -370,6 +459,17 @@ void storage_storageget(map_session_data *sd, struct s_storage *stor, int32 inde
 	enum e_storage_add result;
 
 	nullpo_retv(sd);
+	
+	if (stor->stor_id == COLLECTION_STORAGE) {
+		if(battle_config.collection_storage_remove_card){
+			map_session_data* sdd = map_id2sd(stor->id);
+			char output[255];
+			sprintf(output, msg_txt(sdd, 2176));
+			clif_displaymessage(sdd->fd, output);
+			storage_premiumStorage_close(sdd);
+			return;
+		}
+	}
 
 	result = storage_canGetItem(stor, index, amount);
 	if (result != STORAGE_ADD_OK)
@@ -400,6 +500,35 @@ void storage_storageaddfromcart(map_session_data *sd, struct s_storage *stor, in
 		return;
 	}
 
+
+	if (stor->stor_id == COLLECTION_STORAGE) {
+		const std::shared_ptr<item_data> data = item_db.find(sd->inventory.u.items_inventory[index].nameid);
+		const map_session_data* sd = map_id2sd(stor->id);
+		map_session_data* sdd = map_id2sd(stor->id);
+		if (!data || !sd) {
+			return;
+		}
+
+		if (!data->flag.collection) {
+			char output[255];
+			sprintf(output, msg_txt(sdd, 2177));
+			clif_displaymessage(sdd->fd, output);
+			return;
+		}
+
+		if (util::vector_exists(sd->collection, data->nameid)) {
+			return;
+		}
+
+		if(amount != data->collection_card_count){
+			char output[255];
+			sprintf(output, msg_txt(sdd, 2175), data->collection_card_count, data->ename);
+			clif_displaymessage(sdd->fd, output);
+			storage_premiumStorage_close(sdd);
+			return;
+		}
+	}
+	
 	result = storage_canAddItem(stor, index, sd->cart.u.items_cart, amount, MAX_CART);
 	if (result == STORAGE_ADD_INVALID)
 		return;
@@ -439,6 +568,17 @@ void storage_storagegettocart(map_session_data* sd, struct s_storage *stor, int3
 		return;
 	}
 
+	if (stor->stor_id == COLLECTION_STORAGE) {
+		if(battle_config.collection_storage_remove_card){
+			map_session_data* sdd = map_id2sd(stor->id);
+			char output[255];
+			sprintf(output, msg_txt(sdd, 2176));
+			clif_displaymessage(sdd->fd, output);
+			storage_premiumStorage_close(sdd);
+			return;
+		}
+	}
+	
 	result = storage_canGetItem(stor, index, amount);
 	if (result != STORAGE_ADD_OK)
 		return;
@@ -1149,7 +1289,7 @@ bool storage_premiumStorage_load(map_session_data *sd, uint8 num, uint8 mode) {
 		return 0;
 	}
 
-	if (sd->premiumStorage.stor_id != num)
+	if (sd->premiumStorage.stor_id != num || sd->state.collection_flag)
 		return intif_storage_request(sd, TABLE_STORAGE, num, mode);
 	else {
 		sd->premiumStorage.state.put = (mode&STOR_MODE_PUT) ? 1 : 0;
@@ -1188,6 +1328,10 @@ void storage_premiumStorage_close(map_session_data *sd) {
 	if( sd->state.storage_flag == 3 ){
 		sd->state.storage_flag = 0;
 		clif_storageclose( *sd );
+	}
+
+	if (sd->state.collection_flag == 3) {
+		pc_collection(*sd);
 	}
 }
 

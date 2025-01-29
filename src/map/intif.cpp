@@ -3477,6 +3477,34 @@ static bool intif_parse_StorageReceived(int32 fd)
 
 	memcpy(stor, p, sz_stor); //copy the items data to correct destination
 
+	if (stor->stor_id == COLLECTION_STORAGE && sd->state.collection_flag) {
+
+		sd->collection.clear();
+
+		for (int i = 0; i < sd->premiumStorage.amount; ++i) {
+
+			t_itemid nameid = sd->premiumStorage.u.items_storage[i].nameid;
+
+			if (!item_db.exists(nameid)) {
+				continue;
+			}
+			if (rathena::util::vector_exists(sd->collection, nameid)) {
+				continue;
+			}
+			sd->collection.push_back(nameid);
+			std::shared_ptr<item_data> data = item_db.find(nameid);
+			sd->state.collection_count = sd->premiumStorage.u.items_storage[i].amount;
+		}
+
+		if (sd->collection.size() > 0 || sd->state.collection_flag == 3) {
+			status_calc_pc(sd, (enum e_status_calc_opt)(SCO_FIRST | SCO_FORCE));
+		}
+
+		sd->state.collection_flag = 0;
+
+		return true;
+	}
+
 	switch (type) {
 		case TABLE_INVENTORY: {
 #ifdef BOUND_ITEMS

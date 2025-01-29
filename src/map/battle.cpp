@@ -12032,7 +12032,17 @@ static const struct _battle_data {
 	{ "afk_monster_ignore",                 &battle_config.afk_monster_ignore,              1,      0,      1,              },
 	{ "afk_headgear_viewid",                &battle_config.afk_headgear_viewid,             0,      0,      INT_MAX,        },
 	{ "afk_hat_effectid",                   &battle_config.afk_hat_effectid,                0,      0,      INT_MAX,        },
-
+	
+	// PC GOLD UI
+	{ "feature.goldpc_active",              &battle_config.feature_goldpc_active,           1,      0,      1,              },
+	{ "feature.goldpc_time",                &battle_config.feature_goldpc_time,          3600,      0,   3600,              },
+	{ "feature.goldpc_max_points",          &battle_config.feature_goldpc_max_points,     300,      0,    300,              },
+	{ "feature.goldpc_vip",                 &battle_config.feature_goldpc_vip,              1,      0,      1,              },
+	{ "feature_goldpc_timer_rates",                 &battle_config.feature_goldpc_timer_rates,              1,      0,      INT_MAX,              },
+	
+	// Collection Book
+	{ "collection_storage_remove_card",        &battle_config.collection_storage_remove_card,     0,      0,      INT_MAX,              },
+ 
 #include <custom/battle_config_init.inc>
 };
 

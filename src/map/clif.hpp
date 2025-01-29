@@ -1537,5 +1537,7 @@ void clif_hat_effect_npc(struct block_list* src, struct block_list* bl, bool ena
 //Mir4 Mining Sys (Hyroshima)
 void clif_frame(struct block_list* bl, int n);
 
+void clif_goldpc_info( map_session_data& sd );
+
 #endif /* CLIF_HPP */
 

@@ -309,8 +309,30 @@ int32 chrif_save(map_session_data *sd, int32 flag) {
 	if (sd->premiumStorage.dirty)
 		storage_premiumStorage_save(sd);
 
-	if (flag&CSAVE_QUITTING)
+	if (flag&CSAVE_QUITTING){
 		sd->state.storage_flag = 0; //Force close it.
+		if( sd->goldpc_tid != INVALID_TIMER ){
+			const struct TimerData* td = get_timer( sd->goldpc_tid );
+
+			if( td != nullptr ){
+				// Get the remaining milliseconds until the next reward
+				t_tick remaining = td->tick - gettick();
+
+				// Always round up to full second and a little safety delay
+				remaining += ( remaining % 1000 ) + 2000;
+
+				// Store the seconds that already fully passed
+				pc_setreg2( sd, GOLDPC_SECONDS_VAR, battle_config.feature_goldpc_time - remaining / 1000 );
+
+				// If a player logs out or starts autotrade, stop counting
+				delete_timer( sd->goldpc_tid, pc_goldpc_update );
+				sd->goldpc_tid = INVALID_TIMER;
+			}
+		}else{
+			// Invalid timer anyway
+			sd->goldpc_tid = INVALID_TIMER;
+		}
+	}
 
 	//Saving of registry values.
 	if (sd->vars_dirty)
@@ -1655,6 +1677,10 @@ void chrif_parse_ack_vipActive(int32 fd) {
 		if((flag&0x1)) { //isvip
 			sd->vip.enabled = 1;
 			sd->vip.time = vip_time;
+
+			// vip_time is in epoch timestamp which are in seconds,  while sc_start requires milliseconds
+			sc_start(NULL, &sd->bl, SC_VIPSTATE, 100, 1, (vip_time-time(NULL)) * 1000);
+
 			// Increase storage size for VIP.
 			sd->storage.max_amount = battle_config.vip_storage_increase + MIN_STORAGE;
 			if (sd->storage.max_amount > MAX_STORAGE) {
@@ -1664,11 +1690,16 @@ void chrif_parse_ack_vipActive(int32 fd) {
 		} else if (sd->vip.enabled) {
 			sd->vip.enabled = 0;
 			sd->vip.time = 0;
+			status_change_end(&sd->bl, SC_VIPSTATE, INVALID_TIMER);
+
 			sd->storage.max_amount = MIN_STORAGE;
 			sd->special_state.no_gemstone = 0;
 			clif_displaymessage(sd->fd,msg_txt(sd,438));
 		}
 	}
+	
+	clif_goldpc_info( *sd );
+	
 	// Show info if status changed
 	if (((flag&0x4) || changed) && !sd->vip.disableshowrate) {
 		clif_display_pinfo( *sd );

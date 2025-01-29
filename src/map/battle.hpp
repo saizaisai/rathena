@@ -839,7 +839,17 @@ struct Battle_Config
 	int afk_monster_ignore;
 	int afk_headgear_viewid;
 	int afk_hat_effectid;
+	
+	int feature_goldpc_active;
+	int feature_goldpc_time;
+	int feature_goldpc_max_points;
+	int feature_goldpc_vip;
 
+	// PC GOLD UI
+	int feature_goldpc_timer_rates;
+
+	// Collection Book
+	int collection_storage_remove_card;
 	
 #include <custom/battle_config_struct.inc>
 };

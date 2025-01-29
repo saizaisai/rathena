@@ -1107,6 +1107,69 @@ uint64 ItemDatabase::parseBodyNode(const ryml::NodeRef& node) {
 		if (!exists)
 			item->unequip_script = nullptr;
 	}
+	
+	if (this->nodeExists(node, "CollectionMap")) {
+	    std::string collectionmap;
+	
+	    if (!this->asString(node, "CollectionMap", collectionmap))
+	        return 0;
+	
+	    if (collectionmap.length() > MAP_NAME_LENGTH) {
+	        this->invalidWarning(node["CollectionMap"], "CollectionMap \"%s\" exceeds maximum of %d characters, capping...\n", collectionmap.c_str(), MAP_NAME_LENGTH - 1);
+	    }
+	
+	    // Converter std::string para char[]
+	    strncpy(item->map_collection, collectionmap.c_str(), sizeof(item->map_collection) - 1);
+	    item->map_collection[sizeof(item->map_collection) - 1] = '\0'; // Garantir que a string seja terminada corretamente
+	} else {
+	    if (!exists)
+	        item->map_collection[0] = '\0'; // Assegurar que a string seja terminada corretamente
+	}
+
+	if (this->nodeExists(node, "CollectionCardCount")) {
+		uint32 collection_card_count;
+
+		if (!this->asUInt32(node, "CollectionCardCount", collection_card_count))
+			return 0;
+
+		item->collection_card_count = collection_card_count;
+	}
+	else {
+		if (!exists)
+			item->collection_card_count = 0;
+	}
+
+	if (this->nodeExists(node, "CollectionIcon")) {
+		uint32 icon;
+
+		if (!this->asUInt32(node, "CollectionIcon", icon))
+			return 0;
+
+		item->icon = icon;
+	} else {
+		if (!exists)
+			item->icon = 0;
+	}
+
+	if (this->nodeExists(node, "CollectionScript")) {
+		std::string script;
+
+		if (!this->asString(node, "CollectionScript", script))
+			return 0;
+
+		if (exists && item->collection_script) {
+			script_free_code(item->collection_script);
+			item->collection_script = nullptr;
+		}
+
+		item->collection_script = parse_script(script.c_str(), this->getCurrentFile().c_str(), this->getLineNumber(node["CollectionScript"]), SCRIPT_IGNORE_EXTERNAL_BRACKETS);
+		item->flag.collection = true;
+	} else {
+		if (!exists) {
+			item->collection_script = nullptr;
+			item->flag.collection = false;
+		}
+	}
 
 	if (!exists)
 		this->put(nameid, item);

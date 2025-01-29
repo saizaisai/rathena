@@ -11344,6 +11344,80 @@ ACMD_FUNC(afk) {
 	return 0;
 }
 
+// VIP Control
+ACMD_FUNC(vipcontrol)
+{
+	struct npc_data *nd = npc_name2id("Vip Control#manager");
+
+	if (nd == NULL)
+	{
+		clif_displaymessage(sd->fd, msg_txt(sd, 1801));
+		return -1;
+	}
+	run_script(nd->u.scr.script, 0, sd->bl.id, nd->bl.id);
+	return 0;
+}
+
+ACMD_FUNC(viptimer)
+{
+	time_t now=time(NULL);
+	
+	nullpo_retr(-1, sd);
+
+	memset(atcmd_output, '\0', sizeof(atcmd_output));
+
+	if (sd->vip.time <= now) {
+		clif_displaymessage(fd, msg_txt(sd,704)); // Player is no longer VIP.
+	} else {
+		int year,month,day,hour,minute,second;
+		char timestr[21];
+		
+		split_time((int)(sd->vip.time-now),&year,&month,&day,&hour,&minute,&second);
+		sprintf(atcmd_output,msg_txt(sd,1803),sd->status.name, year,month,day,hour,minute);
+		clif_displaymessage(sd->fd,atcmd_output);
+		timestamp2string(timestr,20,sd->vip.time,"%d-%m-%Y %H:%M");
+		sprintf(atcmd_output,msg_txt(sd,707),timestr); // You are VIP until : %s
+		clif_displaymessage(sd->fd,atcmd_output);
+	}
+	return 0;
+}
+
+ACMD_FUNC(viptimer2)
+{
+	class map_session_data* pl_sd = NULL;
+	time_t now=time(NULL);
+	
+	nullpo_retr(-1, sd);
+
+	memset(atcmd_output, '\0', sizeof(atcmd_output));
+	
+	if (!message || !*message || sscanf(message, "%23[^\n]", atcmd_player_name) < 1) {
+		sprintf(atcmd_output, msg_txt(sd,435), command); // Please enter a player name (usage: %s <char name>).
+		clif_displaymessage(fd, atcmd_output);
+		return -1;
+	}
+
+	if ((pl_sd = map_nick2sd(atcmd_player_name,false)) == NULL) {
+		clif_displaymessage(fd, msg_txt(sd,3)); // Character not found.
+		return -1;
+	}
+
+	if (pl_sd->vip.time <= now) {
+		clif_displaymessage(fd, msg_txt(sd,704)); // Player is no longer VIP.
+	} else {
+		int year,month,day,hour,minute,second;
+		char timestr[21];
+		
+		split_time((int)(pl_sd->vip.time-now),&year,&month,&day,&hour,&minute,&second);
+		sprintf(atcmd_output,msg_txt(sd,1803),pl_sd->status.name, year,month,day,hour,minute);
+		clif_displaymessage(sd->fd,atcmd_output);
+		timestamp2string(timestr,20,pl_sd->vip.time,"%d-%m-%Y %H:%M");
+		sprintf(atcmd_output,msg_txt(sd,707),timestr); // You are VIP until : %s
+		clif_displaymessage(sd->fd,atcmd_output);
+	}
+	return 0;
+}
+
 #include <custom/atcommand.inc>
 
 /**

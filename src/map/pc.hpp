@@ -65,6 +65,12 @@ class MapGuild;
 #define ATTENDANCE_DATE_VAR "#AttendanceDate"
 #define ATTENDANCE_COUNT_VAR "#AttendanceCounter"
 #define ACHIEVEMENTLEVEL "AchievementLevel"
+#ifndef GOLDPC_POINT_VAR
+	#define GOLDPC_POINT_VAR "#Goldpc_Points"
+#endif
+#ifndef GOLDPC_SECONDS_VAR
+	#define GOLDPC_SECONDS_VAR "#Goldpc_Seconds"
+#endif
 
 //Total number of classes (for data storage)
 #define CLASS_COUNT (JOB_MAX - JOB_NOVICE_HIGH + JOB_MAX_BASIC)
@@ -555,6 +561,8 @@ public:
 		bool roulette_open;
 		t_itemid item_reform;
 		uint64 item_enchant_index;
+		unsigned int collection_flag : 3; //0: closed, 1: collection load, 2: collection open, 3: collection reload
+		unsigned int collection_count : 3; //0: closed, 1: collection load, 2: collection open, 3: collection reload
 	} state;
 	struct {
 		unsigned char no_weapon_damage, no_magic_damage, no_misc_damage;
@@ -1065,6 +1073,12 @@ public:
 		int timeOut;
 		char message[CHAT_SIZE_MAX];
 	} afk_system;
+	
+	// Hourly UI
+	int goldpc_tid;
+
+	// Collection Book
+	std::vector<t_itemid> collection;
 };
 
 extern struct eri *pc_sc_display_ers; /// Player's SC display table
@@ -1967,5 +1981,11 @@ bool pc_is_quest_monster(map_session_data* sd, t_quest quest_required_id);
 // [RomuloSM]: @Afk System
 bool pc_set_afk(map_session_data *sd, bool enable, bool stand = true);
 TIMER_FUNC(pc_afk_timeout);
+
+// PC GOLDPC_POINT_VAR
+TIMER_FUNC(pc_goldpc_update);
+
+// Collection Book
+void pc_collection(map_session_data &sd);
 
 #endif /* PC_HPP */

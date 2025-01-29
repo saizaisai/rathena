@@ -3777,7 +3777,7 @@ TIMER_FUNC(mob_boss_dead_effect_timer) {
 		delete_timer(sd->boss_effect_dead, mob_boss_dead_effect_timer);
 		sd->boss_effect_dead = INVALID_TIMER;
 	}
-	clif_hat_effect_single(sd,327, false, sd->bl.id, false);
+	clif_hat_effect_single(sd,HAT_EF_MINI_BOSS, false, sd->bl.id, false);
 
 	return 1;
 }
@@ -3793,8 +3793,10 @@ int mob_boss_sub(struct block_list *bl, va_list ap) {
 	nullpo_ret(md);
 
 	if( sd && md ) {
+		if(!map_getmapflag(bl->m, MF_GVG_CASTLE) || !map_getmapflag(bl->m, MF_GVG_TE)){
 		if( battle_config.mob_show_mvp_effect && !sd->showMobMvPEffect )
-			clif_hat_effect_single2(&md->bl,218, true);
+			clif_hat_effect_single2(&md->bl,HAT_EF_MINIBOSSICON, true);
+		}
 	}
 	return 1;
 }

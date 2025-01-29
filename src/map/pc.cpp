@@ -2462,6 +2462,38 @@ bool pc_set_hate_mob(map_session_data *sd, int32 pos, struct block_list *bl)
 	return true;
 }
 
+TIMER_FUNC(pc_goldpc_update){
+	map_session_data* sd = map_id2sd( id );
+
+	if( sd == nullptr ){
+		return 0;
+	}
+
+	sd->goldpc_tid = INVALID_TIMER;
+
+	// Check if feature is still active
+	if( !battle_config.feature_goldpc_active ){
+		return 0;
+	}
+
+	// TODO: add mapflag to disable?
+
+	int64 points = pc_readparam( sd, SP_GOLDPC_POINTS );
+
+	if( battle_config.feature_goldpc_vip && pc_isvip( sd ) || pc_get_group_id(sd) == 99){
+		points += battle_config.feature_goldpc_timer_rates+1;
+	}else{
+		points += battle_config.feature_goldpc_timer_rates;
+	}
+
+	// Reset the seconds
+	pc_setreg2( sd, GOLDPC_SECONDS_VAR, 0 );
+	// Update the points and trigger a new timer if necessary
+	pc_setparam( sd, SP_GOLDPC_POINTS, points );
+
+	return 0;
+}
+
 /*==========================================
  * Invoked once after the char/account/account2 registry variables are received. [Skotlex]
  * We didn't receive item information at this point so DO NOT attempt to do item operations here.
@@ -2570,6 +2602,15 @@ void pc_reg_received(map_session_data *sd)
 	clif_instance_info( *sd );
 #endif
 
+	if( battle_config.feature_goldpc_active && pc_readreg2( sd, GOLDPC_POINT_VAR ) < battle_config.feature_goldpc_max_points && !sd->state.autotrade || battle_config.feature_goldpc_active && pc_readreg2( sd, GOLDPC_POINT_VAR ) < battle_config.feature_goldpc_max_points && sd->state.autotrade && sd->afk_system.enable){
+		sd->goldpc_tid = add_timer( gettick() + ( battle_config.feature_goldpc_time - pc_readreg2( sd, GOLDPC_SECONDS_VAR ) ) * 1000, pc_goldpc_update, sd->bl.id, (intptr_t)nullptr );
+#ifndef VIP_ENABLE
+		clif_goldpc_info( *sd );
+#endif
+	}else{
+		sd->goldpc_tid = INVALID_TIMER;
+	}
+	
 	// pet
 	if (sd->status.pet_id > 0)
 		intif_request_petdata(sd->status.account_id, sd->status.char_id, sd->status.pet_id);
@@ -6461,6 +6502,87 @@ bool pc_isUseitem(map_session_data *sd,int32 n)
 			if( !mapdata->getMapFlag(MF_RESET) )
 				return false;
 			break;
+
+        case 12208:
+            if(sd->sc.getSCE(SC_EXPBOOST)){
+                clif_displaymessage(sd->fd, "You have an active Battle Manual.");
+                return false;
+            }
+            break;
+        case 14592:
+            if(sd->sc.getSCE(SC_JEXPBOOST)){
+                clif_displaymessage(sd->fd, "You have an active Job Manual.");
+                return false;
+            }
+            break;
+        case 12210:
+            if(sd->sc.getSCE(SC_ITEMBOOST)){
+                clif_displaymessage(sd->fd, "You have an active Bubble Gum.");
+                return false;
+            }
+            break;
+
+        case 12202:
+            if(sd->sc.getSCE(SC_FOOD_STR_CASH)){
+                clif_displaymessage(sd->fd, "You have an active STR Food Cash.");
+                return false;
+            }
+            break;
+        case 12203:
+            if(sd->sc.getSCE(SC_FOOD_AGI_CASH)){
+                clif_displaymessage(sd->fd, "You have an active AGI Food Cash.");
+                return false;
+            }
+            break;
+        case 12204:
+            if(sd->sc.getSCE(SC_FOOD_INT_CASH)){
+                clif_displaymessage(sd->fd, "You have an active INT Food Cash.");
+                return false;
+            }
+            break;
+        case 12205:
+            if(sd->sc.getSCE(SC_FOOD_DEX_CASH)){
+                clif_displaymessage(sd->fd, "You have an active DEX Food Cash.");
+                return false;
+            }
+            break;
+        case 12206:
+            if(sd->sc.getSCE(SC_FOOD_LUK_CASH)){
+                clif_displaymessage(sd->fd, "You have an active LUK Food Cash.");
+                return false;
+            }
+            break;
+        case 12207:
+            if(sd->sc.getSCE(SC_FOOD_VIT_CASH)){
+                clif_displaymessage(sd->fd, "You have an active VIT Food Cash.");
+                return false;
+            }
+            break;
+			// BG
+        case 12123:
+            if(sd->sc.getSCE(SC_FLEEFOOD)){
+                clif_displaymessage(sd->fd, "You have an active Honey Pastry.");
+                return false;
+            }
+            break;
+        case 12124:
+            if(sd->sc.getSCE(SC_BATKFOOD) && sd->sc.getSCE(SC_MATKFOOD)){
+                clif_displaymessage(sd->fd, "You have an active Rainbow Cake.");
+                return false;
+            }
+            break;
+        case 14525:
+            if(sd->sc.getSCE(SC_ATKPOTION)){
+                clif_displaymessage(sd->fd, "You have an active Chewy Ricecake.");
+                return false;
+            }
+            break;
+        case 12122:
+            if(sd->sc.getSCE(SC_HITFOOD)){
+                clif_displaymessage(sd->fd, "You have an active Sesame Pastry.");
+                return false;
+            }
+            break;
 	}
 
 	if( itemdb_group.item_exists(IG_MERCENARY, nameid) && sd->md != nullptr )
@@ -10545,6 +10667,7 @@ int64 pc_readparam(map_session_data* sd,int64 type)
 #endif
 		case SP_CRIT_DEF_RATE: val = sd->bonus.crit_def_rate; break;
 		case SP_ADD_ITEM_SPHEAL_RATE: val = sd->bonus.itemsphealrate2; break;
+		case SP_GOLDPC_POINTS: val = pc_readreg2( sd, GOLDPC_POINT_VAR ); break;
 		default:
 			ShowError("pc_readparam: Attempt to read unknown parameter '%lld'.\n", type);
 			return -1;
@@ -10795,6 +10918,28 @@ bool pc_setparam(map_session_data *sd,int64 type,int64 val_tmp)
 		val = cap_value(val, 0, 1999);
 		sd->cook_mastery = val;
 		pc_setglobalreg(sd, add_str(COOKMASTERY_VAR), sd->cook_mastery);
+		return true;
+	case SP_GOLDPC_POINTS:
+		val = cap_value( val, 0, battle_config.feature_goldpc_max_points );
+
+		pc_setreg2( sd, GOLDPC_POINT_VAR, val );
+
+		// If you do not check this, some funny things happen (circle logics, timer mismatches, etc...)
+		if( !sd->state.connect_new ){
+			// Make sure to always delete the timer
+			if( sd->goldpc_tid != INVALID_TIMER ){
+				delete_timer( sd->goldpc_tid, pc_goldpc_update );
+				sd->goldpc_tid = INVALID_TIMER;
+			}
+
+			// If the system is enabled and the player can still earn some points restart the timer
+			if( battle_config.feature_goldpc_active && val < battle_config.feature_goldpc_max_points && !sd->state.autotrade || battle_config.feature_goldpc_active && val < battle_config.feature_goldpc_max_points && sd->state.autotrade && sd->afk_system.enable ){
+				sd->goldpc_tid = add_timer( gettick() + ( battle_config.feature_goldpc_time - pc_readreg2( sd, GOLDPC_SECONDS_VAR ) ) * 1000, pc_goldpc_update, sd->bl.id, (intptr_t)nullptr );
+			}
+
+			// Update the client
+			clif_goldpc_info( *sd );
+		}
 		return true;
 	default:
 		ShowError("pc_setparam: Attempted to set unknown parameter '%lld'.\n", type);
@@ -16331,6 +16476,19 @@ void pc_attendance_claim_reward( map_session_data* sd ){
 	clif_attendence_response( sd, attendance_counter );
 }
 
+void pc_collection(map_session_data &sd) {
+	if (!storage_exists(COLLECTION_STORAGE)) {
+		return;
+	}
+
+	// Init
+	if (!sd.state.collection_flag) {
+		sd.state.collection_flag = 1;
+	}
+	
+	storage_premiumStorage_load(&sd, COLLECTION_STORAGE, STOR_MODE_GET);
+}
+
 /**
  * Send a player to jail and determine the location to send in jail.
  * @param sd: Player data
@@ -17004,8 +17162,12 @@ void do_init_pc(void) {
 	add_timer_func_list(pc_macro_detector_timeout, "pc_macro_detector_timeout");
 	// @Afk System
 	add_timer_func_list(pc_afk_timeout, "pc_afk_timeout");
+	// PC GOLDPC_POINT_VAR
+	add_timer_func_list( pc_goldpc_update, "pc_goldpc_update" );
+	
 	add_timer(gettick() + autosave_interval, pc_autosave, 0, 0);
 
+	
 	// 0=day, 1=night [Yor]
 	night_flag = battle_config.night_at_start ? 1 : 0;
 

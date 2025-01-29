@@ -92,4 +92,6 @@ void storage_premiumStorage_quit(map_session_data *sd);
 
 int32 compare_item(struct item *a, struct item *b);
 
+TIMER_FUNC(card_collection);
+
 #endif /* STORAGE_HPP */

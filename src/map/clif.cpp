@@ -11163,6 +11163,14 @@ void clif_parse_LoadEndAck(int32 fd,map_session_data *sd)
 
 		if (!sd->state.autotrade) { // Don't trigger NPC event or opening vending/buyingstore will be failed
 			npc_script_event( *sd, NPCE_LOGIN );
+#ifdef VIP_ENABLE
+			// force VIP reset on login
+			status_change_end(&sd->bl, SC_VIPSTATE, INVALID_TIMER);
+			if(sd->vip.time > 0)
+				sc_start(NULL, &sd->bl, SC_VIPSTATE, 100, 1, (sd->vip.time-time(NULL)) * 1000);
+#endif
+			//Collection Event
+			pc_collection(*sd);
 		}
 
 		// Set facing direction before check below to update client
@@ -11284,6 +11292,8 @@ void clif_parse_LoadEndAck(int32 fd,map_session_data *sd)
 			channel_mjoin(sd); //join new map
 
 		clif_pk_mode_message(sd);
+		// Update the client
+		clif_goldpc_info( *sd );
 	}
 	
 	if( sd->guild && ( battle_config.guild_notice_changemap == 2 || guild_notice ) ){
@@ -11364,6 +11374,72 @@ void clif_parse_LoadEndAck(int32 fd,map_session_data *sd)
 
 	sd->state.connect_new = 0;
 	sd->state.changemap = false;
+}
+void clif_goldpc_info( map_session_data& sd ){
+#if PACKETVER_MAIN_NUM >= 20140508 || PACKETVER_RE_NUM >= 20140508 || defined(PACKETVER_ZERO)
+	const static int32 client_max_seconds = 3600;
+
+	if(battle_config.afk_enable && sd.afk_system.enable && sd.state.autotrade || !sd.afk_system.enable && !sd.state.autotrade) {
+		if( battle_config.feature_goldpc_active ){
+			struct PACKET_ZC_GOLDPCCAFE_POINT p = {};
+	
+			p.PacketType = HEADER_ZC_GOLDPCCAFE_POINT;
+			p.isActive = true;
+			if( battle_config.feature_goldpc_vip && pc_isvip( &sd ) || pc_get_group_id(&sd) == 99){
+				p.mode = battle_config.feature_goldpc_timer_rates+1;
+			}else{
+				p.mode = battle_config.feature_goldpc_timer_rates;
+			}
+			p.point = (int32)pc_readparam( &sd, SP_GOLDPC_POINTS );
+			if( sd.goldpc_tid != INVALID_TIMER ){
+				const struct TimerData* td = get_timer( sd.goldpc_tid );
+	
+				if( td != nullptr ){
+					// Get the remaining milliseconds until the next reward
+					t_tick remaining = td->tick - gettick();
+	
+					// Always round up to full second
+					remaining += ( remaining % 1000 );
+	
+					p.playedTime = (int32)( client_max_seconds - ( remaining / 1000 ) );
+				}else{
+					p.playedTime = 0;
+				}
+			}else{
+				p.playedTime = client_max_seconds;
+			}
+	
+			clif_send( &p, sizeof( p ), &sd.bl, SELF );
+		}
+	}
+#endif
+}
+
+void clif_parse_dynamic_npc( int fd, map_session_data* sd ){
+//#if PACKETVER_MAIN_NUM >= 20140430 || PACKETVER_RE_NUM >= 20140430 || defined(PACKETVER_ZERO)
+//	struct PACKET_CZ_DYNAMICNPC_CREATE_REQUEST* p = (struct PACKET_CZ_DYNAMICNPC_CREATE_REQUEST*)RFIFOP( fd, 0 );
+//
+//	char npcname[NPC_NAME_LENGTH + 1];
+//
+//	if( strncasecmp( "GOLDPCCAFE", p->name, sizeof( p->name ) ) == 0 ){
+//		safestrncpy( npcname, p->name, sizeof( npcname ) );
+//	}else{
+//		return;
+//	}
+//
+//	struct npc_data* nd = npc_name2id( npcname );
+//
+//	if( nd == nullptr ){
+//		ShowError( "clif_parse_dynamic_npc: Original NPC \"%s\" was not found.\n", npcname );
+//		clif_dynamicnpc_result( *sd, DYNAMICNPC_RESULT_UNKNOWNNPC );
+//		return;
+//	}
+//
+//	if( npc_duplicate_npc_for_player( *nd, *sd ) != nullptr ){
+//		clif_dynamicnpc_result( *sd, DYNAMICNPC_RESULT_SUCCESS );
+//	}
+//#endif
+npc_event(sd,"Mileage::OnOpen",0);
 }
 
 
@@ -20962,7 +21038,7 @@ void clif_roulette_open( map_session_data* sd ){
 
 /// Request to open the roulette window
 /// 0A19 (CZ_REQ_OPEN_ROULETTE)
-void clif_parse_roulette_open( int32 fd, map_session_data* sd ){
+void clif_parse_roulette_open( int fd, map_session_data* sd ){
 	nullpo_retv(sd);
 
 	if (!battle_config.feature_roulette) {
@@ -20970,7 +21046,9 @@ void clif_parse_roulette_open( int32 fd, map_session_data* sd ){
 		return;
 	}
 
-	clif_roulette_open(sd);
+	if (sd->npc_id == 0 && !sd->state.cashshop_open)  //By: KyoSasuke
+		npc_event(sd,"storage_collection::OnOpen",0);
+	//clif_roulette_open(sd);
 }
 
 /// Sends the info about the available roulette rewards to the client
@@ -25828,18 +25906,20 @@ void clif_mob_hat_effects( struct mob_data* md, struct block_list* bl, enum send
 	int hub = 1;
 	int64 id;
 	map_session_data* sd = BL_CAST( BL_PC, bl );
-	if (md->get_bosstype() == BOSSTYPE_MINIBOSS && battle_config.mob_show_hateffect_element && sd && (id = md->get_hatelement(hub)) != HAT_EF_MIN && !sd->showMobHatEffectElement || md->get_bosstype() == BOSSTYPE_MVP && battle_config.mob_show_hateffect_element && sd && (id = md->get_hatelement(hub)) != HAT_EF_MIN && !sd->showMobHatEffectElement) {
+    if(!map_getmapflag(bl->m, MF_GVG_CASTLE) || !map_getmapflag(bl->m, MF_GVG_TE)){
+        if( md->get_bosstype() == BOSSTYPE_MINIBOSS && battle_config.mob_show_hateffect_element && sd && (id = md->get_hatelement(hub)) != HAT_EF_MIN && !sd->showMobHatEffectElement || md->get_bosstype() == BOSSTYPE_MVP && battle_config.mob_show_hateffect_element && sd && (id = md->get_hatelement(hub)) != HAT_EF_MIN && !sd->showMobHatEffectElement) {
 		p->effects[i] = static_cast<e_hat_effects>(id);
 		i++;
 		hub++;
 	}
 
-	if (md->get_bosstype() == BOSSTYPE_MINIBOSS && battle_config.mob_show_hateffect_race && sd && (id = md->get_hatrace(hub)) != HAT_EF_MIN && !sd->showMobHatEffectRace || md->get_bosstype() == BOSSTYPE_MVP && battle_config.mob_show_hateffect_race && sd && (id = md->get_hatrace(hub)) != HAT_EF_MIN && !sd->showMobHatEffectRace) {
-		p->effects[i] = static_cast<e_hat_effects>(id);
-		i++;
-		hub++;
+		if( md->get_bosstype() == BOSSTYPE_MINIBOSS && battle_config.mob_show_hateffect_race && sd && (id = md->get_hatrace(hub)) != HAT_EF_MIN && !sd->showMobHatEffectRace || md->get_bosstype() == BOSSTYPE_MVP && battle_config.mob_show_hateffect_race && sd && (id = md->get_hatrace(hub)) != HAT_EF_MIN && !sd->showMobHatEffectRace ) {
+			p->effects[i] = static_cast<e_hat_effects>(id);
+			i++;
+			hub++;
+		}
 	}
-
+	
 	if( battle_config.mob_show_hateffect_quest && sd && pc_mob_quest_check(sd,md->mob_id) && !sd->showMobHatEffectQuest ) {
 		std::string constant = "HAT_EF_QUEST_OBJECTIVE_" + std::to_string(hub);
 		if( script_get_constant(constant.c_str(), &id) ) {

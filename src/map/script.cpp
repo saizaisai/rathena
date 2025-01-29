@@ -28844,6 +28844,108 @@ BUILDIN_FUNC(fake_icon_all)
 
 }
 
+// VIP Control
+BUILDIN_FUNC(getcharinfo)
+{
+	int num;
+	TBL_PC *sd;
+
+	num = script_getnum(st,2);
+
+	if( !script_mapid2sd(3,sd) ){
+		if( num == 7 )
+			script_pushconststr(st, "");
+		else
+			script_pushint(st,0); //return 0, according docs
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	switch( num ) {
+	case 0: script_pushint(st,sd->status.char_id); break;
+	case 1: script_pushint(st,sd->status.party_id); break;
+	case 2: script_pushint(st,sd->status.guild_id); break;
+	case 3: script_pushint(st,sd->status.account_id); break;
+	case 4: script_pushint(st,sd->bg_id); break;
+	case 5: script_pushint(st,sd->status.clan_id); break;
+	case 6: script_pushstrcopy(st,sd->status.name); break;
+	default:
+		ShowError("buildin_getcharinfo: invalid parameter (%d).\n", num);
+		script_pushint(st,0);
+		break;
+	}
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(delgoldpoints) {
+       TBL_PC* sd;
+       if (!script_rid2sd(sd))
+               return SCRIPT_CMD_SUCCESS;
+
+       int val = script_getnum(st, 2);
+
+       if (val > pc_readparam( sd, SP_GOLDPC_POINTS ))
+               ShowError("delgoldpoints: Player don't have enough gold points, remove all point that he have.\n");
+
+       int val_quant = cap_value((pc_readparam( sd, SP_GOLDPC_POINTS ) - val), 0, 300);
+       pc_setaccountreg(sd, add_str(GOLDPC_POINT_VAR), val_quant);
+       clif_goldpc_info(*sd);
+       return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(get_collection_item)
+{
+	TBL_PC* sd;
+
+	if (!script_charid2sd(4, sd)) {
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	std::shared_ptr<item_data> item_id;
+	if (script_isstring(st, 3))
+		item_id = item_db.searchname(script_getstr(st, 3));
+	else // item id
+		item_id = item_db.find(script_getnum(st, 3));
+
+	if (item_id == 0) {
+		ShowError("buildin_get_collection_item: Item invalid '%s'.\n", script_getstr(st, 3));
+		script_pushint(st, 0);
+		return SCRIPT_CMD_FAILURE;
+	}
+	int id = script_getnum(st, 3);
+
+	int stor_id = script_getnum(st, 2);
+
+	if (sd->state.storage_flag != 0) {
+		script_pushint(st, -1);
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	int count = 0;
+	for (int i = 0; i < ARRAYLENGTH(sd->premiumStorage.u.items_storage); ++i) {
+		if (sd->premiumStorage.u.items_storage[i].nameid == id) {
+			count += sd->premiumStorage.u.items_storage[i].amount;
+		}
+	}
+	// Retorna a quantidade do item no storage1
+	script_pushint(st, count);
+	return SCRIPT_CMD_SUCCESS;
+}
+
+BUILDIN_FUNC(get_collection_check)
+{
+	TBL_PC* sd;
+
+	if (!script_charid2sd(3, sd)) {
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	const std::shared_ptr<item_data> data = item_db.find(script_getnum(st, 2));
+	
+
+	script_pushint(st, data->collection_card_count);
+	return SCRIPT_CMD_SUCCESS;
+}
+
 #include <custom/script.inc>
 
 // declarations that were supposed to be exported from npc_chat.cpp
@@ -29638,9 +29740,9 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(permission_check, "i?"),
 	BUILDIN_DEF(permission_add, "i?"),
 	BUILDIN_DEF2(permission_add, "permission_remove", "i?"),
+	//==========================
 
-	BUILDIN_DEF(fstatus,"iiii"),
-	
+
 	// Mob Hat Effects
 	BUILDIN_DEF(mob_hateffect, "iii"),
 	BUILDIN_DEF(mob_showelement, "i?"),
@@ -29656,7 +29758,19 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(champion_drop,"siii?"),
 
 	BUILDIN_DEF( mesitemicon, "i??" ),
+	//Fake Icon
+	BUILDIN_DEF(fstatus,"iiii"),
+	BUILDIN_DEF(fake_icon_all,"iii"),
+	// VIP Control
+	BUILDIN_DEF(getcharinfo,"i?"),
+	
+	// Gold Point
+	BUILDIN_DEF(delgoldpoints, "i"),
 
+	// Collection Book
+	BUILDIN_DEF(get_collection_item, "ii?"),
+	BUILDIN_DEF(get_collection_check, "i?"),
+	
 #include <custom/script_def.inc>
 
 	{nullptr,nullptr,nullptr},
