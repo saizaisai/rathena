@@ -163,13 +163,6 @@ uint64 AtcommandAliasDatabase::parseBodyNode( const ryml::NodeRef& node ){
 			std::string alias;
 			subNode >> alias;
 
-			AtCommandInfo* parent_cmd = get_atcommandinfo_byname( alias.c_str() );
-
-			if( parent_cmd != nullptr ){
-				this->invalidWarning( subNode, "\"%s\" cannot be used as alias for \"%s\", since a command with this name exists.\n", alias.c_str(), command.c_str() );
-				return 0;
-			}
-
 			info->aliases.insert( alias );
 			this->aliases[alias] = command;
 		}
@@ -588,13 +581,8 @@ static void warp_get_suggestions(map_session_data* sd, const char *name) {
 ACMD_FUNC(mapmove)
 {
 	char map_name[MAP_NAME_LENGTH_EXT];
-//<<<<<<< HEAD
-//	unsigned short mapindex;
-//	short x = 0, y = 0;
-//=======
-	uint16 mapindex;
-	int16 x = 0, y = 0;
-//>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
+	unsigned short mapindex;
+	short x = 0, y = 0;
 	int16 m = -1;
 
 	nullpo_retr(-1, sd);
@@ -726,7 +714,7 @@ ACMD_FUNC(jumpto)
  *------------------------------------------*/
 ACMD_FUNC(jump)
 {
-	int16 x = 0, y = 0;
+	short x = 0, y = 0;
 
 	nullpo_retr(-1, sd);
 
@@ -1000,7 +988,7 @@ ACMD_FUNC(load){
  *------------------------------------------*/
 ACMD_FUNC(speed)
 {
-	int16 speed;
+	short speed;
 
 	nullpo_retr(-1, sd);
 
@@ -2294,7 +2282,7 @@ ACMD_FUNC(monster)
 	int32 number = 0;
 	int32 count;
 	int32 i, range;
-	int16 mx, my;
+	short mx, my;
 	uint32 size;
 	nullpo_retr(-1, sd);
 
@@ -3029,7 +3017,7 @@ ACMD_FUNC(stat_all)
 	
 	count = 0;
 	for (i = PARAM_STR; i < PARAM_POW; i++) {
-		int16 new_value;
+		short new_value;
 
 		if (value > 0 && status[i] + value >= max_status[i])
 			new_value = max_status[i];
@@ -3103,7 +3091,7 @@ ACMD_FUNC(trait_all) {
 	uint8 count = 0;
 
 	for (i = PARAM_POW; i < PARAM_MAX; i++) {
-		int16 new_value;
+		short new_value;
 
 		if (value > 0 && status[i] + value >= max_status[i])
 			new_value = max_status[i];
@@ -3141,7 +3129,7 @@ ACMD_FUNC(trait_all) {
  *------------------------------------------*/
 ACMD_FUNC(guildlevelup) {
 	int32 level = 0;
-	int16 added_level;
+	short added_level;
 	nullpo_retr(-1, sd);
 
 	if (!message || !*message || sscanf(message, "%11d", &level) < 1 || level == 0) {
@@ -3160,9 +3148,9 @@ ACMD_FUNC(guildlevelup) {
 	//	return -1;
 	//}
 
-	added_level = (int16)level;
-	if (level > 0 && (level > MAX_GUILDLEVEL || added_level > ((int16)MAX_GUILDLEVEL - guild_info->guild.guild_lv))) // fix positive overflow
-		added_level = (int16)MAX_GUILDLEVEL - guild_info->guild.guild_lv;
+	added_level = (short)level;
+	if (level > 0 && (level > MAX_GUILDLEVEL || added_level > ((short)MAX_GUILDLEVEL - guild_info->guild.guild_lv))) // fix positive overflow
+		added_level = (short)MAX_GUILDLEVEL - guild_info->guild.guild_lv;
 	else if (level < 0 && (level < -MAX_GUILDLEVEL || added_level < (1 - guild_info->guild.guild_lv))) // fix negative overflow
 		added_level = 1 - guild_info->guild.guild_lv;
 
@@ -5932,7 +5920,7 @@ ACMD_FUNC(killer)
 		clif_displaymessage(fd, msg_txt(sd,241)); // You can now attack and kill players freely.
 	else {
 		clif_displaymessage(fd, msg_txt(sd,292)); // Killer state reset.
-		unit_stop_attack( &sd->bl );
+		pc_stop_attack(sd);
 	}
 	return 0;
 }
@@ -5985,7 +5973,7 @@ ACMD_FUNC(skilloff)
  *------------------------------------------*/
 ACMD_FUNC(npcmove)
 {
-	int16 x = 0, y = 0;
+	short x = 0, y = 0;
 	struct npc_data *nd = 0;
 	char npc_name[NPC_NAME_LENGTH];
 
@@ -6020,13 +6008,8 @@ ACMD_FUNC(npcmove)
 ACMD_FUNC(addwarp)
 {
 	char mapname[MAP_NAME_LENGTH_EXT], warpname[NPC_NAME_LENGTH];
-//<<<<<<< HEAD
-//	short x,y;
-//	unsigned short m;
-//=======
-	int16 x,y;
-	uint16 m;
-//>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
+	short x,y;
+	unsigned short m;
 	struct npc_data* nd;
 
 	nullpo_retr(-1, sd);
@@ -7371,7 +7354,7 @@ ACMD_FUNC(cleanmap)
 
 ACMD_FUNC(cleanarea)
 {
-	int16 x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+	short x0 = 0, y0 = 0, x1 = 0, y1 = 0;
 
 	if (!message || !*message || sscanf(message, "%6hd %6hd %6hd %6hd", &x0, &y0, &x1, &y1) < 1) {
 		map_foreachinallarea(atcommand_cleanfloor_sub, sd->bl.m, sd->bl.x - (AREA_SIZE * 2), sd->bl.y - (AREA_SIZE * 2), sd->bl.x + (AREA_SIZE * 2), sd->bl.y + (AREA_SIZE * 2), BL_ITEM);
@@ -8947,7 +8930,7 @@ ACMD_FUNC(fakename)
  *------------------------------------------*/
 ACMD_FUNC(mapflag) {
 	char flag_name[50];
-	int16 flag = 0, i, j;
+	short flag = 0, i, j;
 	std::string buf;
 
 	nullpo_retr(-1, sd);
@@ -10540,40 +10523,30 @@ ACMD_FUNC(vip) {
 	}
 
 	if (pc_get_group_level(pl_sd) > pc_get_group_level(sd)) {
-		clif_displaymessage(fd, msg_txt(sd,81)); // Your GM level doesn't authorize you to perform this action on the specified player.
+		clif_displaymessage(fd, msg_txt(sd,81)); // Your GM level don't authorise you to do this action on this player.
 		return -1;
 	}
-
-	if( pc_get_group_level( pl_sd ) > 0 ){
-		clif_displaymessage( sd->fd, msg_txt( sd, 437 ) ); // GM's cannot become a VIP.
-		return -1;
-	}
-
 	if(pl_sd->vip.time==0) pl_sd->vip.time=now;
 	pl_sd->vip.time += vipdifftime; //increase or reduce VIP duration
 	
 	if (pl_sd->vip.time <= now) {
 		clif_displaymessage(pl_sd->fd, msg_txt(pl_sd,703)); // GM has removed your VIP time.
-
-		if( pl_sd != sd ){
-			sprintf( atcmd_output, msg_txt( sd, 704 ), pl_sd->status.name ); // Player '%s' is no longer VIP.
-			clif_displaymessage( fd, atcmd_output );
-		}
+		clif_displaymessage(fd, msg_txt(sd,704)); // Player is no longer VIP.
 	} else {
 		int32 year,month,day,hour,minute,second;
 		char timestr[21];
 		
 		split_time((int32)(pl_sd->vip.time-now),&year,&month,&day,&hour,&minute,&second);
-		sprintf(atcmd_output,msg_txt(pl_sd,705),year,month,day,hour,minute,second); // Your VIP status is valid for %d years, %d months, %d days, %d hours, %d minutes and %d seconds.
+		sprintf(atcmd_output,msg_txt(pl_sd,705),year,month,day,hour,minute); // Your VIP status is valid for %d years, %d months, %d days, %d hours and %d minutes.
 		clif_displaymessage(pl_sd->fd,atcmd_output);
-		timestamp2string(timestr,20,pl_sd->vip.time,"%Y-%m-%d %H:%M:%S");
-		sprintf(atcmd_output,msg_txt(pl_sd,707),timestr); // You are VIP until: %s
+		timestamp2string(timestr,20,pl_sd->vip.time,"%Y-%m-%d %H:%M");
+		sprintf(atcmd_output,msg_txt(pl_sd,707),timestr); // You are VIP until : %s
 		clif_displaymessage(pl_sd->fd,atcmd_output);
 
 		if (pl_sd != sd) {
-			sprintf(atcmd_output,msg_txt(sd,706),pl_sd->status.name,year,month,day,hour,minute,second); // Player '%s' is now VIP for %d years, %d months, %d days, %d hours, %d minutes and %d seconds.
+			sprintf(atcmd_output,msg_txt(sd,706),pl_sd->status.name,year,month,day,hour,minute); // Player '%s' is now VIP for %d years, %d months, %d days, %d hours and %d minutes.
 			clif_displaymessage(fd,atcmd_output);
-			sprintf(atcmd_output,msg_txt(sd,708),timestr); // The player is now VIP until: %s
+			sprintf(atcmd_output,msg_txt(sd,708),timestr); // The player is now VIP until : %s
 			clif_displaymessage(fd,atcmd_output);
 		}
 	}
@@ -10743,7 +10716,7 @@ ACMD_FUNC(cloneequip) {
 	else {
 		int8 i;
 		for (i = 0; i < EQI_MAX; i++) {
-			int16 idx;
+			short idx;
 			char flag = 0;
 			struct item tmp_item;
 			if ((idx = pl_sd->equip_index[i]) < 0)
@@ -10815,7 +10788,7 @@ ACMD_FUNC(clonestat) {
 	}
 	else {
 		uint8 i;
-		int16 max_status[PARAM_MAX] = {};
+		short max_status[PARAM_MAX] = {};
 
 		pc_resetstate(sd);
 		if (pc_has_permission(sd, PC_PERM_BYPASS_STAT_ONCLONE)) {

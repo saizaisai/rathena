@@ -96,7 +96,7 @@ struct Damage {
 	int64 damage, /// Right hand damage
 		damage2; /// Left hand damage
 	enum e_damage_type type; /// Check clif_damage for type
-	int16 div_; /// Number of hit
+	short div_; /// Number of hit
 	int32 amotion,
 		dmotion;
 	int32 blewcount; /// Number of knockback
@@ -786,7 +786,7 @@ struct Battle_Config
 	int32 item_stacking;
 	int32 hom_delay_reset_vaporize;
 	int32 hom_delay_reset_warp;
-
+	
 	// Champion Monster
 	int32 group_id_monster_champion;
 	
@@ -840,8 +840,7 @@ struct Battle_Config
 	int afk_headgear_viewid;
 	int afk_hat_effectid;
 
-	int32 loot_range;
-
+	
 #include <custom/battle_config_struct.inc>
 };
 

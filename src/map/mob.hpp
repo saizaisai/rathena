@@ -29,6 +29,8 @@ struct guardian_data;
 #define MAX_MOB_DROP_TOTAL (MAX_MOB_DROP+MAX_MOB_DROP_ADD)
 #define MAX_MVP_DROP_TOTAL (MAX_MVP_DROP+MAX_MVP_DROP_ADD)
 
+#define MAX_MINCHASE 30	//Max minimum chase value to use for mobs.
+
 //Min time between AI executions
 const t_tick MIN_MOBTHINKTIME = 100;
 //Min time before mobs do a check to call nearby friends for help (or for slaves to support their master)
@@ -191,20 +193,15 @@ enum e_aegis_monsterclass : int8 {
 struct s_mob_skill {
 	enum MobSkillState state;
 	uint16 skill_id,skill_lv;
-	int16 permillage;
+	short permillage;
 	int32 casttime,delay;
-	int16 cancel;
-	int16 cond1;
+	short cancel;
+	short cond1;
 	int64 cond2;
-	int16 target;
+	short target;
 	int32 val[5];
-//<<<<<<< HEAD
-//	short emotion;
-//	unsigned short msg_id;
-//=======
-	int16 emotion;
-	uint16 msg_id;
-//>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
+	short emotion;
+	unsigned short msg_id;
 };
 
 struct s_mob_chat {
@@ -361,20 +358,17 @@ struct mob_data {
 	int32 spawn_timer; //Required for Convex Mirror
 	int16 centerX, centerY; // Spawn center of this individual monster
 	struct s_mob_lootitem *lootitems;
-//<<<<<<< HEAD
-//	short mob_id;
+	short mob_id;
 	uint32 tdmg; //Stores total damage given to the mob, for exp calculations. [Skotlex]
-//=======
-	int16 mob_id;
-//>>>>>>> b12526368b1dd72a704cb80c388cab991f952933
 	int32 level;
 	int32 target_id,attacked_id,norm_attacked_id;
 	int32 areanpc_id; //Required in OnTouchNPC (to avoid multiple area touchs)
 	int32 bg_id; // BattleGround System
 
 	t_tick next_walktime,last_thinktime,last_linktime,last_pcneartime,dmgtick,last_canmove,last_skillcheck;
-	int16 move_fail_count;
-	int16 lootitem_count;
+	short move_fail_count;
+	short lootitem_count;
+	short min_chase;
 	unsigned char walktoxy_fail_count; //Pathfinding succeeds but the actual walking failed (e.g. Icewall lock)
 
 	int32 deletetimer;
@@ -538,6 +532,9 @@ void mob_damage(struct mob_data *md, struct block_list *src, int32 damage);
 int32 mob_dead(struct mob_data *md, struct block_list *src, int32 type);
 void mob_revive(struct mob_data *md, uint32 hp);
 void mob_heal(struct mob_data *md,uint32 heal);
+
+#define mob_stop_walking(md, type) unit_stop_walking(&(md)->bl, type)
+#define mob_stop_attack(md) unit_stop_attack(&(md)->bl)
 
 void mob_clear_spawninfo();
 void do_init_mob(void);
